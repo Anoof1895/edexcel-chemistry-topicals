@@ -24,6 +24,9 @@ export interface QuestionItem {
   all_subparts?: string[];
   questionImagePath: string;
   markSchemeImagePath: string | null;
+  answer?: string;
+  correctAnswer?: string;
+  correct_answer?: string;
 }
 
 export type ViewMode = 'split' | 'question-only' | 'ms-only';

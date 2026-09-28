@@ -10,6 +10,8 @@ dist/
 frontend/dist/
 
 # Environment files
+.env
+.env.*
 .env.local
 
 # Logs and scratch files
@@ -29,6 +31,6 @@ frontend/public/ms_crops/
 !frontend/public/dataset.json
 .cache/
 papers/
+sample_papers/
 scratch/
 *.png
-frontend/public/crops/

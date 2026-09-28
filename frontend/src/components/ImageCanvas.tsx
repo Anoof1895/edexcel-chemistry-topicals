@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -13,7 +13,8 @@ interface ImageCanvasProps {
   src: string | null;
   title: string;
   badgeText?: string;
-  badgeColor?: 'cyan' | 'emerald' | 'indigo' | 'amber';
+  badgeColor?: 'cyan' | 'emerald' | 'indigo' | 'amber' | 'purple';
+  extraBadge?: React.ReactNode;
   placeholderTitle?: string;
   placeholderMessage?: string;
 }
@@ -23,6 +24,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   title,
   badgeText,
   badgeColor = 'cyan',
+  extraBadge,
   placeholderTitle = 'No image available',
   placeholderMessage = 'Mark scheme for this question is not available in the sample paper.'
 }) => {
@@ -32,6 +34,11 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [lightboxZoom, setLightboxZoom] = useState(1.2);
   const containerRef = useRef<HTMLDivElement>(null);
   const resolvedSrc = getFullImageUrl(src);
+
+  useEffect(() => {
+    setHasError(false);
+    setZoom(1);
+  }, [src]);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.5));
@@ -45,22 +52,25 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
         return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'amber':
         return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      case 'purple':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       default:
         return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-dark-950/60 overflow-hidden border-r border-dark-800 last:border-r-0">
+    <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-dark-950/60 overflow-hidden border-r border-dark-800 last:border-r-0">
       {/* Canvas Header */}
       <div className="h-11 px-3 sm:px-4 border-b border-dark-800 bg-dark-900/60 flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-wrap sm:flex-nowrap">
           <span className="text-xs font-semibold text-slate-200 truncate">{title}</span>
           {badgeText && (
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${getBadgeClass()}`}>
               {badgeText}
             </span>
           )}
+          {extraBadge}
         </div>
 
         {/* Zoom & Lightbox Controls */}
@@ -113,7 +123,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Canvas Viewport */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-auto p-2 sm:p-4 flex items-start justify-center bg-dark-950/40 relative"
+        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-2 sm:p-4 flex items-start justify-center bg-dark-950/40 relative"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       >
         {!src || hasError ? (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -63,6 +63,11 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   // Mobile specific view tab: 'question' | 'ms'
   const [mobileTab, setMobileTab] = useState<'question' | 'ms'>('question');
 
+  // Reset mobile view to question when switching questions
+  useEffect(() => {
+    setMobileTab('question');
+  }, [question?.id]);
+
   // Sibling subparts belonging to this question's parent in the same paper
   const siblingSubparts = useMemo(() => {
     if (!question || !allQuestions) return [];
@@ -101,6 +106,22 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   const isMarkSchemeVisible = viewMode === 'split' || viewMode === 'ms-only';
   const statusCfg = getStatusConfig(questionStatus);
   const qType = getQuestionType(question);
+
+  const questionImagePath = question.questionImagePath 
+    || (question as any).crop_path 
+    || (question as any).image_path 
+    || '';
+
+  const markSchemePath = question.markSchemeImagePath 
+    || (question as any).ms_crop_path 
+    || (question as any).ms_image_path 
+    || (question as any).mark_scheme_image_path 
+    || null;
+
+  const mcqAnswer = (question as any).answer 
+    || (question as any).correct_answer 
+    || (question as any).correctAnswer 
+    || (question as any).key;
 
   return (
     <main className="flex-1 flex flex-col h-full bg-dark-950 overflow-hidden select-none relative">
@@ -146,6 +167,16 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           >
             {qType === 'mcq' ? 'MCQ' : 'Theory'}
           </span>
+
+          {/* MCQ Answer Key Badge in Header if available */}
+          {qType === 'mcq' && mcqAnswer && (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold shrink-0 shadow-sm">
+              <span className="text-[10px] uppercase tracking-wider text-emerald-400">Key:</span>
+              <span className="font-mono text-white bg-emerald-600 px-1.5 py-0.2 rounded text-[11px] font-extrabold">
+                [{mcqAnswer.toUpperCase()}]
+              </span>
+            </span>
+          )}
 
           {/* Paper Series & Year */}
           <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-dark-850 border border-dark-750 text-xs text-slate-400 shrink-0 font-medium">
@@ -345,13 +376,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         {/* Mobile: Controlled by mobileTab */}
 
         {/* Question Canvas */}
-        <div className={`
-          flex-1 flex flex-col h-full overflow-hidden
-          ${mobileTab === 'question' ? 'flex' : 'hidden md:flex'}
-          ${viewMode === 'ms-only' ? 'hidden md:hidden' : ''}
-        `}>
+        <div
+          className={`flex-1 flex-col h-full w-full overflow-hidden ${
+            mobileTab === 'question' ? 'flex' : 'hidden'
+          } ${viewMode === 'ms-only' ? 'md:hidden' : 'md:flex'}`}
+        >
           <ImageCanvas
-            src={question.questionImagePath}
+            src={questionImagePath}
             title={`Question ${question.questionNumber}`}
             badgeText={`${question.marks} ${question.marks === 1 ? 'Mark' : 'Marks'}`}
             badgeColor="cyan"
@@ -361,16 +392,45 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         </div>
 
         {/* Mark Scheme Canvas */}
-        <div className={`
-          flex-1 flex flex-col h-full overflow-hidden
-          ${mobileTab === 'ms' ? 'flex' : 'hidden md:flex'}
-          ${viewMode === 'question-only' ? 'hidden md:hidden' : ''}
-        `}>
+        <div
+          className={`flex-1 flex-col h-full w-full min-h-[300px] overflow-hidden ${
+            mobileTab === 'ms' ? 'flex' : 'hidden'
+          } ${viewMode === 'question-only' ? 'md:hidden' : 'md:flex'}`}
+        >
+          {/* Prominent Section A MCQ Key Header Bar */}
+          {qType === 'mcq' && (
+            <div className="bg-emerald-950/70 border-b border-emerald-500/30 px-3 sm:px-4 py-2 flex items-center justify-between shrink-0 select-none">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-emerald-200">
+                  {mcqAnswer ? 'Section A MCQ Key:' : 'Multiple Choice Question (1 Mark)'}
+                </span>
+                {mcqAnswer && (
+                  <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
+                    Option [{mcqAnswer.toUpperCase()}]
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] text-emerald-400/80 hidden sm:inline">Official Pearson Mark Scheme</span>
+            </div>
+          )}
           <ImageCanvas
-            src={question.markSchemeImagePath}
+            src={markSchemePath}
             title={`Mark Scheme: Q${question.questionNumber}`}
-            badgeText="Official Answers"
-            badgeColor="emerald"
+            badgeText={
+              mcqAnswer
+                ? `Correct Option: [${mcqAnswer.toUpperCase()}]`
+                : qType === 'mcq'
+                ? 'MCQ Answer Key'
+                : 'Official Answers'
+            }
+            badgeColor={qType === 'mcq' ? 'purple' : 'emerald'}
+            extraBadge={
+              mcqAnswer ? (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                  Option [{mcqAnswer.toUpperCase()}]
+                </span>
+              ) : undefined
+            }
             placeholderTitle="Mark Scheme Pending"
             placeholderMessage="This question's mark scheme row is either still processing or was not included in the sample pages."
           />
