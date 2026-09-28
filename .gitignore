@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build outputs
+dist/
+frontend/dist/
+
+# Environment files
+.env.local
+
+# Logs and scratch files
+*.log
+.DS_Store
+Thumbs.db
+tmp_test/
+temp_crop*.png
+test_*.png
+
+# Large image assets hosted on Cloudflare R2 (excluded from Git and Vercel builds)
+frontend/public/crops/
+frontend/public/extracted/
+frontend/public/ms_crops/
+
+# Keep dataset tracked (only ~15 MB)
+!frontend/public/dataset.json
+.cache/
+papers/
+scratch/
+*.png
+frontend/public/crops/
