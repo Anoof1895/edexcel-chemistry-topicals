@@ -302,11 +302,10 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             badgeColor="cyan"
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
-            centerVertically={!isMcq}
           >
-            {/* Interactive MCQ A/B/C/D Tap Zones */}
+            {/* Interactive MCQ A/B/C/D Tap Zones (Mobile only: md:hidden) */}
             {isMcq && (
-              <div className="w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
+              <div className="md:hidden w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
                 <div className="flex items-center justify-between w-full px-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Select Your Answer
@@ -403,22 +402,6 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             mobileTab === 'ms' ? 'flex' : 'hidden'
           } ${viewMode === 'question-only' ? 'md:hidden' : 'md:flex'}`}
         >
-          {/* Prominent Section A MCQ Key Header Bar */}
-          {qType === 'mcq' && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/70 border-b border-emerald-200 dark:border-emerald-500/30 px-3 sm:px-4 py-2 flex items-center justify-between shrink-0 select-none">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">
-                  {mcqAnswer ? 'Section A MCQ Key:' : 'Multiple Choice Question (1 Mark)'}
-                </span>
-                {mcqAnswer && (
-                  <span className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-emerald-600 text-white shadow-sm shadow-emerald-500/30">
-                    Option [{mcqAnswer.toUpperCase()}]
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400/80 hidden sm:inline">Official Pearson Mark Scheme</span>
-            </div>
-          )}
           <ImageCanvas
             src={markSchemePath}
             title={`Mark Scheme: Q${question.questionNumber}`}
@@ -446,28 +429,28 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* ===================================================================== */}
       {/* ANCHORED BOTTOM ACTION BAR (Desktop & Tablet >= 768px)               */}
       {/* ===================================================================== */}
-      <div className="hidden md:flex sticky bottom-0 w-full py-3 px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-slate-200 dark:border-slate-800 items-center justify-between z-10 shrink-0 select-none">
+      <div className="hidden md:flex sticky bottom-0 w-full py-2.5 px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-slate-200 dark:border-slate-800 items-center justify-center gap-3 z-10 shrink-0 select-none">
         {/* Left: Previous Question */}
         <button
           type="button"
           onClick={onPrevQuestion}
           disabled={!hasPrev}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border text-sm font-medium disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
           title="Previous Question [← or []"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>Previous Question</span>
+          <span>Prev</span>
         </button>
 
-        {/* Center: High-contrast primary toggle button */}
+        {/* Center: Prominent primary toggle button */}
         <button
           type="button"
           onClick={onToggleMarkScheme}
           title={isMarkSchemeVisible ? 'Hide Mark Scheme [Space or M]' : 'Show Mark Scheme [Space or M]'}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all ${
+          className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold text-sm shadow-sm active:scale-95 transition-all ${
             isMarkSchemeVisible
-              ? 'bg-slate-100 dark:bg-dark-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700'
-              : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-cyan-500/25 border border-cyan-400/30'
+              ? 'bg-slate-200 hover:bg-slate-300 text-slate-800 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border'
+              : 'bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-500 shadow-cyan-500/20'
           }`}
         >
           {isMarkSchemeVisible ? (
@@ -481,10 +464,10 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               <span>Show Mark Scheme</span>
             </>
           )}
-          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+          <span className={`text-[11px] font-mono px-1.5 py-0.2 rounded ${
             isMarkSchemeVisible
-              ? 'bg-slate-200 dark:bg-dark-700 text-slate-600 dark:text-slate-300'
-              : 'bg-black/20 text-white'
+              ? 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+              : 'bg-cyan-700/60 text-white'
           }`}>
             Space
           </span>
@@ -495,10 +478,10 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           type="button"
           onClick={onNextQuestion}
           disabled={!hasNext}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border text-sm font-medium disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
           title="Next Question [→ or ]]"
         >
-          <span>Next Question</span>
+          <span>Next</span>
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

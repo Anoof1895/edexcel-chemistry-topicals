@@ -18,7 +18,6 @@ interface ImageCanvasProps {
   placeholderTitle?: string;
   placeholderMessage?: string;
   children?: React.ReactNode;
-  centerVertically?: boolean;
 }
 
 export const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -30,7 +29,6 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   placeholderTitle = 'No image available',
   placeholderMessage = 'Mark scheme for this question is not available in the sample paper.',
   children,
-  centerVertically = false,
 }) => {
   const [zoom, setZoom] = useState(1);
   const [hasError, setHasError] = useState(false);
@@ -139,7 +137,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             <p className="text-xs text-slate-500">{placeholderMessage}</p>
           </div>
         ) : (
-          <div className={`w-full max-w-full flex flex-col items-center justify-center ${centerVertically ? 'my-auto py-4 sm:py-6' : 'my-0 py-2 sm:py-4'}`}>
+          <div className="flex flex-col justify-start items-center pt-4 pb-12 w-full max-w-full">
             <div 
               className="max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white cursor-pointer"
               style={{ transform: `scale(${zoom})` }}
