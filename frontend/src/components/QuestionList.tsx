@@ -354,7 +354,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     {isSelected ? rawSubtopic : (cleanedSubtopic || rawSubtopic)}
                   </div>
 
-                  {/* Bottom Row: Status Pill & MCQ Answer Key (if available) */}
+                  {/* Bottom Row: Status Pill */}
                   <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-dark-800/60 text-[10px]">
                     {/* Status Pill Button */}
                     <button
@@ -369,13 +369,6 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
                       <span>{statusCfg.label}</span>
                     </button>
-
-                    {/* MCQ Answer Key if present */}
-                    {qType === 'mcq' && q.answer && (
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                        Key: [{q.answer}]
-                      </span>
-                    )}
                   </div>
                 </div>
               );
