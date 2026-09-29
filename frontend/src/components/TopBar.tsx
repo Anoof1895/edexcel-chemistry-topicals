@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { 
   Columns, 
   Eye, 
@@ -46,6 +46,20 @@ export const TopBar: React.FC<TopBarProps> = ({
   allQuestions
 }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isSecondaryPopoverOpen, setIsSecondaryPopoverOpen] = useState(false);
+  const secondaryPopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (secondaryPopoverRef.current && !secondaryPopoverRef.current.contains(e.target as Node)) {
+        setIsSecondaryPopoverOpen(false);
+      }
+    };
+    if (isSecondaryPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSecondaryPopoverOpen]);
 
   // Precompute options with question counts
   const unitOptions: FilterOption[] = useMemo(() => {
@@ -131,11 +145,36 @@ export const TopBar: React.FC<TopBarProps> = ({
     return count;
   }, [filters]);
 
+  // Active secondary filter count (Year, Series, Status)
+  const activeSecondaryCount = useMemo(() => {
+    let count = 0;
+    if (filters.selectedYears.length > 0) count++;
+    if (filters.selectedSeries.length > 0) count++;
+    if (filters.statusFilter !== 'all') count++;
+    return count;
+  }, [filters.selectedYears, filters.selectedSeries, filters.statusFilter]);
+
+  const toggleYear = (yStr: string) => {
+    const current = filters.selectedYears;
+    const updated = current.includes(yStr)
+      ? current.filter((y) => y !== yStr)
+      : [...current, yStr];
+    onFilterChange({ selectedYears: updated });
+  };
+
+  const toggleSeries = (s: string) => {
+    const current = filters.selectedSeries;
+    const updated = current.includes(s)
+      ? current.filter((item) => item !== s)
+      : [...current, s];
+    onFilterChange({ selectedSeries: updated });
+  };
+
   const hasActiveFilters = activeFilterCount > 0;
 
   return (
     <>
-      <header className="h-13 border-b border-dark-800 bg-dark-900/80 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 z-20">
+      <header className="h-11 border-b border-dark-800 bg-dark-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 z-20">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-white flex items-center gap-1.5">
@@ -226,22 +265,22 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
 
         {/* ===================================================================== */}
-        {/* DESKTOP FULL INLINE FILTER TOOLBAR (>= 1024px)                        */}
+        {/* DESKTOP STREAMLINED FILTER TOOLBAR (>= 1024px)                       */}
         {/* ===================================================================== */}
-        <div className="hidden lg:flex items-center gap-2.5 flex-1 max-w-4xl justify-center">
-          {/* Search */}
-          <div className="relative w-44 sm:w-56">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <div className="hidden lg:flex items-center gap-2 flex-1 justify-center max-w-4xl">
+          {/* Primary 1: Search Input */}
+          <div className="relative w-36 xl:w-48">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="Search topic or Q#..."
               value={filters.searchQuery}
               onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
-              className="w-full bg-dark-800/80 border border-dark-700/80 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+              className="w-full bg-dark-800/80 border border-dark-700/80 rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/50 transition-all"
             />
           </div>
 
-          {/* Unit Multi-Select */}
+          {/* Primary 2: Unit Multi-Select Dropdown */}
           <FilterMultiSelect
             labelSingular="Unit"
             labelPlural="Units"
@@ -251,60 +290,19 @@ export const TopBar: React.FC<TopBarProps> = ({
             onChange={(units) => onFilterChange({ selectedUnits: units })}
           />
 
-          {/* Searchable Multi-Select Subtopics with Collapsible Main Topics */}
+          {/* Primary 3: Searchable Multi-Select Subtopics with Collapsible Main Topics */}
           <SubtopicMultiSelect
             hierarchy={subtopicHierarchy}
             selectedSubtopics={filters.selectedSubtopics}
             onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
           />
 
-          {/* Year Multi-Select */}
-          <FilterMultiSelect
-            labelSingular="Year"
-            labelPlural="Years"
-            icon={<Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
-            options={yearOptions}
-            selectedValues={filters.selectedYears}
-            onChange={(years) => onFilterChange({ selectedYears: years })}
-            badgeFontMono
-          />
-
-          {/* Series / Season Multi-Select */}
-          <FilterMultiSelect
-            labelSingular="Series"
-            labelPlural="Series"
-            icon={<CalendarRange className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
-            options={seriesOptions}
-            selectedValues={filters.selectedSeries}
-            onChange={(series) => onFilterChange({ selectedSeries: series })}
-            showSearch={false}
-          />
-
-          {/* Status Filter Dropdown */}
-          <div className="flex items-center gap-1.5 bg-dark-800/80 border border-dark-700/80 rounded-lg px-2.5 py-1.5">
-            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${
-              filters.statusFilter === 'mastered' ? 'text-emerald-400' :
-              filters.statusFilter === 'review' ? 'text-amber-400' :
-              filters.statusFilter === 'unattempted' ? 'text-slate-400' : 'text-cyan-400'
-            }`} />
-            <select
-              value={filters.statusFilter}
-              onChange={(e) => onFilterChange({ statusFilter: e.target.value as any })}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer pr-1 font-medium"
-            >
-              <option value="all" className="bg-dark-900 text-slate-200">All Status</option>
-              <option value="unattempted" className="bg-dark-900 text-slate-400">⚪ Unattempted</option>
-              <option value="review" className="bg-dark-900 text-amber-300">🟡 Review Needed</option>
-              <option value="mastered" className="bg-dark-900 text-emerald-300">🟢 Mastered</option>
-            </select>
-          </div>
-
-          {/* Question Type: MCQ vs Theory Segmented Switch */}
-          <div className="flex items-center bg-dark-800/80 border border-dark-700/80 p-0.5 rounded-lg text-xs">
+          {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch */}
+          <div className="flex items-center bg-dark-800/80 border border-dark-700/80 p-0.5 rounded-lg text-xs shrink-0">
             <button
               type="button"
               onClick={() => onFilterChange({ questionType: 'all' })}
-              className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                 filters.questionType === 'all'
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-200'
@@ -315,7 +313,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               type="button"
               onClick={() => onFilterChange({ questionType: 'mcq' })}
-              className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                 filters.questionType === 'mcq'
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-200'
@@ -326,7 +324,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               type="button"
               onClick={() => onFilterChange({ questionType: 'theory' })}
-              className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                 filters.questionType === 'theory'
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-400 hover:text-slate-200'
@@ -336,20 +334,181 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
           </div>
 
+          {/* Consolidate Secondary Filters into "Filters" Popover */}
+          <div className="relative shrink-0" ref={secondaryPopoverRef}>
+            <button
+              type="button"
+              onClick={() => setIsSecondaryPopoverOpen((prev) => !prev)}
+              className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
+                activeSecondaryCount > 0
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm shadow-cyan-950/40'
+                  : 'bg-dark-800/80 text-slate-300 border-dark-700/80 hover:bg-dark-750 hover:text-white'
+              }`}
+              title="Consolidated filters: Year, Series, Status"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>Filters</span>
+              {activeSecondaryCount > 0 && (
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-500 text-dark-950">
+                  • {activeSecondaryCount}
+                </span>
+              )}
+            </button>
+
+            {/* Secondary Filters Popover Dropdown */}
+            {isSecondaryPopoverOpen && (
+              <div className="absolute top-full mt-2 left-0 w-80 bg-dark-900 border border-dark-750 rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-3">
+                {/* Popover Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-dark-800">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>More Filters</span>
+                    {activeSecondaryCount > 0 && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        {activeSecondaryCount} active
+                      </span>
+                    )}
+                  </div>
+                  {activeSecondaryCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onFilterChange({ selectedYears: [], selectedSeries: [], statusFilter: 'all' })}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Exam Years Grid Chips */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-cyan-400" />
+                      <span>Exam Year</span>
+                    </label>
+                    {filters.selectedYears.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onFilterChange({ selectedYears: [] })}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {availableYears.map((yr) => {
+                      const yStr = String(yr);
+                      const isSelected = filters.selectedYears.includes(yStr);
+                      return (
+                        <button
+                          key={yr}
+                          type="button"
+                          onClick={() => toggleYear(yStr)}
+                          className={`px-2 py-0.5 rounded-md text-xs font-mono transition-all ${
+                            isSelected
+                              ? 'bg-cyan-600 text-white font-bold shadow-sm'
+                              : 'bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-750 border border-dark-750'
+                          }`}
+                        >
+                          {yr}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Series / Season Chips */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <CalendarRange className="w-3 h-3 text-cyan-400" />
+                      <span>Series / Season</span>
+                    </label>
+                    {filters.selectedSeries.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onFilterChange({ selectedSeries: [] })}
+                        className="text-[10px] text-cyan-400 hover:text-cyan-300"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {['January', 'May/June', 'October'].map((s) => {
+                      const isSelected = filters.selectedSeries.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleSeries(s)}
+                          className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all ${
+                            isSelected
+                              ? 'bg-cyan-600 text-white font-bold shadow-sm'
+                              : 'bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-750 border border-dark-750'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Revision Status Chips */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      <span>Revision Status</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    {[
+                      { value: 'all', label: 'All Status' },
+                      { value: 'unattempted', label: '⚪ Unattempted' },
+                      { value: 'review', label: '🟡 Review' },
+                      { value: 'mastered', label: '🟢 Mastered' },
+                    ].map((st) => {
+                      const isSelected = filters.statusFilter === st.value;
+                      return (
+                        <button
+                          key={st.value}
+                          type="button"
+                          onClick={() => onFilterChange({ statusFilter: st.value as any })}
+                          className={`px-2 py-1 rounded-md text-xs font-medium text-left truncate transition-all ${
+                            isSelected
+                              ? 'bg-cyan-600 text-white font-bold shadow-sm'
+                              : 'bg-dark-800 text-slate-400 hover:text-slate-200 hover:bg-dark-750 border border-dark-750'
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Stats Pill */}
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-dark-800 border border-dark-750 text-[11px] text-slate-300">
-            <span className="font-semibold text-cyan-400">{totalFiltered}</span> questions
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-dark-800 border border-dark-750 text-[11px] text-slate-300 shrink-0">
+            <span className="font-semibold text-cyan-400">{totalFiltered}</span> Qs
             <span className="w-1 h-1 rounded-full bg-slate-600"></span>
             <span className="font-semibold text-emerald-400">{totalMarks}</span> marks
           </div>
 
+          {/* Reset All Button */}
           {hasActiveFilters && (
             <button
               onClick={onResetFilters}
               title="Reset All Filters"
-              className="p-1.5 rounded-lg bg-dark-800/80 border border-dark-700/80 hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition-colors"
+              className="p-1 rounded-lg bg-dark-800/80 border border-dark-750 hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition-colors shrink-0"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3 h-3" />
             </button>
           )}
         </div>

@@ -9,6 +9,7 @@ import {
   X
 } from 'lucide-react';
 import { QuestionItem, MasteryStatus } from '../types';
+import { getQuestionType } from '../utils/questionClassification';
 
 interface QuestionListProps {
   questions: QuestionItem[];
@@ -24,6 +25,23 @@ interface QuestionListProps {
   isDrawerOpen?: boolean;
   onCloseDrawer?: () => void;
 }
+
+export const cleanSubtopic = (title: string = ''): string => {
+  return title.replace(/^(\d+(\.\d+)*(-\d+(\.\d+)*)?:\s*|topic\s+\d+:\s*)/i, '').trim();
+};
+
+export const formatPaperSeriesYear = (q: QuestionItem): string => {
+  const session = q.session || '';
+  let shortSession = session;
+  const lower = session.toLowerCase();
+  if (lower.includes('jan')) shortSession = 'Jan';
+  else if (lower.includes('june') || lower.includes('may')) shortSession = 'June';
+  else if (lower.includes('oct') || lower.includes('nov')) shortSession = 'Oct';
+
+  const seriesPart = shortSession && q.year ? `${shortSession} ${q.year}` : (q.series || `${q.unit} • ${q.year}`);
+  const codePart = q.paperCode || q.paper_code || q.unitCode || '';
+  return codePart ? `${seriesPart} · ${codePart}` : seriesPart;
+};
 
 export const getStatusConfig = (status: MasteryStatus = 'unattempted') => {
   switch (status) {
@@ -245,6 +263,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               const isBookmarked = bookmarks.has(q.id);
               const status = questionStatuses[q.id] || 'unattempted';
               const statusCfg = getStatusConfig(status);
+              const qType = getQuestionType(q);
+              const paperInfo = formatPaperSeriesYear(q);
+              const rawSubtopic = q.subtopic || q.topic || '';
+              const cleanedSubtopic = cleanSubtopic(rawSubtopic);
 
               return (
                 <div
@@ -255,25 +277,41 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       onCloseDrawer();
                     }
                   }}
-                  className={`group relative rounded-xl p-3 cursor-pointer transition-all duration-150 border ${
+                  className={`group relative rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
                     isSelected
-                      ? 'bg-dark-800/90 border-cyan-500/60 shadow-lg shadow-cyan-950/40 text-white ring-1 ring-cyan-500/30'
-                      : 'bg-dark-850/40 border-dark-800/60 hover:bg-dark-800/60 hover:border-dark-700 text-slate-300'
+                      ? 'bg-dark-800/95 border-y-cyan-500/40 border-r-cyan-500/40 border-l-cyan-400 shadow-md shadow-cyan-950/50 text-white ring-1 ring-cyan-500/25'
+                      : 'bg-dark-850/40 border-dark-800/70 border-l-transparent hover:bg-dark-800/70 hover:border-dark-700/80 hover:border-l-slate-600 text-slate-300'
                   }`}
                 >
-                  {/* Top Row: Q Number, Marks, Stem Pill, Bookmark Action */}
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-cyan-300 group-hover:text-cyan-200">
+                  {/* Top Row: Q Number, Mark Badge, Type Pill, Stem Pill, Bookmark Action */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {/* Prominent Question Number */}
+                      <span className={`font-semibold text-sm tracking-tight ${isSelected ? 'text-white font-bold' : 'text-slate-100 group-hover:text-white'}`}>
                         Q{q.questionNumber}
                       </span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-dark-750 text-slate-300 border border-dark-700">
-                        {q.marks} {q.marks === 1 ? 'mark' : 'marks'}
+
+                      {/* Marks Badge */}
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-dark-750 text-amber-300 border border-amber-500/20">
+                        {q.marks}m
                       </span>
+
+                      {/* Question Type Pill */}
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                          qType === 'mcq'
+                            ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                            : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                        }`}
+                      >
+                        {qType === 'mcq' ? 'MCQ' : 'Theory'}
+                      </span>
+
+                      {/* Stitched Shared Stem Indicator */}
                       {q.hasStem && (
                         <span 
                           title="Contains stitched shared question stem"
-                          className="flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                          className="flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"
                         >
                           <Paperclip className="w-2.5 h-2.5" />
                           Stem
@@ -281,8 +319,8 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       )}
                     </div>
 
-                    {/* Actions: Bookmark */}
-                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    {/* Bookmark Action */}
+                    <div className="flex items-center shrink-0">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -290,7 +328,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                           onToggleBookmark(q.id);
                         }}
                         title={isBookmarked ? "Remove bookmark [B]" : "Bookmark question [B]"}
-                        className={`p-1.5 rounded hover:bg-dark-700/80 transition-colors ${
+                        className={`p-1 rounded-md hover:bg-dark-700/80 transition-colors ${
                           isBookmarked ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'
                         }`}
                       >
@@ -299,13 +337,25 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     </div>
                   </div>
 
-                  {/* Topic & Subtopic */}
-                  <div className="text-xs text-slate-300 line-clamp-1 font-medium mb-2">
-                    {q.subtopic || q.topic}
+                  {/* Sub-row: Paper series and year clearly with improved contrast */}
+                  <div className="text-[11px] text-slate-400 font-medium mt-1 flex items-center gap-1.5">
+                    <span>{paperInfo}</span>
                   </div>
 
-                  {/* Bottom Row: Status Pill & Paper info */}
-                  <div className="flex items-center justify-between pt-2 border-t border-dark-800/60 text-[10px]">
+                  {/* Subtopic Title: Cleanly truncated / uncluttered on unselected, expanded on selected */}
+                  <div 
+                    className={`mt-1 transition-colors ${
+                      isSelected 
+                        ? 'text-xs text-cyan-300 font-medium line-clamp-2' 
+                        : 'text-[11px] text-slate-400/80 group-hover:text-slate-300 truncate'
+                    }`}
+                    title={rawSubtopic}
+                  >
+                    {isSelected ? rawSubtopic : (cleanedSubtopic || rawSubtopic)}
+                  </div>
+
+                  {/* Bottom Row: Status Pill & MCQ Answer Key (if available) */}
+                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-dark-800/60 text-[10px]">
                     {/* Status Pill Button */}
                     <button
                       type="button"
@@ -320,16 +370,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       <span>{statusCfg.label}</span>
                     </button>
 
-                    <div className="flex items-center gap-1 text-slate-500 text-[10px]">
-                      <span className="truncate max-w-[90px]">{q.series || `${q.unit} • ${q.year}`}</span>
-                      <span className="font-mono text-[9px] uppercase tracking-wider">{q.paperCode || q.unitCode}</span>
-                    </div>
+                    {/* MCQ Answer Key if present */}
+                    {qType === 'mcq' && q.answer && (
+                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        Key: [{q.answer}]
+                      </span>
+                    )}
                   </div>
-
-                  {/* Left Active Accent Bar */}
-                  {isSelected && (
-                    <div className="absolute left-0 top-2 bottom-2 w-1 bg-cyan-500 rounded-r"></div>
-                  )}
                 </div>
               );
             })

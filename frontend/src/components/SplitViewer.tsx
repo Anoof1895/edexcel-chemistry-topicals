@@ -126,19 +126,19 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   return (
     <main className="flex-1 flex flex-col h-full bg-dark-950 overflow-hidden select-none relative">
       {/* ===================================================================== */}
-      {/* ACTIVE QUESTION TOP HEADER                                            */}
+      {/* ACTIVE QUESTION TOP HEADER (Compact h-11 to reclaim vertical canvas)   */}
       {/* ===================================================================== */}
-      <div className="h-13 px-3 sm:px-4 border-b border-dark-800 bg-dark-900/90 flex items-center justify-between gap-2 sm:gap-4 shrink-0 select-none">
+      <div className="h-11 px-3 sm:px-4 border-b border-dark-800 bg-dark-900/90 flex items-center justify-between gap-2 sm:gap-3 shrink-0 select-none">
         {/* Left: Question Navigator Trigger (on mobile/tablet) & Metadata */}
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Question List Drawer Button on mobile/tablet (< 1024px) */}
           <button
             type="button"
             onClick={onOpenQuestionList}
-            className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 border border-dark-700 text-cyan-300 text-xs font-semibold shrink-0 active:scale-95 transition-all"
+            className="lg:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 border border-dark-700 text-cyan-300 text-xs font-semibold shrink-0 active:scale-95 transition-all"
             title="Open Question List"
           >
-            <List className="w-4 h-4 text-cyan-400" />
+            <List className="w-3.5 h-3.5 text-cyan-400" />
             <span className="font-mono font-bold">
               Q{question.questionNumber}
             </span>
@@ -148,18 +148,18 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           </button>
 
           {/* Question ID Badge (shown on desktop >= 1024px) */}
-          <span className="hidden lg:inline-flex font-mono font-bold text-xs tracking-tight text-cyan-300 px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/30 shrink-0">
+          <span className="hidden lg:inline-flex font-mono font-bold text-xs tracking-tight text-cyan-300 px-2 py-0.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 shrink-0">
             Q{question.questionNumber}
           </span>
 
           {/* Marks Badge */}
-          <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold shrink-0">
+          <span className="px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold shrink-0">
             {question.marks}m
           </span>
 
           {/* Question Type Badge */}
           <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${
+            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0 ${
               qType === 'mcq'
                 ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
                 : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
@@ -170,30 +170,30 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
           {/* MCQ Answer Key Badge in Header if available */}
           {qType === 'mcq' && mcqAnswer && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold shrink-0 shadow-sm">
-              <span className="text-[10px] uppercase tracking-wider text-emerald-400">Key:</span>
-              <span className="font-mono text-white bg-emerald-600 px-1.5 py-0.2 rounded text-[11px] font-extrabold">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold shrink-0 shadow-sm">
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400">Key:</span>
+              <span className="font-mono text-white bg-emerald-600 px-1 py-0.2 rounded text-[10px] font-extrabold">
                 [{mcqAnswer.toUpperCase()}]
               </span>
             </span>
           )}
 
           {/* Paper Series & Year */}
-          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-dark-850 border border-dark-750 text-xs text-slate-400 shrink-0 font-medium">
+          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-dark-850 border border-dark-750 text-xs text-slate-400 shrink-0 font-medium">
             <Calendar className="w-3 h-3 text-slate-500" />
             {question.series || question.session} {question.year}
           </span>
 
           {/* Cleanly Truncated Topic & Subtopic */}
-          <span className="text-xs text-slate-300 font-medium truncate hidden sm:inline max-w-xs md:max-w-sm lg:max-w-md">
+          <span className="text-xs text-slate-300 font-medium truncate hidden sm:inline max-w-xs xl:max-w-sm">
             <span className="text-cyan-400 font-semibold">{question.unit}:</span>{' '}
             {question.subtopic || question.topic}
           </span>
 
           {/* Stitched Stem Indicator */}
           {question.hasStem && (
-            <span className="hidden 2xl:inline-flex items-center gap-1 text-[10px] text-indigo-300 px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/25 shrink-0">
-              <Paperclip className="w-3 h-3 text-indigo-400" />
+            <span className="hidden 2xl:inline-flex items-center gap-1 text-[9px] text-indigo-300 px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/25 shrink-0">
+              <Paperclip className="w-2.5 h-2.5 text-indigo-400" />
               Stem
             </span>
           )}
@@ -204,9 +204,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               type="button"
               onClick={() => setIsFullQuestionOpen(true)}
               title={`View complete Question with all ${siblingSubparts.length} parts`}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 px-2 py-1 rounded-lg shrink-0 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1 text-xs text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 px-2 py-0.5 rounded-md shrink-0 transition-colors"
             >
-              <FileText className="w-3.5 h-3.5 text-indigo-400" />
+              <FileText className="w-3 h-3 text-indigo-400" />
               <span>All Parts ({siblingSubparts.length})</span>
             </button>
           )}
@@ -219,7 +219,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             type="button"
             onClick={onCycleStatus}
             title={`Status: ${statusCfg.label}. Click to cycle status`}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-medium border transition-all ${statusCfg.bg}`}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border transition-all ${statusCfg.bg}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
             <span className="hidden sm:inline">{statusCfg.label}</span>
@@ -230,7 +230,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             type="button"
             onClick={onToggleBookmark}
             title={isBookmarked ? 'Remove bookmark [B]' : 'Bookmark question [B]'}
-            className={`p-1.5 sm:p-2 rounded-lg border transition-all ${
+            className={`p-1.5 rounded-md border transition-all ${
               isBookmarked
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 : 'bg-dark-850 text-slate-400 border-dark-750 hover:bg-dark-800 hover:text-slate-200'
@@ -239,13 +239,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
 
-          <div className="hidden sm:block w-px h-4 bg-dark-800 mx-0.5" />
+          <div className="hidden sm:block w-px h-3.5 bg-dark-800 mx-0.5" />
 
           {/* Toggle Mark Scheme Visibility (Desktop & Tablet) */}
           <button
             onClick={onToggleMarkScheme}
             title={isMarkSchemeVisible ? 'Hide Mark Scheme [M or Space]' : 'Show Mark Scheme [M or Space]'}
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            className={`hidden sm:flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold border transition-all ${
               isMarkSchemeVisible
                 ? 'bg-dark-800 text-slate-300 border-dark-700 hover:bg-dark-750'
                 : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-400/40 shadow-sm shadow-cyan-500/20 hover:brightness-110'
@@ -267,8 +267,8 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             </span>
           </button>
 
-          {/* Desktop Side-by-Side vs Toggle Switcher (hidden on mobile < 768px) */}
-          <div className="hidden md:flex items-center bg-dark-850 p-0.5 rounded-lg border border-dark-750 text-xs">
+          {/* Desktop Side-by-Side vs Toggle Switcher */}
+          <div className="hidden md:flex items-center bg-dark-850 p-0.5 rounded-md border border-dark-750 text-xs">
             <button
               onClick={() => onSetViewMode('question-only')}
               title="Question Focus Mode (Answers hidden)"
@@ -290,7 +290,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Columns className="w-3 h-3 inline mr-1" />
+              <Columns className="w-3 h-3 inline mr-0.5" />
               Split
             </button>
 
@@ -307,20 +307,20 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             </button>
           </div>
 
-          <div className="hidden sm:block w-px h-4 bg-dark-800 mx-0.5" />
+          <div className="hidden sm:block w-px h-3.5 bg-dark-800 mx-0.5" />
 
           {/* Desktop/Tablet Question Navigation Arrows */}
-          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-dark-850 p-0.5 rounded-lg border border-dark-750">
+          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-dark-850 p-0.5 rounded-md border border-dark-750">
             <button
               onClick={onPrevQuestion}
               disabled={!hasPrev}
               title="Previous Question [← or []"
-              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-dark-750 text-slate-300 hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-dark-750 text-slate-300 hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-16 md:w-20 text-center font-mono text-xs text-slate-300 select-none shrink-0 font-medium">
+            <span className="w-14 text-center font-mono text-[11px] text-slate-300 select-none shrink-0 font-medium">
               {currentIndex + 1} / {totalQuestions}
             </span>
 
@@ -328,9 +328,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               onClick={onNextQuestion}
               disabled={!hasNext}
               title="Next Question [→ or ]]"
-              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-dark-750 text-slate-300 hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-dark-750 text-slate-300 hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
