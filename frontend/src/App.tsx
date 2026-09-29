@@ -9,6 +9,7 @@ import { getQuestionType } from './utils/questionClassification';
 import { QuestionList } from './components/QuestionList';
 import { SplitViewer } from './components/SplitViewer';
 import { Loader2 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 export const App: React.FC = () => {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
@@ -519,6 +520,7 @@ export const App: React.FC = () => {
           </div>
         </div>
       )}
+      <Analytics />
     </div>
   );
 };
