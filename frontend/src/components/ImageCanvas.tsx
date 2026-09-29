@@ -47,24 +47,24 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const getBadgeClass = () => {
     switch (badgeColor) {
       case 'emerald':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        return 'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
       case 'indigo':
-        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+        return 'bg-indigo-500/15 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30';
       case 'amber':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+        return 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30';
       case 'purple':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+        return 'bg-purple-500/15 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30';
       default:
-        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
+        return 'bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30';
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-dark-950/60 overflow-hidden border-r border-dark-800 last:border-r-0">
+    <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-slate-100/60 dark:bg-dark-950/60 overflow-hidden border-r border-slate-200 dark:border-dark-800 last:border-r-0 transition-colors">
       {/* Canvas Header */}
-      <div className="h-11 px-3 sm:px-4 border-b border-dark-800 bg-dark-900/60 flex items-center justify-between shrink-0 select-none">
+      <div className="h-11 px-3 sm:px-4 border-b border-slate-200 dark:border-dark-800 bg-white/80 dark:bg-dark-900/60 backdrop-blur-sm flex items-center justify-between shrink-0 select-none">
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-wrap sm:flex-nowrap">
-          <span className="text-xs font-semibold text-slate-200 truncate">{title}</span>
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{title}</span>
           {badgeText && (
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${getBadgeClass()}`}>
               {badgeText}
@@ -75,36 +75,36 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
         {/* Zoom & Lightbox Controls */}
         {src && !hasError && (
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-dark-800/80 rounded-lg p-0.5 border border-dark-750 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-dark-800/80 rounded-lg p-0.5 border border-slate-200 dark:border-dark-750 shrink-0">
             <button
               type="button"
               onClick={handleZoomOut}
               title="Zoom out"
-              className="p-1 sm:p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[10px] font-mono text-slate-400 px-1 select-none min-w-[2.5rem] sm:min-w-[3rem] text-center">
+            <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 px-1 select-none min-w-[2.5rem] sm:min-w-[3rem] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <button
               type="button"
               onClick={handleZoomIn}
               title="Zoom in"
-              className="p-1 sm:p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-3.5 bg-dark-700 mx-0.5" />
+            <div className="w-px h-3.5 bg-slate-200 dark:bg-dark-700 mx-0.5" />
             <button
               type="button"
               onClick={handleResetZoom}
               title="Reset Zoom"
-              className="p-1 sm:p-1.5 rounded hover:bg-dark-700 text-slate-400 hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-3.5 bg-dark-700 mx-0.5" />
+            <div className="w-px h-3.5 bg-slate-200 dark:bg-dark-700 mx-0.5" />
             <button
               type="button"
               onClick={() => {
@@ -112,7 +112,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                 setIsLightboxOpen(true);
               }}
               title="Full-screen Lightbox (inspect intricate mechanisms & graphs)"
-              className="p-1 sm:p-1.5 rounded hover:bg-dark-700 text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
@@ -123,21 +123,21 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Canvas Viewport */}
       <div 
         ref={containerRef}
-        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-2 sm:p-4 flex items-start justify-center bg-dark-950/40 relative"
+        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-2 sm:p-4 flex items-start justify-center bg-slate-100/40 dark:bg-dark-950/40 relative"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       >
         {!src || hasError ? (
           <div className="m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-sm">
-            <div className="w-12 h-12 rounded-2xl bg-dark-850 border border-dark-750 flex items-center justify-center text-slate-500 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-dark-850 border border-slate-300 dark:border-dark-750 flex items-center justify-center text-slate-500 mb-3">
               <FileQuestion className="w-6 h-6" />
             </div>
-            <h4 className="text-sm font-semibold text-slate-300 mb-1">{placeholderTitle}</h4>
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{placeholderTitle}</h4>
             <p className="text-xs text-slate-500">{placeholderMessage}</p>
           </div>
         ) : (
           <div className="w-full max-w-full flex items-start justify-center">
             <div 
-              className="max-w-full transition-transform duration-100 ease-out origin-top shadow-xl rounded-lg overflow-hidden border border-slate-700/50 bg-white cursor-pointer"
+              className="max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white cursor-pointer"
               style={{ transform: `scale(${zoom})` }}
               onClick={() => {
                 if (zoom === 1) {

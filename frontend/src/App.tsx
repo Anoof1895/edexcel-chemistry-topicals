@@ -417,7 +417,7 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-dark-950 text-slate-400 gap-3">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
         <p className="text-sm font-medium">Loading Edexcel IAL Chemistry Hub...</p>
       </div>
@@ -426,14 +426,14 @@ export const App: React.FC = () => {
 
   if (error) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-dark-950 text-rose-400 gap-3">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-rose-500 dark:text-rose-400 gap-3">
         <p className="text-sm font-medium">Error: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-dark-950 text-slate-100 font-sans overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
       {/* Top Application Navbar */}
       <AppNavbar
         currentView={currentView}
