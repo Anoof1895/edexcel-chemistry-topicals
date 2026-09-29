@@ -63,7 +63,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         {/* Desktop / Tablet Nav & Theme Switch (> 768px) */}
         <div className="hidden md:flex items-center gap-2">
-          <nav className="flex items-center gap-1.5 bg-slate-100 dark:bg-dark-855 p-1 rounded-xl border border-slate-200 dark:border-dark-750">
+          <nav className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-slate-900/90 dark:border-slate-800 dark:text-slate-300 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => onNavigate('home')}

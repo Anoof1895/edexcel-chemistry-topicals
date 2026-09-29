@@ -287,12 +287,12 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {/* Prominent Question Number */}
-                      <span className={`font-semibold text-sm tracking-tight ${isSelected ? 'text-cyan-950 dark:text-white font-bold' : 'text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-white'}`}>
+                      <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-cyan-950 dark:text-white' : 'text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-white'}`}>
                         Q{q.questionNumber}
                       </span>
 
                       {/* Marks Badge */}
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-dark-750 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/20">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-dark-750 text-slate-900 dark:text-slate-100 border border-amber-200 dark:border-amber-500/20">
                         {q.marks}m
                       </span>
 
@@ -338,7 +338,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                   </div>
 
                   {/* Sub-row: Paper series and year clearly with improved contrast */}
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                     <span>{paperInfo}</span>
                   </div>
 
@@ -347,7 +347,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     className={`mt-1 transition-colors ${
                       isSelected 
                         ? 'text-xs text-cyan-800 dark:text-cyan-300 font-medium line-clamp-2' 
-                        : 'text-[11px] text-slate-500 dark:text-slate-400/80 group-hover:text-slate-700 dark:group-hover:text-slate-300 truncate'
+                        : 'text-[11px] text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 truncate'
                     }`}
                     title={rawSubtopic}
                   >

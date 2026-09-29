@@ -17,6 +17,8 @@ interface ImageCanvasProps {
   extraBadge?: React.ReactNode;
   placeholderTitle?: string;
   placeholderMessage?: string;
+  children?: React.ReactNode;
+  centerVertically?: boolean;
 }
 
 export const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -26,7 +28,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   badgeColor = 'cyan',
   extraBadge,
   placeholderTitle = 'No image available',
-  placeholderMessage = 'Mark scheme for this question is not available in the sample paper.'
+  placeholderMessage = 'Mark scheme for this question is not available in the sample paper.',
+  children,
+  centerVertically = false,
 }) => {
   const [zoom, setZoom] = useState(1);
   const [hasError, setHasError] = useState(false);
@@ -135,7 +139,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             <p className="text-xs text-slate-500">{placeholderMessage}</p>
           </div>
         ) : (
-          <div className="w-full max-w-full flex items-start justify-center">
+          <div className={`w-full max-w-full flex flex-col items-center justify-center ${centerVertically ? 'my-auto py-4 sm:py-6' : 'my-0 py-2 sm:py-4'}`}>
             <div 
               className="max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white cursor-pointer"
               style={{ transform: `scale(${zoom})` }}
@@ -154,6 +158,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                 className="w-full max-w-full h-auto object-contain block select-none"
               />
             </div>
+            {children}
           </div>
         )}
       </div>

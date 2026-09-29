@@ -5,14 +5,13 @@ import {
   Paperclip, 
   Eye, 
   EyeOff, 
-  Columns, 
   Bookmark, 
   FileText, 
   X, 
   ExternalLink, 
-  Calendar,
-  List,
-  CheckCircle2
+  Calendar, 
+  List, 
+  CheckCircle2 
 } from 'lucide-react';
 import { QuestionItem, ViewMode, MasteryStatus } from '../types';
 import { ImageCanvas } from './ImageCanvas';
@@ -62,10 +61,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   const [isFullQuestionOpen, setIsFullQuestionOpen] = useState(false);
   // Mobile specific view tab: 'question' | 'ms'
   const [mobileTab, setMobileTab] = useState<'question' | 'ms'>('question');
+  // Student's interactive selection for MCQ items
+  const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
 
-  // Reset mobile view to question when switching questions
+  // Reset mobile view and MCQ selection when switching questions
   useEffect(() => {
     setMobileTab('question');
+    setSelectedMcqOption(null);
   }, [question?.id]);
 
   // Sibling subparts belonging to this question's parent in the same paper
@@ -123,12 +125,24 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     || (question as any).correctAnswer 
     || (question as any).key;
 
+  const isMcq = qType === 'mcq' || !!mcqAnswer;
+  const normalizedKey = mcqAnswer ? String(mcqAnswer).trim().toUpperCase() : '';
+  const isMcqAnswerRevealed = isMarkSchemeVisible || mobileTab === 'ms' || selectedMcqOption !== null;
+
+  const handleMcqSelect = (opt: string) => {
+    setSelectedMcqOption(opt);
+    // Automatically reveal mark scheme / explanation on desktop if in question-only mode
+    if (viewMode === 'question-only') {
+      onSetViewMode('split');
+    }
+  };
+
   return (
     <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
       {/* ===================================================================== */}
-      {/* ACTIVE QUESTION TOP HEADER (Compact h-11 to reclaim vertical canvas)   */}
+      {/* ACTIVE QUESTION TOP HEADER (Clean sub-bar: metadata, bookmarks & counter)*/}
       {/* ===================================================================== */}
-      <div className="h-11 px-3 sm:px-4 border-b border-slate-200 dark:border-dark-800 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 shrink-0 select-none">
+      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-dark-800 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
         {/* Left: Question Navigator Trigger (on mobile/tablet) & Metadata */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Question List Drawer Button on mobile/tablet (< 1024px) */}
@@ -168,12 +182,12 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             {qType === 'mcq' ? 'MCQ' : 'Theory'}
           </span>
 
-          {/* MCQ Answer Key Badge in Header if available */}
-          {qType === 'mcq' && mcqAnswer && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0 shadow-sm">
+          {/* MCQ Answer Key Badge in Header - only shown once revealed (anti-spoiler) */}
+          {isMcq && mcqAnswer && isMcqAnswerRevealed && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0 shadow-sm animate-in fade-in duration-200">
               <span className="text-[9px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Key:</span>
               <span className="font-mono text-white bg-emerald-600 px-1 py-0.2 rounded text-[10px] font-extrabold">
-                [{mcqAnswer.toUpperCase()}]
+                [{normalizedKey}]
               </span>
             </span>
           )}
@@ -212,7 +226,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           )}
         </div>
 
-        {/* Right: Actions & Navigation Controls */}
+        {/* Right: Actions & Navigation Controls (Clean: Status, Bookmark & Counter) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
           {/* Status Cycle Button */}
           <button
@@ -241,74 +255,6 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
           <div className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-dark-800 mx-0.5" />
 
-          {/* Toggle Mark Scheme Visibility (Desktop & Tablet) */}
-          <button
-            onClick={onToggleMarkScheme}
-            title={isMarkSchemeVisible ? 'Hide Mark Scheme [M or Space]' : 'Show Mark Scheme [M or Space]'}
-            className={`hidden sm:flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold border transition-all ${
-              isMarkSchemeVisible
-                ? 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:bg-slate-200 dark:hover:bg-dark-750'
-                : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-400/40 shadow-sm shadow-cyan-500/20 hover:brightness-110'
-            }`}
-          >
-            {isMarkSchemeVisible ? (
-              <>
-                <EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                <span>Hide Answer</span>
-              </>
-            ) : (
-              <>
-                <Eye className="w-3.5 h-3.5 text-white" />
-                <span>Show Answer</span>
-              </>
-            )}
-            <span className="hidden md:inline text-[9px] opacity-75 font-mono bg-black/20 text-white px-1 py-0.2 rounded">
-              M
-            </span>
-          </button>
-
-          {/* Desktop Side-by-Side vs Toggle Switcher */}
-          <div className="hidden md:flex items-center bg-slate-100 dark:bg-dark-850 p-0.5 rounded-md border border-slate-200 dark:border-dark-750 text-xs">
-            <button
-              onClick={() => onSetViewMode('question-only')}
-              title="Question Focus Mode (Answers hidden)"
-              className={`px-2 py-0.5 rounded text-xs font-medium transition-all ${
-                viewMode === 'question-only'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Question
-            </button>
-
-            <button
-              onClick={() => onSetViewMode('split')}
-              title="Side-by-Side Split View"
-              className={`px-2 py-0.5 rounded text-xs font-medium transition-all ${
-                viewMode === 'split'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Columns className="w-3 h-3 inline mr-0.5" />
-              Split
-            </button>
-
-            <button
-              onClick={() => onSetViewMode('ms-only')}
-              title="Mark Scheme Focus Mode"
-              className={`px-2 py-0.5 rounded text-xs font-medium transition-all ${
-                viewMode === 'ms-only'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Answers
-            </button>
-          </div>
-
-          <div className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-dark-800 mx-0.5" />
-
           {/* Desktop/Tablet Question Navigation Arrows */}
           <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-slate-100 dark:bg-dark-850 p-0.5 rounded-md border border-slate-200 dark:border-dark-750">
             <button
@@ -320,7 +266,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-14 text-center font-mono text-[11px] text-slate-700 dark:text-slate-300 select-none shrink-0 font-medium">
+            <span className="w-14 sm:w-16 text-center font-mono text-[11px] text-slate-700 dark:text-slate-300 select-none shrink-0 font-medium">
               {currentIndex + 1} / {totalQuestions}
             </span>
 
@@ -333,38 +279,6 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* ===================================================================== */}
-      {/* MOBILE SEGMENTED CONTROL: [ Question ] | [ Mark Scheme ] (< 768px)    */}
-      {/* ===================================================================== */}
-      <div className="flex md:hidden items-center justify-center p-2 bg-white/90 dark:bg-dark-900/90 border-b border-slate-200 dark:border-dark-800 shrink-0">
-        <div className="grid grid-cols-2 w-full max-w-sm bg-slate-100 dark:bg-dark-850 p-1 rounded-xl border border-slate-200 dark:border-dark-750">
-          <button
-            type="button"
-            onClick={() => setMobileTab('question')}
-            className={`min-h-[40px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition-all ${
-              mobileTab === 'question'
-                ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-600/30'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            <span>Question</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab('ms')}
-            className={`min-h-[40px] flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition-all ${
-              mobileTab === 'ms'
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Mark Scheme</span>
-          </button>
         </div>
       </div>
 
@@ -388,7 +302,99 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             badgeColor="cyan"
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
-          />
+            centerVertically={!isMcq}
+          >
+            {/* Interactive MCQ A/B/C/D Tap Zones */}
+            {isMcq && (
+              <div className="w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
+                <div className="flex items-center justify-between w-full px-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                    Select Your Answer
+                  </span>
+                  {selectedMcqOption && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMcqOption(null)}
+                      className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
+                    >
+                      Reset Choice
+                    </button>
+                  )}
+                </div>
+
+                {/* 4 Interactive Tap Buttons */}
+                <div className="grid grid-cols-4 gap-2.5 sm:gap-3 w-full">
+                  {['A', 'B', 'C', 'D'].map((opt) => {
+                    const isSelected = selectedMcqOption === opt;
+                    const isCorrect = normalizedKey && opt === normalizedKey;
+                    let btnStyle = 'bg-slate-100 dark:bg-dark-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-dark-750 hover:bg-slate-200 dark:hover:bg-dark-750 hover:border-cyan-500 dark:hover:border-cyan-400';
+
+                    if (selectedMcqOption !== null) {
+                      if (isSelected) {
+                        if (isCorrect) {
+                          btnStyle = 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400';
+                        } else {
+                          btnStyle = 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/30 ring-2 ring-rose-400';
+                        }
+                      } else if (isCorrect) {
+                        btnStyle = 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50 animate-pulse-subtle';
+                      } else {
+                        btnStyle = 'bg-slate-100/50 dark:bg-dark-850/50 text-slate-400 dark:text-slate-600 border-transparent opacity-40';
+                      }
+                    }
+
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleMcqSelect(opt)}
+                        className={`h-12 sm:h-14 rounded-xl font-bold font-mono text-base sm:text-lg border-2 flex items-center justify-center transition-all active:scale-95 shadow-sm ${btnStyle}`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Instant visual feedback message banner */}
+                {selectedMcqOption !== null && normalizedKey && (
+                  <div className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
+                    selectedMcqOption === normalizedKey
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
+                      : 'bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {selectedMcqOption === normalizedKey ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span>Correct! Option [{normalizedKey}] is the right answer.</span>
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                          <span>Incorrect. Option [{normalizedKey}] is the correct answer.</span>
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.innerWidth < 768) {
+                          setMobileTab('ms');
+                        } else {
+                          onSetViewMode('split');
+                        }
+                      }}
+                      className="text-[11px] font-bold underline shrink-0 hover:opacity-80"
+                    >
+                      View Mark Scheme
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </ImageCanvas>
         </div>
 
         {/* Mark Scheme Canvas */}
@@ -435,22 +441,66 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             placeholderMessage="This question's mark scheme row is either still processing or was not included in the sample pages."
           />
         </div>
+      </div>
 
-        {/* Floating Quick Action if in Question Only mode on Desktop */}
-        {viewMode === 'question-only' && (
-          <div className="hidden md:block absolute bottom-6 right-6 z-10">
-            <button
-              onClick={onToggleMarkScheme}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs shadow-xl shadow-cyan-950/40 border border-cyan-400/40 hover:brightness-110 transition-all hover:scale-105 select-none"
-            >
-              <Eye className="w-3.5 h-3.5 text-white" />
-              Show Mark Scheme
-              <span className="text-[9px] opacity-80 font-mono bg-cyan-800/80 px-1.5 py-0.5 rounded">
-                M / Space
-              </span>
-            </button>
-          </div>
-        )}
+      {/* ===================================================================== */}
+      {/* ANCHORED BOTTOM ACTION BAR (Desktop & Tablet >= 768px)               */}
+      {/* ===================================================================== */}
+      <div className="hidden md:flex sticky bottom-0 w-full py-3 px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-slate-200 dark:border-slate-800 items-center justify-between z-10 shrink-0 select-none">
+        {/* Left: Previous Question */}
+        <button
+          type="button"
+          onClick={onPrevQuestion}
+          disabled={!hasPrev}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          title="Previous Question [← or []"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Previous Question</span>
+        </button>
+
+        {/* Center: High-contrast primary toggle button */}
+        <button
+          type="button"
+          onClick={onToggleMarkScheme}
+          title={isMarkSchemeVisible ? 'Hide Mark Scheme [Space or M]' : 'Show Mark Scheme [Space or M]'}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all ${
+            isMarkSchemeVisible
+              ? 'bg-slate-100 dark:bg-dark-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700'
+              : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-cyan-500/25 border border-cyan-400/30'
+          }`}
+        >
+          {isMarkSchemeVisible ? (
+            <>
+              <EyeOff className="w-4 h-4" />
+              <span>Hide Mark Scheme</span>
+            </>
+          ) : (
+            <>
+              <Eye className="w-4 h-4" />
+              <span>Show Mark Scheme</span>
+            </>
+          )}
+          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+            isMarkSchemeVisible
+              ? 'bg-slate-200 dark:bg-dark-700 text-slate-600 dark:text-slate-300'
+              : 'bg-black/20 text-white'
+          }`}>
+            Space
+          </span>
+        </button>
+
+        {/* Right: Next Question */}
+        <button
+          type="button"
+          onClick={onNextQuestion}
+          disabled={!hasNext}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          title="Next Question [→ or ]]"
+        >
+          <span>Next Question</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* ===================================================================== */}

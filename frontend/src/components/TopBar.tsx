@@ -174,7 +174,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 z-20 transition-colors">
+      <header className="h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 z-20 transition-colors">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -539,7 +539,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
-              <span>Side-by-Side</span>
+              <span>Split</span>
             </button>
 
             <button
@@ -552,7 +552,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Answers</span>
+              <span>Mark Scheme</span>
             </button>
           </div>
         </div>
