@@ -82,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          // Dynamically redirect back to current environment origin (e.g. localhost or production domain)
           redirectTo: window.location.origin,
         },
       });
