@@ -18,6 +18,7 @@ import { ImageCanvas } from './ImageCanvas';
 import { getStatusConfig } from './QuestionList';
 import { getQuestionType } from '../utils/questionClassification';
 import { getFullImageUrl } from '../utils/imageUrl';
+import { useProgress } from '../context/ProgressContext';
 
 interface SplitViewerProps {
   question: QuestionItem | null;
@@ -58,17 +59,18 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   onToggleBookmark,
   onOpenQuestionList,
 }) => {
+  const { userAnswers, setMcqAnswer } = useProgress();
   const [isFullQuestionOpen, setIsFullQuestionOpen] = useState(false);
   // Mobile specific view tab: 'question' | 'ms'
   const [mobileTab, setMobileTab] = useState<'question' | 'ms'>('question');
   // Student's interactive selection for MCQ items
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
 
-  // Reset mobile view and MCQ selection when switching questions
+  // Sync mobile view and MCQ selection when switching questions
   useEffect(() => {
     setMobileTab('question');
-    setSelectedMcqOption(null);
-  }, [question?.id]);
+    setSelectedMcqOption(question?.id ? userAnswers[question.id] || null : null);
+  }, [question?.id, userAnswers]);
 
   // Sibling subparts belonging to this question's parent in the same paper
   const siblingSubparts = useMemo(() => {
@@ -131,9 +133,20 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
   const handleMcqSelect = (opt: string) => {
     setSelectedMcqOption(opt);
+    const isCorrect = normalizedKey ? opt.toUpperCase() === normalizedKey.toUpperCase() : undefined;
+    if (question) {
+      setMcqAnswer(question.id, opt, isCorrect);
+    }
     // Automatically reveal mark scheme / explanation on desktop if in question-only mode
     if (viewMode === 'question-only') {
       onSetViewMode('split');
+    }
+  };
+
+  const handleResetMcq = () => {
+    setSelectedMcqOption(null);
+    if (question) {
+      setMcqAnswer(question.id, '', undefined);
     }
   };
 
@@ -303,9 +316,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
           >
-            {/* Interactive MCQ A/B/C/D Tap Zones (Mobile only: md:hidden) */}
+            {/* Interactive MCQ A/B/C/D Tap Zones */}
             {isMcq && (
-              <div className="md:hidden w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
+              <div className="w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
                 <div className="flex items-center justify-between w-full px-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Select Your Answer
@@ -313,7 +326,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                   {selectedMcqOption && (
                     <button
                       type="button"
-                      onClick={() => setSelectedMcqOption(null)}
+                      onClick={handleResetMcq}
                       className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
                     >
                       Reset Choice

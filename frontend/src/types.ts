@@ -31,7 +31,16 @@ export interface QuestionItem {
 
 export type ViewMode = 'split' | 'question-only' | 'ms-only';
 
-export type MasteryStatus = 'unattempted' | 'review' | 'mastered';
+export type MasteryStatus = 'unattempted' | 'review' | 'mastered' | 'correct' | 'incorrect';
+
+export interface UserProgressRecord {
+  user_id: string;
+  question_id: string;
+  status: string;
+  is_bookmarked: boolean;
+  user_answer: string | null;
+  updated_at: string;
+}
 
 export type StatusFilter = 'all' | 'review' | 'unattempted' | 'mastered';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { QuestionItem, FilterState, ViewMode, MasteryStatus, AppView } from './types';
+import { QuestionItem, FilterState, ViewMode, AppView } from './types';
 import { AppNavbar } from './components/AppNavbar';
 import { HomePage } from './components/HomePage';
 import { TestMakerPage } from './components/TestMakerPage';
@@ -8,6 +8,9 @@ import { buildStaticSubtopicHierarchy } from './constants/taxonomy';
 import { getQuestionType } from './utils/questionClassification';
 import { QuestionList } from './components/QuestionList';
 import { SplitViewer } from './components/SplitViewer';
+import { AuthModal } from './components/AuthModal';
+import { useAuth } from './context/AuthContext';
+import { useProgress } from './context/ProgressContext';
 import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -63,25 +66,14 @@ export const App: React.FC = () => {
   // Default view: Question Only mode so answers aren't spoiled
   const [viewMode, setViewMode] = useState<ViewMode>('question-only');
 
-  // Persisted bookmarks
-  const [bookmarks, setBookmarks] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('chem_bookmarks');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-
-  // Persisted question statuses: 'unattempted' | 'review' | 'mastered'
-  const [questionStatuses, setQuestionStatuses] = useState<Record<string, MasteryStatus>>(() => {
-    try {
-      const saved = localStorage.getItem('chem_question_status');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  // Cloud-synced bookmarks and question statuses from ProgressContext
+  const { 
+    bookmarks, 
+    questionStatuses, 
+    toggleBookmark, 
+    cycleQuestionStatus 
+  } = useProgress();
+  const { isAuthModalOpen, closeAuthModal } = useAuth();
 
   // Persisted custom test maker cart
   const [testCart, setTestCart] = useState<string[]>(() => {
@@ -118,16 +110,6 @@ export const App: React.FC = () => {
     questionType: 'all',
     bookmarkedOnly: false,
   });
-
-  // Save bookmarks to localStorage
-  useEffect(() => {
-    localStorage.setItem('chem_bookmarks', JSON.stringify(Array.from(bookmarks)));
-  }, [bookmarks]);
-
-  // Save question statuses to localStorage
-  useEffect(() => {
-    localStorage.setItem('chem_question_status', JSON.stringify(questionStatuses));
-  }, [questionStatuses]);
 
   // Save test cart to localStorage
   useEffect(() => {
@@ -318,37 +300,18 @@ export const App: React.FC = () => {
     setViewMode((prev) => (prev === 'question-only' ? 'split' : 'question-only'));
   }, []);
 
-  // Cycle status: unattempted -> review -> mastered -> unattempted
-  const cycleStatus = (status: MasteryStatus = 'unattempted'): MasteryStatus => {
-    if (status === 'unattempted') return 'review';
-    if (status === 'review') return 'mastered';
-    return 'unattempted';
-  };
-
   const handleCycleStatus = useCallback((id: string) => {
-    setQuestionStatuses((prev) => {
-      const current = prev[id] || 'unattempted';
-      const next = cycleStatus(current);
-      return { ...prev, [id]: next };
-    });
-  }, []);
+    cycleQuestionStatus(id);
+  }, [cycleQuestionStatus]);
 
   const handleToggleBookmark = useCallback((id: string) => {
-    setBookmarks((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+    toggleBookmark(id);
+  }, [toggleBookmark]);
 
   const handleToggleActiveBookmark = useCallback(() => {
     if (!activeQuestion) return;
-    handleToggleBookmark(activeQuestion.id);
-  }, [activeQuestion, handleToggleBookmark]);
+    toggleBookmark(activeQuestion.id);
+  }, [activeQuestion, toggleBookmark]);
 
   // Keyboard navigation shortcuts (active in Topical Explorer mode):
   // - ArrowLeft / [: Previous question
@@ -520,6 +483,8 @@ export const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
       <Analytics />
     </div>
   );

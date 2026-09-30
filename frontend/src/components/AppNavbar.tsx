@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FlaskConical, 
   Home, 
   Compass, 
   FileText, 
   ChevronRight,
+  ChevronDown,
   Menu,
   X,
   Sun,
-  Moon
+  Moon,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import { AppView } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface AppNavbarProps {
   currentView: AppView;
@@ -27,12 +31,35 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   totalQuestions = 5712
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
   const { theme, toggleTheme } = useTheme();
+  const { user, openAuthModal, signOut } = useAuth();
 
   const handleNavClick = (view: AppView) => {
     onNavigate(view);
     setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
   };
+
+  // Close user dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isUserMenuOpen]);
+
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
+  const userDisplayName = user?.email ? user.email.split('@')[0] : 'Student';
 
   return (
     <>
@@ -123,6 +150,74 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <Moon className="w-4 h-4 text-slate-700 hover:-rotate-12 transition-transform" />
             )}
           </button>
+
+          {/* Desktop Authentication Button / User Profile Dropdown */}
+          <div className="relative" ref={userMenuRef}>
+            {user ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800/90 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-xs transition-all active:scale-95 shadow-sm"
+                  title={`Logged in as ${user.email}`}
+                >
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                    {userInitial}
+                  </div>
+                  <span className="max-w-[110px] truncate font-medium text-slate-800 dark:text-slate-200 hidden lg:inline">
+                    {userDisplayName}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {/* User Dropdown */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800 mb-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
+                          {userInitial}
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {user.email}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              Cloud Sync Active
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        signOut();
+                      }}
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={openAuthModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-all shadow-sm shadow-cyan-600/25 active:scale-95"
+                title="Sign in to sync your bookmarks and progress across devices"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Desktop Active Subject Pill (> 768px) */}
@@ -142,6 +237,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         {/* Mobile Action Controls (< 768px) */}
         <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Auth Button */}
+          {user ? (
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm active:scale-95"
+              title={`Logged in as ${user.email}`}
+            >
+              {userInitial}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={openAuthModal}
+              className="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs active:scale-95 transition-all shadow-sm"
+              title="Sign In"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
+
           {/* Mobile Theme Toggle Button */}
           <button
             type="button"
@@ -195,6 +312,51 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             className="bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-dark-750 p-4 space-y-2 shadow-2xl animate-in slide-in-from-top-4 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* User Account Card in Mobile Drawer */}
+            {user ? (
+              <div className="p-3 rounded-xl border border-slate-200 dark:border-dark-750 bg-slate-50 dark:bg-dark-850 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
+                    {userInitial}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {user.email}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        Cloud Sync Active
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="p-2 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openAuthModal();
+                }}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-semibold transition-all shadow-md shadow-cyan-600/30"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In / Create Account</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => handleNavClick('home')}

@@ -46,16 +46,18 @@ export const formatPaperSeriesYear = (q: QuestionItem): string => {
 export const getStatusConfig = (status: MasteryStatus = 'unattempted') => {
   switch (status) {
     case 'mastered':
+    case 'correct':
       return {
-        label: 'Mastered',
-        shortLabel: 'Mastered',
+        label: status === 'correct' ? 'Correct' : 'Mastered',
+        shortLabel: status === 'correct' ? 'Correct' : 'Mastered',
         bg: 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
         dot: 'bg-emerald-500 dark:bg-emerald-400',
       };
     case 'review':
+    case 'incorrect':
       return {
-        label: 'Review Needed',
-        shortLabel: 'Review',
+        label: status === 'incorrect' ? 'Incorrect' : 'Review Needed',
+        shortLabel: status === 'incorrect' ? 'Incorrect' : 'Review',
         bg: 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border-amber-500/30',
         dot: 'bg-amber-500 dark:bg-amber-400',
       };
