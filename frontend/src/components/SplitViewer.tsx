@@ -316,9 +316,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
           >
-            {/* Interactive MCQ A/B/C/D Tap Zones */}
+            {/* Interactive MCQ A/B/C/D Tap Zones (Mobile only: md:hidden) */}
             {isMcq && (
-              <div className="w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
+              <div className="md:hidden w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
                 <div className="flex items-center justify-between w-full px-1">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Select Your Answer
