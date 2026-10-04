@@ -76,8 +76,8 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     bookmarkedOnly: false,
   });
 
-  // Marks filter: 'all' | '1' | '2-3' | '4+'
-  const [marksFilter, setMarksFilter] = useState<'all' | '1' | '2-3' | '4+'>('all');
+  // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m'
+  const [marksFilter, setMarksFilter] = useState<'all' | '1m' | '2-3m' | '4-5m' | '6m'>('all');
 
   // Available filter options
   const availableUnits = useMemo(() => {
@@ -159,9 +159,10 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       // Marks filter
       if (marksFilter !== 'all') {
         const marks = q.marks || 0;
-        if (marksFilter === '1' && marks !== 1) return false;
-        if (marksFilter === '2-3' && (marks < 2 || marks > 3)) return false;
-        if (marksFilter === '4+' && marks < 4) return false;
+        if (marksFilter === '1m' && marks !== 1) return false;
+        if (marksFilter === '2-3m' && (marks < 2 || marks > 3)) return false;
+        if (marksFilter === '4-5m' && (marks < 4 || marks > 5)) return false;
+        if (marksFilter === '6m' && marks < 6) return false;
       }
 
       // Search query
@@ -432,7 +433,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
             {/* Marks Filter */}
             <div className="flex items-center bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-[10px]">
-              {(['all', '1', '2-3', '4+'] as const).map((m) => (
+              {(['all', '1m', '2-3m', '4-5m', '6m'] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -442,11 +443,11 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   }}
                   className={`px-1.5 py-0.5 rounded font-medium transition-all ${
                     marksFilter === m
-                      ? 'bg-cyan-600 text-white font-bold'
+                      ? 'bg-cyan-600 dark:bg-cyan-500 text-white font-bold shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  {m === 'all' ? 'All m' : `${m}m`}
+                  {m === 'all' ? 'All m' : m}
                 </button>
               ))}
             </div>

@@ -26,11 +26,15 @@ test_*.png
 frontend/public/crops/
 frontend/public/extracted/
 frontend/public/ms_crops/
+frontend/public/crops_physics/
+crops_physics/
 
-# Keep dataset tracked (only ~15 MB)
+# Keep datasets tracked
 !frontend/public/dataset.json
+!frontend/public/dataset_physics.json
 .cache/
 papers/
+papers_physics/
 sample_papers/
 scratch/
 *.png

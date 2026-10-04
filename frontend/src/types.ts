@@ -61,7 +61,14 @@ export interface FilterState {
   series?: string;
 }
 
-export type AppView = 'home' | 'chemistry-topical' | 'chemistry-test-maker';
+export type Subject = 'chemistry' | 'physics';
+
+export type AppView = 
+  | 'home' 
+  | 'chemistry-topical' 
+  | 'chemistry-test-maker'
+  | 'physics-topical'
+  | 'physics-test-maker';
 
 export interface TestPaperConfig {
   title: string;

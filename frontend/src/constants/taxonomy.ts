@@ -237,6 +237,167 @@ export const OFFICIAL_IAL_CHEMISTRY_TAXONOMY: UnitDefinition[] = [
   },
 ];
 
+export const OFFICIAL_IAL_PHYSICS_TAXONOMY: UnitDefinition[] = [
+  {
+    unitCode: 'WPH11',
+    unitName: 'Unit 1',
+    title: 'Mechanics and Materials',
+    topics: [
+      {
+        topicName: 'Topic 1: Mechanics',
+        subtopics: [
+          '1.1: Physical Quantities, SI Units & Vectors',
+          '1.2: Kinematics, Motion Graphs & SUVAT Equations',
+          '1.3: Projectile Motion & Trajectory Analysis',
+          '1.4: Newton\'s Laws of Motion, Momentum & Impulse',
+          '1.5: Forces in Equilibrium, Moments & Centre of Gravity',
+          '1.6: Work, Kinetic & Potential Energy, Power & Efficiency',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Materials',
+        subtopics: [
+          '2.1: Density, Upthrust, Archimedes\' Principle & Fluid Flow',
+          '2.2: Viscosity, Temperature Effects, Stokes\' Law & Terminal Velocity',
+          '2.3: Hooke\'s Law, Elastic & Plastic Deformation',
+          '2.4: Stress, Strain, Young Modulus & Force-Extension Graphs',
+          '2.5: Material Properties (Brittle, Ductile, Tough, Hard, Malleable)',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WPH12',
+    unitName: 'Unit 2',
+    title: 'Waves and Electricity',
+    topics: [
+      {
+        topicName: 'Topic 3: Waves and the Particle Nature of Light',
+        subtopics: [
+          '3.1: Wave Properties (Transverse & Longitudinal, Amplitude, Frequency, Wavelength, Wave Equation)',
+          '3.2: Refraction, Reflection & Total Internal Reflection (Snell\'s Law, Critical Angle)',
+          '3.3: Superposition & Interference (Path Difference, Phase Difference, Two-Source Interference, Young\'s Double Slit)',
+          '3.4: Stationary Waves (Nodes, Antinodes, Harmonics on strings and in air columns)',
+          '3.5: Diffraction (Diffraction gratings, Single slit, n*lambda = d*sin(theta))',
+          '3.6: Polarization (Malus\' Law, Applications of polarized light)',
+          '3.7: Pulse-Echo Techniques & Ultrasound',
+          '3.8: Photons & The Photoelectric Effect (Work function, Threshold frequency, Einstein\'s Photoelectric Equation)',
+          '3.9: Wave-Particle Duality & De Broglie Wavelength',
+          '3.10: Atomic Line Spectra & Energy Levels (Photon emission/absorption, Transition equations)',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Electric Circuits',
+        subtopics: [
+          '4.1: Electric Current, Charge & Drift Velocity (I = nqvA)',
+          '4.2: Potential Difference, EMF & Electrical Energy/Power (P = VI, P = I^2*R, W = VQ)',
+          '4.3: Resistance, Ohm\'s Law & I-V Characteristics (Ohmic conductors, Filament lamps, Diodes)',
+          '4.4: Resistivity & Temperature Effects (R = rho*L/A, Thermistors, Superconductivity)',
+          '4.5: Series and Parallel Circuits (Kirchhoff\'s First and Second Laws, Equivalent resistance)',
+          '4.6: Potential Dividers & Sensor Circuits (LDRs, NTC thermistors, Potentiometers)',
+          '4.7: Internal Resistance & Terminal Potential Difference (E = V + Ir, Load resistance matching)',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WPH13',
+    unitName: 'Unit 3',
+    title: 'Practical Skills in Physics I',
+    topics: [
+      {
+        topicName: 'Topic 5: Practical Skills and Techniques I',
+        subtopics: [
+          '5.1: Experimental Planning, Apparatus & Core Practicals (AS)',
+          '5.2: Measurement Uncertainties, Errors & Percentage Uncertainties',
+          '5.3: Graphical Analysis, Error Propagation & Evaluation of Results',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WPH14',
+    unitName: 'Unit 4',
+    title: 'Further Mechanics, Fields and Particles',
+    topics: [
+      {
+        topicName: 'Topic 6: Further Mechanics',
+        subtopics: [
+          '6.1: 2D Momentum, Elastic & Inelastic Collisions',
+          '6.2: Circular Motion, Centripetal Acceleration & Centripetal Force',
+        ],
+      },
+      {
+        topicName: 'Topic 7: Electric and Magnetic Fields',
+        subtopics: [
+          '7.1: Electric Fields, Coulomb\'s Law, Field Strength & Potential',
+          '7.2: Capacitors, Charging/Discharging & Energy Stored',
+          '7.3: Magnetic Fields, Force on Moving Charges & Fleming\'s Left-Hand Rule',
+          '7.4: Electromagnetic Induction, Magnetic Flux, Faraday\'s & Lenz\'s Laws',
+        ],
+      },
+      {
+        topicName: 'Topic 8: Particle Physics',
+        subtopics: [
+          '8.1: Particle Accelerators (Linacs, Cyclotrons) & Detectors',
+          '8.2: Standard Model (Quarks, Leptons, Hadrons) & Conservation Laws',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WPH15',
+    unitName: 'Unit 5',
+    title: 'Thermodynamics, Radiation, Oscillations and Cosmology',
+    topics: [
+      {
+        topicName: 'Topic 9: Thermodynamics',
+        subtopics: [
+          '9.1: Specific Heat Capacity, Latent Heat & Internal Energy',
+          '9.2: Ideal Gas Laws, pV = NkT & Kinetic Theory Model',
+        ],
+      },
+      {
+        topicName: 'Topic 10: Nuclear Radiation and Decay',
+        subtopics: [
+          '10.1: Alpha, Beta & Gamma Radiation, Radioactive Decay & Half-life',
+          '10.2: Nuclear Binding Energy, Mass Defect, Fission & Fusion',
+        ],
+      },
+      {
+        topicName: 'Topic 11: Oscillations',
+        subtopics: [
+          '11.1: Simple Harmonic Motion (SHM) Kinematics & Energy Transfers',
+          '11.2: Free & Forced Oscillations, Damping & Resonance',
+        ],
+      },
+      {
+        topicName: 'Topic 12: Astrophysics and Cosmology',
+        subtopics: [
+          '12.1: Gravitational Fields, Newton\'s Law of Gravitation & Gravitational Potential',
+          '12.2: Stellar Radii, Luminosity, Black Body Radiation & Hertzsprung-Russell Diagrams',
+          '12.3: Astronomical Distances (Standard Candles, Hubble\'s Law) & Cosmic Expansion',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WPH16',
+    unitName: 'Unit 6',
+    title: 'Practical Skills in Physics II',
+    topics: [
+      {
+        topicName: 'Topic 13: Practical Skills and Techniques II',
+        subtopics: [
+          '13.1: Advanced Core Practicals & Experimental Methods (A2)',
+          '13.2: Instrument Calibration, Systematic & Random Error Analysis',
+          '13.3: Logarithmic & Power-Law Graph Linearisation and Verification',
+        ],
+      },
+    ],
+  },
+];
+
 export interface SubtopicGroup {
   topicName: string;
   subtopics: {
@@ -252,12 +413,28 @@ export interface SubtopicGroup {
  */
 export function buildStaticSubtopicHierarchy(
   unitFilter: string | string[],
-  questions: { subtopic?: string; subtopics?: string[]; unit?: string }[]
+  questions: { subtopic?: string; subtopics?: string[]; unit?: string; unitCode?: string; paperId?: string }[],
+  subject?: 'chemistry' | 'physics'
 ): SubtopicGroup[] {
   // Normalize unitFilter to an array of unit identifiers
   const unitList: string[] = Array.isArray(unitFilter)
     ? unitFilter
     : (!unitFilter || unitFilter === 'all' ? [] : [unitFilter]);
+
+  // Determine taxonomy: explicit subject or auto-detect from questions
+  let taxonomy = OFFICIAL_IAL_CHEMISTRY_TAXONOMY;
+  if (subject === 'physics') {
+    taxonomy = OFFICIAL_IAL_PHYSICS_TAXONOMY;
+  } else if (!subject && questions.length > 0) {
+    const isPhys = questions.some((q) => {
+      const code = (q.unitCode || '').toUpperCase();
+      const pid = (q.paperId || '').toLowerCase();
+      return code.startsWith('WPH') || pid.startsWith('wph');
+    });
+    if (isPhys) {
+      taxonomy = OFFICIAL_IAL_PHYSICS_TAXONOMY;
+    }
+  }
 
   // Precompute subtopic frequency across the questions
   const subtopicCounts = new Map<string, number>();
@@ -272,8 +449,8 @@ export function buildStaticSubtopicHierarchy(
 
   // Filter unit definitions
   const relevantUnits = unitList.length === 0
-    ? OFFICIAL_IAL_CHEMISTRY_TAXONOMY
-    : OFFICIAL_IAL_CHEMISTRY_TAXONOMY.filter(
+    ? taxonomy
+    : taxonomy.filter(
         (u) => unitList.includes(u.unitName) || unitList.includes(u.unitCode)
       );
 
@@ -297,9 +474,16 @@ export function buildStaticSubtopicHierarchy(
 }
 
 /**
- * Resolves the canonical parent topic for any subtopic string.
+ * Resolves the canonical parent topic for any subtopic string across Physics and Chemistry.
  */
 export function getParentTopicForSubtopic(subtopic: string): string {
+  for (const unit of OFFICIAL_IAL_PHYSICS_TAXONOMY) {
+    for (const topic of unit.topics) {
+      if (topic.subtopics.includes(subtopic)) {
+        return topic.topicName;
+      }
+    }
+  }
   for (const unit of OFFICIAL_IAL_CHEMISTRY_TAXONOMY) {
     for (const topic of unit.topics) {
       if (topic.subtopics.includes(subtopic)) {
@@ -307,13 +491,20 @@ export function getParentTopicForSubtopic(subtopic: string): string {
       }
     }
   }
-  return 'General Chemistry';
+  return 'General';
 }
 
 /**
- * Resolves the canonical Unit for any subtopic string.
+ * Resolves the canonical Unit for any subtopic string across Physics and Chemistry.
  */
 export function getUnitForSubtopic(subtopic: string): string {
+  for (const unit of OFFICIAL_IAL_PHYSICS_TAXONOMY) {
+    for (const topic of unit.topics) {
+      if (topic.subtopics.includes(subtopic)) {
+        return unit.unitName;
+      }
+    }
+  }
   for (const unit of OFFICIAL_IAL_CHEMISTRY_TAXONOMY) {
     for (const topic of unit.topics) {
       if (topic.subtopics.includes(subtopic)) {

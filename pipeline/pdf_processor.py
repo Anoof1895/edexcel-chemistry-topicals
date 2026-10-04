@@ -174,7 +174,8 @@ class PDFProcessor:
         current_qnum: Optional[str] = None,
         scan_markers: bool = True,
         is_mcq: bool = False,
-        is_stem: bool = False
+        is_stem: bool = False,
+        min_allowed_top_pts: Optional[float] = None
     ) -> Image.Image:
         """
         Crops a region from the page image.
@@ -222,8 +223,11 @@ class PDFProcessor:
 
         rubric_pats = [
             re.compile(r"^\s*SECTION\s+[A-Z]", re.I),
-            re.compile(r"^\s*Answer\s+ALL\s+the\s+questions", re.I),
+            re.compile(r"^\s*Answer\s+ALL\s+(?:the\s+)?questions", re.I),
             re.compile(r"^\s*Write\s+your\s+answers\s+in\s+the\s+spaces\s+provided", re.I),
+            re.compile(r"select\s+one\s+answer", re.I),
+            re.compile(r"change\s+your\s+mind", re.I),
+            re.compile(r"use\s+the\s+space\s+for\s+rough\s+working", re.I),
         ]
         rubric_blocks = [b for b in page_blocks if any(rp.search(b[4]) for rp in rubric_pats) and b[3] <= orig_ymin_pts + 5]
         rubric_ceiling_pts = (max((b[3] for b in rubric_blocks), default=0) + 1.5) if rubric_blocks else None
@@ -233,9 +237,11 @@ class PDFProcessor:
             min_allowed_ymin_pts = max(min_allowed_ymin_pts, prev_text_y1_pts + 1.5)
         if rubric_ceiling_pts is not None:
             min_allowed_ymin_pts = max(min_allowed_ymin_pts, rubric_ceiling_pts)
+        if min_allowed_top_pts is not None:
+            min_allowed_ymin_pts = max(min_allowed_ymin_pts, min_allowed_top_pts)
 
         # Top Safety Padding: Back off ymin so character ascenders and question headers ('2', '3', 'T', etc.) are never sliced horizontally
-        top_safety_pad = 12.0 if scale > 1.0 else 0.012
+        top_safety_pad = (12.0 if scale > 1.0 else 0.012) if (padding_top is None or padding_top > 0) else 0.0
         if min_allowed_ymin_pts > 0:
             ymin_pts = max(min_allowed_ymin_pts, orig_ymin_pts - (top_safety_pad / scale * ph))
             ymin = ymin_pts / ph * scale
@@ -354,7 +360,7 @@ class PDFProcessor:
 
                             # 5. Check next sequential integer question
                             line_x0 = l["bbox"][0]
-                            if line_x0 < 120:
+                            if line_x0 < 60:
                                 m_q = mcq_next_q_pat.match(line_txt) or re.match(r"^\s*(?:question\s+|q\.?\s*)?(\d{1,2})[:.]?(?:\s+|\t)+(?:\([a-z]\)|[A-Za-z])", line_txt, re.I)
                                 if m_q and not re.search(r"^\s*(?:question\s+|q\.?\s*)?\d{1,3}[:.]?\s+(?:cm|dm|g|mol|°|%|k?j|k?pa|v|s|m|h|min)[0-9\-–−]*\b", line_txt, re.I):
                                     if cur_parent is not None:

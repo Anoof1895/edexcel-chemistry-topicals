@@ -6,6 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    allowedHosts: true
+    allowedHosts: true,
+    fs: {
+      // public/crops_physics is a Windows junction to ../crops_physics; allow its real path
+      allow: ['.', '../crops_physics']
+    }
   }
 });

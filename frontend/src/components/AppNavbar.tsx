@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   FlaskConical, 
+  Atom,
   Home, 
   Compass, 
   FileText, 
@@ -13,7 +14,7 @@ import {
   LogIn,
   LogOut
 } from 'lucide-react';
-import { AppView } from '../types';
+import { AppView, Subject } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,17 +23,37 @@ interface AppNavbarProps {
   onNavigate: (view: AppView) => void;
   cartCount?: number;
   totalQuestions?: number;
+  activeSubject?: Subject;
+  chemCount?: number;
+  physCount?: number;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
   currentView,
   onNavigate,
   cartCount = 0,
-  totalQuestions = 5712
+  totalQuestions = 5712,
+  activeSubject = 'chemistry',
+  chemCount = 5712,
+  physCount = 4136
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSubjectMenuOpen, setIsSubjectMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const subjectMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close subject switcher on click outside
+  useEffect(() => {
+    if (!isSubjectMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (subjectMenuRef.current && !subjectMenuRef.current.contains(e.target as Node)) {
+        setIsSubjectMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSubjectMenuOpen]);
 
   const { theme, toggleTheme } = useTheme();
   const { user, openAuthModal, signOut } = useAuth();
@@ -61,6 +82,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
   const userDisplayName = user?.email ? user.email.split('@')[0] : 'Student';
 
+  const isPhysics = activeSubject === 'physics' || currentView.startsWith('physics');
+  const topicalView: AppView = isPhysics ? 'physics-topical' : 'chemistry-topical';
+  const testMakerView: AppView = isPhysics ? 'physics-test-maker' : 'chemistry-test-maker';
+  const isTopicalActive = currentView === 'chemistry-topical' || currentView === 'physics-topical';
+  const isTestMakerActive = currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker';
+
   return (
     <>
       <header className="h-14 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 z-30 relative transition-colors">
@@ -71,19 +98,25 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           title="Go to Home Portal"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20 border border-cyan-400/30 group-hover:scale-105 transition-transform">
-            <FlaskConical className="w-4 h-4 text-white" />
+            {isPhysics ? (
+              <Atom className="w-4 h-4 text-white" />
+            ) : (
+              <FlaskConical className="w-4 h-4 text-white" />
+            )}
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
-                Edexcel Hub
+                Edexcel IAL Topicals
               </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
-                IAL
+                Hub
               </span>
             </div>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
-              Chemistry Topicals & Exam Builder
+              {currentView === 'home'
+                ? 'Chemistry & Physics Topicals & Exam Builder'
+                : isPhysics ? 'Physics Topicals & Exam Builder' : 'Chemistry Topicals & Exam Builder'}
             </span>
           </div>
         </div>
@@ -106,9 +139,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
             <button
               type="button"
-              onClick={() => onNavigate('chemistry-topical')}
+              onClick={() => onNavigate(topicalView)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                currentView === 'chemistry-topical'
+                isTopicalActive
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-dark-800'
               }`}
@@ -119,9 +152,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
             <button
               type="button"
-              onClick={() => onNavigate('chemistry-test-maker')}
+              onClick={() => onNavigate(testMakerView)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
-                currentView === 'chemistry-test-maker'
+                isTestMakerActive
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-dark-800'
               }`}
@@ -220,19 +253,79 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </div>
         </div>
 
-        {/* Desktop Active Subject Pill (> 768px) */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Desktop Subject Switcher (> 768px) */}
+        <div className="hidden md:flex items-center gap-2 relative" ref={subjectMenuRef}>
           <button
             type="button"
-            onClick={() => onNavigate('home')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-dark-800/80 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700/80 text-xs font-medium transition-all group"
-            title="Chemistry Specification"
+            onClick={() => setIsSubjectMenuOpen((o) => !o)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-dark-800/80 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700/80 text-xs font-medium transition-all"
+            title="Switch subject"
+            aria-haspopup="menu"
+            aria-expanded={isSubjectMenuOpen}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-            <span className="text-slate-800 dark:text-slate-200 font-semibold">Chemistry</span>
-            <span className="text-slate-500 hidden lg:inline">({totalQuestions.toLocaleString()} Qs)</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
+            <span className={`w-2 h-2 rounded-full animate-pulse ${
+              currentView === 'home'
+                ? 'bg-cyan-500 dark:bg-cyan-400'
+                : isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'
+            }`}></span>
+            <span className="text-slate-800 dark:text-slate-200 font-semibold">
+              {currentView === 'home' ? 'All Subjects' : isPhysics ? 'Physics' : 'Chemistry'}
+            </span>
+            <span className="text-slate-500 hidden lg:inline">
+              ({(currentView === 'home' ? chemCount + physCount : totalQuestions).toLocaleString()} Qs)
+            </span>
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform ${isSubjectMenuOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {isSubjectMenuOpen && (
+            <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 shadow-2xl p-1.5 z-50">
+              {([
+                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500' },
+                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500' },
+              ]).map(({ subject, label, count, view, Icon, dot }) => {
+                const isActive = currentView !== 'home' && (subject === 'physics') === isPhysics;
+                return (
+                  <button
+                    key={subject}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsSubjectMenuOpen(false);
+                      onNavigate(view);
+                    }}
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                      isActive
+                        ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${dot}`}></span>
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                      {count.toLocaleString()} Qs
+                    </span>
+                  </button>
+                );
+              })}
+              <div className="my-1 border-t border-slate-100 dark:border-dark-800" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsSubjectMenuOpen(false);
+                  onNavigate('home');
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800"
+              >
+                <Home className="w-3.5 h-3.5" />
+                Subject Portal
+                <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Action Controls (< 768px) */}
@@ -278,7 +371,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           {cartCount > 0 && (
             <button
               type="button"
-              onClick={() => handleNavClick('chemistry-test-maker')}
+              onClick={() => handleNavClick(testMakerView)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-dark-800 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-bold font-mono transition-all"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -375,9 +468,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
             <button
               type="button"
-              onClick={() => handleNavClick('chemistry-topical')}
+              onClick={() => handleNavClick(topicalView)}
               className={`w-full flex items-center gap-3 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                currentView === 'chemistry-topical'
+                isTopicalActive
                   ? 'bg-cyan-600 text-white border-cyan-500 shadow-md shadow-cyan-600/30'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-dark-850 dark:border-dark-750 dark:text-slate-300 dark:hover:bg-dark-800'
               }`}
@@ -385,15 +478,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <Compass className="w-5 h-5" />
               <div className="flex flex-col text-left">
                 <span>Topical Explorer</span>
-                <span className="text-[11px] opacity-75 font-normal">Past paper questions & official mark schemes (Units 1–6)</span>
+                <span className="text-[11px] opacity-75 font-normal">
+                  {isPhysics ? 'Physics past paper questions & official mark schemes (Units 1–2)' : 'Chemistry past paper questions & official mark schemes (Units 1–6)'}
+                </span>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => handleNavClick('chemistry-test-maker')}
+              onClick={() => handleNavClick(testMakerView)}
               className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm font-semibold transition-all ${
-                currentView === 'chemistry-test-maker'
+                isTestMakerActive
                   ? 'bg-cyan-600 text-white border-cyan-500 shadow-md shadow-cyan-600/30'
                   : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-dark-850 dark:border-dark-750 dark:text-slate-300 dark:hover:bg-dark-800'
               }`}
@@ -437,8 +532,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {/* Subject Footer Details */}
             <div className="pt-3 mt-1 border-t border-slate-200 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">Edexcel Chemistry (IAL)</span>
+                <span className={`w-2 h-2 rounded-full animate-pulse ${isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'}`}></span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {isPhysics ? 'Edexcel Physics (IAL)' : 'Edexcel Chemistry (IAL)'}
+                </span>
               </div>
               <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400 font-bold">
                 {totalQuestions.toLocaleString()} Questions

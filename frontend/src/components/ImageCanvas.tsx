@@ -7,7 +7,7 @@ import {
   Maximize2,
   X
 } from 'lucide-react';
-import { getFullImageUrl } from '../utils/imageUrl';
+import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
 
 interface ImageCanvasProps {
   src: string | null;
@@ -35,10 +35,22 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxZoom, setLightboxZoom] = useState(1.2);
   const containerRef = useRef<HTMLDivElement>(null);
-  const resolvedSrc = getFullImageUrl(src);
+  const [useLocalFallback, setUseLocalFallback] = useState(false);
+  const cdnSrc = getFullImageUrl(src);
+  const localSrc = getLocalImageUrl(src);
+  const resolvedSrc = useLocalFallback ? localSrc : cdnSrc;
+
+  const handleImageError = () => {
+    if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
+      setUseLocalFallback(true);
+    } else {
+      setHasError(true);
+    }
+  };
 
   useEffect(() => {
     setHasError(false);
+    setUseLocalFallback(false);
     setZoom(1);
   }, [src]);
 
@@ -152,7 +164,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               <img
                 src={resolvedSrc}
                 alt={title}
-                onError={() => setHasError(true)}
+                onError={handleImageError}
                 className="w-full max-w-full h-auto object-contain block select-none"
               />
             </div>

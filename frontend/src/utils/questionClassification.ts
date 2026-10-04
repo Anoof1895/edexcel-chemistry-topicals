@@ -23,7 +23,9 @@ export function isMCQ(q: QuestionItem): boolean {
     unit.includes('unit 3') || 
     unit.includes('unit 6') || 
     unitCode === 'WCH13' || 
-    unitCode === 'WCH16'
+    unitCode === 'WCH16' ||
+    unitCode === 'WPH13' || 
+    unitCode === 'WPH16'
   ) {
     return false;
   }

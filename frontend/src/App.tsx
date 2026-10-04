@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { QuestionItem, FilterState, ViewMode, AppView } from './types';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { QuestionItem, FilterState, ViewMode, AppView, Subject } from './types';
 import { AppNavbar } from './components/AppNavbar';
 import { HomePage } from './components/HomePage';
 import { TestMakerPage } from './components/TestMakerPage';
@@ -15,14 +15,17 @@ import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 
 export const App: React.FC = () => {
-  const [questions, setQuestions] = useState<QuestionItem[]>([]);
+  const [chemQuestions, setChemQuestions] = useState<QuestionItem[] | null>(null);
+  const [physQuestions, setPhysQuestions] = useState<QuestionItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // View routing: 'home' | 'chemistry-topical' | 'chemistry-test-maker'
+  // View routing: 'home' | 'chemistry-topical' | 'chemistry-test-maker' | 'physics-topical' | 'physics-test-maker'
   const getInitialView = (): AppView => {
     try {
       const hash = window.location.hash.toLowerCase();
+      if (hash.includes('physics-test-maker') || hash.includes('physics/test-maker')) return 'physics-test-maker';
+      if (hash.includes('physics-topical') || hash.includes('physics/topical') || hash.includes('physics')) return 'physics-topical';
       if (hash.includes('test-maker')) return 'chemistry-test-maker';
       if (hash.includes('topical')) return 'chemistry-topical';
     } catch {
@@ -33,9 +36,15 @@ export const App: React.FC = () => {
 
   const [currentView, setCurrentView] = useState<AppView>(getInitialView);
 
+  const activeSubject: Subject = currentView.startsWith('physics') ? 'physics' : 'chemistry';
+
   const handleNavigate = useCallback((view: AppView) => {
     setCurrentView(view);
-    if (view === 'chemistry-topical') {
+    if (view === 'physics-topical') {
+      window.location.hash = '#/physics/topical';
+    } else if (view === 'physics-test-maker') {
+      window.location.hash = '#/physics/test-maker';
+    } else if (view === 'chemistry-topical') {
       window.location.hash = '#/topical';
     } else if (view === 'chemistry-test-maker') {
       window.location.hash = '#/test-maker';
@@ -48,7 +57,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes('test-maker')) {
+      if (hash.includes('physics-test-maker') || hash.includes('physics/test-maker')) {
+        setCurrentView('physics-test-maker');
+      } else if (hash.includes('physics-topical') || hash.includes('physics/topical') || hash.includes('physics')) {
+        setCurrentView('physics-topical');
+      } else if (hash.includes('test-maker')) {
         setCurrentView('chemistry-test-maker');
       } else if (hash.includes('topical')) {
         setCurrentView('chemistry-topical');
@@ -60,6 +73,28 @@ export const App: React.FC = () => {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // Dynamic Browser Tab Title
+  useEffect(() => {
+    if (currentView === 'physics-topical') {
+      document.title = 'Physics Topicals | Edexcel IAL Topicals';
+    } else if (currentView === 'physics-test-maker') {
+      document.title = 'Physics Test Maker | Edexcel IAL Topicals';
+    } else if (currentView === 'chemistry-topical') {
+      document.title = 'Chemistry Topicals | Edexcel IAL Topicals';
+    } else if (currentView === 'chemistry-test-maker') {
+      document.title = 'Chemistry Test Maker | Edexcel IAL Topicals';
+    } else {
+      document.title = 'Edexcel IAL Topicals';
+    }
+  }, [currentView]);
+
+  const questions = useMemo(() => {
+    if (activeSubject === 'physics') {
+      return physQuestions || [];
+    }
+    return chemQuestions || [];
+  }, [activeSubject, physQuestions, chemQuestions]);
 
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   
@@ -75,8 +110,8 @@ export const App: React.FC = () => {
   } = useProgress();
   const { isAuthModalOpen, closeAuthModal } = useAuth();
 
-  // Persisted custom test maker cart
-  const [testCart, setTestCart] = useState<string[]>(() => {
+  // Persisted custom test maker carts separated by subject
+  const [chemTestCart, setChemTestCart] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('chem_test_cart');
       return saved ? JSON.parse(saved) : [];
@@ -85,13 +120,129 @@ export const App: React.FC = () => {
     }
   });
 
-  const [testTitle, setTestTitle] = useState<string>(() => {
+  const [physTestCart, setPhysTestCart] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('phys_test_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const testCart = activeSubject === 'physics' ? physTestCart : chemTestCart;
+
+  const [chemTestTitle, setChemTestTitle] = useState<string>(() => {
     try {
       return localStorage.getItem('chem_test_title') || 'Custom Chemistry Mock Exam';
     } catch {
       return 'Custom Chemistry Mock Exam';
     }
   });
+
+  const [physTestTitle, setPhysTestTitle] = useState<string>(() => {
+    try {
+      return localStorage.getItem('phys_test_title') || 'Custom Physics Mock Exam';
+    } catch {
+      return 'Custom Physics Mock Exam';
+    }
+  });
+
+  const testTitle = activeSubject === 'physics' ? physTestTitle : chemTestTitle;
+
+  const setTestTitle = useCallback((title: string) => {
+    if (activeSubject === 'physics') {
+      setPhysTestTitle(title);
+    } else {
+      setChemTestTitle(title);
+    }
+  }, [activeSubject]);
+
+  useEffect(() => {
+    localStorage.setItem('chem_test_cart', JSON.stringify(chemTestCart));
+  }, [chemTestCart]);
+
+  useEffect(() => {
+    localStorage.setItem('phys_test_cart', JSON.stringify(physTestCart));
+  }, [physTestCart]);
+
+  useEffect(() => {
+    localStorage.setItem('chem_test_title', chemTestTitle);
+  }, [chemTestTitle]);
+
+  useEffect(() => {
+    localStorage.setItem('phys_test_title', physTestTitle);
+  }, [physTestTitle]);
+
+  const handleAddToCart = useCallback((id: string) => {
+    if (activeSubject === 'physics') {
+      setPhysTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    } else {
+      setChemTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    }
+  }, [activeSubject]);
+
+  const handleRemoveFromCart = useCallback((id: string) => {
+    if (activeSubject === 'physics') {
+      setPhysTestCart((prev) => prev.filter((item) => item !== id));
+    } else {
+      setChemTestCart((prev) => prev.filter((item) => item !== id));
+    }
+  }, [activeSubject]);
+
+  const handleClearCart = useCallback(() => {
+    if (activeSubject === 'physics') {
+      setPhysTestCart([]);
+    } else {
+      setChemTestCart([]);
+    }
+  }, [activeSubject]);
+
+  const handleReorderCart = useCallback((newIds: string[]) => {
+    if (activeSubject === 'physics') {
+      setPhysTestCart(newIds);
+    } else {
+      setChemTestCart(newIds);
+    }
+  }, [activeSubject]);
+
+  // Load dataset.json and dataset_physics.json in parallel
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+
+    const loadChem = fetch('/dataset.json')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load Chemistry dataset: ${res.statusText}`);
+        return res.json();
+      })
+      .then((data: QuestionItem[]) => {
+        if (isMounted) setChemQuestions(data);
+        return data;
+      });
+
+    const loadPhys = fetch('/dataset_physics.json')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load Physics dataset: ${res.statusText}`);
+        return res.json();
+      })
+      .then((data: QuestionItem[]) => {
+        if (isMounted) setPhysQuestions(data);
+        return data;
+      });
+
+    Promise.allSettled([loadChem, loadPhys])
+      .then(([chemRes, physRes]) => {
+        if (!isMounted) return;
+        if (chemRes.status === 'rejected' && physRes.status === 'rejected') {
+          setError('Failed to load datasets.');
+        }
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Active drawer tab: 'all' | 'bookmarked'
   const [activeTab, setActiveTab] = useState<'all' | 'bookmarked'>('all');
@@ -111,53 +262,28 @@ export const App: React.FC = () => {
     bookmarkedOnly: false,
   });
 
-  // Save test cart to localStorage
+  const prevSubjectRef = useRef<Subject>(activeSubject);
   useEffect(() => {
-    localStorage.setItem('chem_test_cart', JSON.stringify(testCart));
-  }, [testCart]);
-
-  useEffect(() => {
-    localStorage.setItem('chem_test_title', testTitle);
-  }, [testTitle]);
-
-  const handleAddToCart = useCallback((id: string) => {
-    setTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
-  }, []);
-
-  const handleRemoveFromCart = useCallback((id: string) => {
-    setTestCart((prev) => prev.filter((item) => item !== id));
-  }, []);
-
-  const handleClearCart = useCallback(() => {
-    setTestCart([]);
-  }, []);
-
-  const handleReorderCart = useCallback((newIds: string[]) => {
-    setTestCart(newIds);
-  }, []);
-
-  // Load dataset.json
-  useEffect(() => {
-    fetch('/dataset.json')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load dataset: ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then((data: QuestionItem[]) => {
-        setQuestions(data);
-        if (data.length > 0) {
-          setSelectedQuestionId(data[0].id);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err.message);
-        setLoading(false);
+    if (prevSubjectRef.current !== activeSubject) {
+      prevSubjectRef.current = activeSubject;
+      setActiveTab('all');
+      setFilters({
+        selectedUnits: [],
+        selectedSubtopics: [],
+        selectedYears: [],
+        selectedSeries: [],
+        searchQuery: '',
+        statusFilter: 'all',
+        questionType: 'all',
+        bookmarkedOnly: false,
       });
-  }, []);
+      if (questions.length > 0) {
+        setSelectedQuestionId(questions[0].id);
+      }
+    } else if (!selectedQuestionId && questions.length > 0) {
+      setSelectedQuestionId(questions[0].id);
+    }
+  }, [activeSubject, questions, selectedQuestionId]);
 
   // Filter options extraction
   const availableUnits = useMemo(() => {
@@ -170,8 +296,8 @@ export const App: React.FC = () => {
 
   // Canonical Specification Hierarchy: subtopics are permanently locked to their official parent topic and unit
   const subtopicHierarchy = useMemo(() => {
-    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions);
-  }, [questions, filters.selectedUnits]);
+    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions, activeSubject);
+  }, [questions, filters.selectedUnits, activeSubject]);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -320,7 +446,7 @@ export const App: React.FC = () => {
   // - B: Toggle Bookmark
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (currentView !== 'chemistry-topical') return;
+      if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical') return;
 
       // Don't trigger shortcuts if typing inside an input or textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -383,7 +509,7 @@ export const App: React.FC = () => {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-        <p className="text-sm font-medium">Loading Edexcel IAL Chemistry Hub...</p>
+        <p className="text-sm font-medium">Loading Edexcel IAL Topicals Hub...</p>
       </div>
     );
   }
@@ -404,17 +530,21 @@ export const App: React.FC = () => {
         onNavigate={handleNavigate}
         cartCount={testCart.length}
         totalQuestions={questions.length}
+        activeSubject={activeSubject}
+        chemCount={chemQuestions?.length ?? 0}
+        physCount={physQuestions?.length ?? 0}
       />
 
       {/* Main View Router */}
       {currentView === 'home' && (
         <HomePage
           onNavigate={handleNavigate}
-          questions={questions}
+          questions={chemQuestions || []}
+          physicsQuestions={physQuestions || []}
         />
       )}
 
-      {currentView === 'chemistry-test-maker' && (
+      {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker') && (
         <TestMakerPage
           questions={questions}
           cartQuestionIds={testCart}
@@ -427,7 +557,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {currentView === 'chemistry-topical' && (
+      {(currentView === 'chemistry-topical' || currentView === 'physics-topical') && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Filter & Search Bar */}
           <TopBar

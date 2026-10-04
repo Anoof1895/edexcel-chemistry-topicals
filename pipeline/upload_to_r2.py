@@ -22,10 +22,26 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Upload question & mark scheme crops to Cloudflare R2"
     )
-    parser.add_argument("--bucket", required=True, help="R2 Bucket name (e.g. edexcel-chemistry-crops)")
-    parser.add_argument("--account-id", required=True, help="Cloudflare Account ID")
-    parser.add_argument("--access-key", required=True, help="R2 Access Key ID")
-    parser.add_argument("--secret-key", required=True, help="R2 Secret Access Key")
+    parser.add_argument(
+        "--bucket",
+        default=os.getenv("R2_BUCKET", "edexcel-chemistry-crops"),
+        help="R2 Bucket name (default: edexcel-chemistry-crops)",
+    )
+    parser.add_argument(
+        "--account-id",
+        default=os.getenv("R2_ACCOUNT_ID", "4d7cfd7388f8a4cbec19e52d0975b565"),
+        help="Cloudflare Account ID",
+    )
+    parser.add_argument(
+        "--access-key",
+        default=os.getenv("R2_ACCESS_KEY", "8d1153fd97b257b53deadb314bb0ff74"),
+        help="R2 Access Key ID",
+    )
+    parser.add_argument(
+        "--secret-key",
+        default=os.getenv("R2_SECRET_KEY", "6017faec2e5cbca7f3f58fbfcabd1705c0dd0e681c7b07b6dde52cca223be38d"),
+        help="R2 Secret Access Key",
+    )
     parser.add_argument(
         "--upload-dir",
         default=None,
@@ -53,23 +69,23 @@ def collect_image_files(base_search_dir: str | None = None):
     files_to_process = []
     seen_keys = set()
 
-    # Priority directories under frontend/public
     public_dir = os.path.abspath("frontend/public")
+    project_root = os.path.abspath(".")
 
     search_dirs = []
     if base_search_dir:
         abs_base = os.path.abspath(base_search_dir)
         search_dirs.append(abs_base)
-        # If user passed crops/ but extracted/ exists, include extracted/ as well
-        extracted_dir = os.path.join(public_dir, "extracted")
-        if abs_base != extracted_dir and os.path.exists(extracted_dir):
-            search_dirs.append(extracted_dir)
     else:
-        # Default scan targets
-        for sub in ["extracted", "crops", "ms_crops"]:
+        # Default scan targets across Chemistry and Physics
+        for sub in ["extracted", "crops", "ms_crops", "crops_physics"]:
             target = os.path.join(public_dir, sub)
             if os.path.exists(target):
                 search_dirs.append(target)
+            elif sub == "crops_physics":
+                root_physics = os.path.join(project_root, "crops_physics")
+                if os.path.exists(root_physics):
+                    search_dirs.append(root_physics)
 
     image_extensions = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -79,13 +95,16 @@ def collect_image_files(base_search_dir: str | None = None):
                 ext = Path(file).suffix.lower()
                 if ext in image_extensions:
                     full_local_path = os.path.join(root, file)
-                    # Compute key relative to frontend/public if inside it, else relative to root_dir
-                    try:
-                        rel = os.path.relpath(full_local_path, public_dir)
-                    except ValueError:
-                        rel = os.path.relpath(full_local_path, root_dir)
+                    normalized_path = full_local_path.replace("\\", "/")
                     
-                    s3_key = rel.replace("\\", "/").lstrip("/")
+                    if "/crops_physics/" in normalized_path:
+                        parts = normalized_path.split("/crops_physics/")
+                        s3_key = f"crops_physics/{parts[-1]}"
+                    elif full_local_path.startswith(public_dir):
+                        s3_key = os.path.relpath(full_local_path, public_dir).replace("\\", "/").lstrip("/")
+                    else:
+                        s3_key = os.path.relpath(full_local_path, project_root).replace("\\", "/").lstrip("/")
+
                     if s3_key not in seen_keys:
                         seen_keys.add(s3_key)
                         files_to_process.append((full_local_path, s3_key))
