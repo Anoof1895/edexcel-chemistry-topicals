@@ -315,6 +315,8 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             badgeColor="cyan"
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
+            enableAnnotation={true}
+            questionId={question.id}
           >
             {/* Interactive MCQ A/B/C/D Tap Zones (Mobile only: md:hidden) */}
             {isMcq && (

@@ -719,6 +719,8 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     badgeText={`${activePreviewQuestion.marks}m`}
                     badgeColor="cyan"
                     placeholderTitle="Question crop missing"
+                    enableAnnotation={true}
+                    questionId={activePreviewQuestion.id}
                   />
                 </div>
               )}
