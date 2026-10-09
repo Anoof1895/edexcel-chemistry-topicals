@@ -11,7 +11,8 @@ import {
   Highlighter,
   Eraser,
   Trash2,
-  Type
+  Type,
+  Undo2
 } from 'lucide-react';
 import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
 
@@ -129,6 +130,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const isDrawingRef = useRef<boolean>(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
   const prevQuestionIdRef = useRef<string | undefined>(questionId);
+  const strokeHistoryRef = useRef<ImageData[]>([]);
+  const [canUndo, setCanUndo] = useState<boolean>(false);
 
   const handleImageError = () => {
     if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
@@ -189,6 +192,24 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       }
     }
   }, [questionId, src]);
+
+  // Undo last drawn stroke
+  const handleUndo = useCallback(() => {
+    if (strokeHistoryRef.current.length === 0) return;
+    const previousSnapshot = strokeHistoryRef.current.pop();
+    if (!previousSnapshot) return;
+
+    setCanUndo(strokeHistoryRef.current.length > 0);
+
+    const activeCanvas = isLightboxOpen ? lightboxCanvasRef.current : canvasRef.current;
+    if (activeCanvas) {
+      const ctx = activeCanvas.getContext('2d');
+      if (ctx) {
+        ctx.putImageData(previousSnapshot, 0, 0);
+        syncDrawingCanvases(activeCanvas);
+      }
+    }
+  }, [isLightboxOpen, syncDrawingCanvases]);
 
   // Commit and save text annotation
   const commitEditingText = useCallback(() => {
@@ -334,6 +355,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     setEditingItem(null);
     editingItemRef.current = null;
     setTextAnnotations([]);
+    strokeHistoryRef.current = [];
+    setCanUndo(false);
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
@@ -358,6 +381,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     if (prevQuestionIdRef.current && prevQuestionIdRef.current !== questionId) {
       inMemoryDrawingCache.delete(prevQuestionIdRef.current);
       inMemoryTextCache.delete(prevQuestionIdRef.current);
+      strokeHistoryRef.current = [];
+      setCanUndo(false);
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
@@ -450,10 +475,16 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       if (e.key === 'Escape' && isLightboxOpen && !editingItemRef.current) {
         closeLightbox();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        if (!editingItemRef.current && isAnnotating && strokeHistoryRef.current.length > 0) {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen]);
+  }, [isLightboxOpen, isAnnotating, handleUndo]);
 
   // Map mouse or touch coordinate to high-res canvas coordinate
   const getCanvasCoords = (
@@ -489,6 +520,20 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     if (currentTool === 'text') return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Snapshot current canvas state before stroke begins for Undo
+    try {
+      if (canvas.width > 0 && canvas.height > 0) {
+        const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        strokeHistoryRef.current.push(snapshot);
+        if (strokeHistoryRef.current.length > 20) {
+          strokeHistoryRef.current.shift();
+        }
+        setCanUndo(true);
+      }
+    } catch {
+      // Ignore potential security/taint issues with external images
+    }
 
     isDrawingRef.current = true;
     lastPosRef.current = { x: coords.x, y: coords.y };
@@ -779,6 +824,22 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           </div>
 
           <div className="w-px h-4 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+
+          {/* Undo Button */}
+          <button
+            type="button"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            title="Undo drawing stroke (Ctrl+Z)"
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+              canUndo
+                ? 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
+                : 'text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed'
+            }`}
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            <span>Undo</span>
+          </button>
 
           {/* Clear Button */}
           <button

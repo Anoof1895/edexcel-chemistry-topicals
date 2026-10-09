@@ -24,7 +24,6 @@ import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
 import { getQuestionType } from '../utils/questionClassification';
 import { ImageCanvas } from './ImageCanvas';
-import { generateQuestionPaperPDF, generateMarkSchemePDF } from '../utils/pdfGenerator';
 
 interface TestMakerPageProps {
   questions: QuestionItem[];
@@ -78,6 +77,18 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
   // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m'
   const [marksFilter, setMarksFilter] = useState<'all' | '1m' | '2-3m' | '4-5m' | '6m'>('all');
+
+  // Debounced search input
+  const [searchInput, setSearchInput] = useState(filters.searchQuery);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (filters.searchQuery !== searchInput) {
+        setFilters((prev) => ({ ...prev, searchQuery: searchInput }));
+        setCurrentPage(1);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchInput, filters.searchQuery]);
 
   // Available filter options
   const availableUnits = useMemo(() => {
@@ -245,6 +256,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     setIsExportingQP(true);
     setExportStatus('Generating Question Paper PDF...');
     try {
+      const { generateQuestionPaperPDF } = await import('../utils/pdfGenerator');
       await generateQuestionPaperPDF({
         title: testTitle || 'Custom Chemistry Mock Exam',
         questions: cartQuestions,
@@ -267,6 +279,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     setIsExportingMS(true);
     setExportStatus('Generating Mark Scheme PDF...');
     try {
+      const { generateMarkSchemePDF } = await import('../utils/pdfGenerator');
       await generateMarkSchemePDF({
         title: testTitle || 'Custom Chemistry Mock Exam',
         questions: cartQuestions,
@@ -346,11 +359,8 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             <input
               type="text"
               placeholder="Search topic, question, or year..."
-              value={filters.searchQuery}
-              onChange={(e) => {
-                setFilters((prev) => ({ ...prev, searchQuery: e.target.value }));
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
@@ -446,6 +456,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setSearchInput('');
                   setFilters({
                     selectedUnits: [],
                     selectedSubtopics: [],

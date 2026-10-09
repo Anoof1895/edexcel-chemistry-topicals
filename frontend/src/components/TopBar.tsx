@@ -49,6 +49,22 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [isSecondaryPopoverOpen, setIsSecondaryPopoverOpen] = useState(false);
   const secondaryPopoverRef = useRef<HTMLDivElement>(null);
 
+  // Debounced search input state
+  const [searchInput, setSearchInput] = useState(filters.searchQuery);
+
+  useEffect(() => {
+    setSearchInput(filters.searchQuery);
+  }, [filters.searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.searchQuery) {
+        onFilterChange({ searchQuery: searchInput });
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchInput, filters.searchQuery, onFilterChange]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (secondaryPopoverRef.current && !secondaryPopoverRef.current.contains(e.target as Node)) {
@@ -195,8 +211,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             <input
               type="text"
               placeholder="Search Q# or topic..."
-              value={filters.searchQuery}
-              onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
@@ -274,8 +290,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             <input
               type="text"
               placeholder="Search topic or Q#..."
-              value={filters.searchQuery}
-              onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
             />
           </div>
@@ -613,8 +629,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <input
                     type="text"
                     placeholder="Search topic, question number, or keyword..."
-                    value={filters.searchQuery}
-                    onChange={(e) => onFilterChange({ searchQuery: e.target.value })}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     className="w-full bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500"
                   />
                 </div>

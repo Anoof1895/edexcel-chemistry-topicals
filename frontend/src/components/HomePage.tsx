@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   FlaskConical, 
   Atom, 
@@ -20,13 +20,24 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physicsQuestions = [] }) => {
-  const chemTotal = questions.length || 5712;
-  const chemPapers = new Set(questions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 142;
-  const chemMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0) || 12850;
+  const { chemTotal, chemPapers, chemMarks, physTotal, physPapers, physMarks } = useMemo(() => {
+    const chemTot = questions.length || 5712;
+    const chemP = new Set(questions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 142;
+    const chemM = questions.reduce((sum, q) => sum + (q.marks || 0), 0) || 12850;
 
-  const physTotal = physicsQuestions.length || 4136;
-  const physPapers = new Set(physicsQuestions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 140;
-  const physMarks = physicsQuestions.reduce((sum, q) => sum + (q.marks || 0), 0) || 10230;
+    const physTot = physicsQuestions.length || 4136;
+    const physP = new Set(physicsQuestions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 140;
+    const physM = physicsQuestions.reduce((sum, q) => sum + (q.marks || 0), 0) || 10230;
+
+    return {
+      chemTotal: chemTot,
+      chemPapers: chemP,
+      chemMarks: chemM,
+      physTotal: physTot,
+      physPapers: physP,
+      physMarks: physM,
+    };
+  }, [questions, physicsQuestions]);
 
   const totalQuestionsCombined = chemTotal + physTotal;
   const totalPapersCombined = chemPapers + physPapers;

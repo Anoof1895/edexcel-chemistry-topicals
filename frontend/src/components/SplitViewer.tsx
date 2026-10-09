@@ -22,6 +22,8 @@ import { useProgress } from '../context/ProgressContext';
 
 interface SplitViewerProps {
   question: QuestionItem | null;
+  prevQuestion?: QuestionItem | null;
+  nextQuestion?: QuestionItem | null;
   allQuestions?: QuestionItem[];
   onSelectQuestionById?: (id: string) => void;
   viewMode: ViewMode;
@@ -42,6 +44,8 @@ interface SplitViewerProps {
 
 export const SplitViewer: React.FC<SplitViewerProps> = ({
   question,
+  prevQuestion,
+  nextQuestion,
   allQuestions,
   onSelectQuestionById,
   viewMode,
@@ -65,6 +69,39 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   const [mobileTab, setMobileTab] = useState<'question' | 'ms'>('question');
   // Student's interactive selection for MCQ items
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
+
+  // Background idle prefetcher for adjacent questions (prev & next)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const prefetchUrls: string[] = [];
+    if (prevQuestion) {
+      if (prevQuestion.questionImagePath) prefetchUrls.push(getFullImageUrl(prevQuestion.questionImagePath));
+      if (prevQuestion.markSchemeImagePath) prefetchUrls.push(getFullImageUrl(prevQuestion.markSchemeImagePath));
+    }
+    if (nextQuestion) {
+      if (nextQuestion.questionImagePath) prefetchUrls.push(getFullImageUrl(nextQuestion.questionImagePath));
+      if (nextQuestion.markSchemeImagePath) prefetchUrls.push(getFullImageUrl(nextQuestion.markSchemeImagePath));
+    }
+
+    if (prefetchUrls.length === 0) return;
+
+    const schedulePrefetch = (window as any).requestIdleCallback || ((cb: () => void) => setTimeout(cb, 100));
+    const handle = schedulePrefetch(() => {
+      prefetchUrls.forEach((url) => {
+        const img = new Image();
+        img.src = url;
+      });
+    });
+
+    return () => {
+      if ((window as any).cancelIdleCallback) {
+        (window as any).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
+      }
+    };
+  }, [prevQuestion?.id, nextQuestion?.id]);
 
   // Sync mobile view and MCQ selection when switching questions
   useEffect(() => {

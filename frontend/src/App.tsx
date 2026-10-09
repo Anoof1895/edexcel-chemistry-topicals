@@ -1,78 +1,111 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { QuestionItem, FilterState, ViewMode, AppView, Subject } from './types';
 import { AppNavbar } from './components/AppNavbar';
-import { HomePage } from './components/HomePage';
-import { TestMakerPage } from './components/TestMakerPage';
 import { TopBar } from './components/TopBar';
 import { buildStaticSubtopicHierarchy } from './constants/taxonomy';
 import { getQuestionType } from './utils/questionClassification';
 import { QuestionList } from './components/QuestionList';
 import { SplitViewer } from './components/SplitViewer';
+import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
 import { AuthModal } from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
 import { useProgress } from './context/ProgressContext';
 import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 
+// Route-level code-splitting for large views
+const HomePage = React.lazy(() => import('./components/HomePage').then((m) => ({ default: m.HomePage })));
+const TestMakerPage = React.lazy(() => import('./components/TestMakerPage').then((m) => ({ default: m.TestMakerPage })));
+
+const ViewLoadingFallback: React.FC = () => (
+  <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500 dark:text-slate-400 gap-3">
+    <Loader2 className="w-7 h-7 text-cyan-500 animate-spin" />
+    <span className="text-xs font-medium">Loading view...</span>
+  </div>
+);
+
+// URL hash router helper: parses view and optional ?q=question_id
+const parseHashRoute = (): { view: AppView; questionId: string | null } => {
+  try {
+    const fullHash = window.location.hash || '';
+    const [hashPath, hashQuery] = fullHash.split('?');
+    const lowerPath = (hashPath || '').toLowerCase();
+
+    let view: AppView = 'home';
+    if (lowerPath.includes('physics-test-maker') || lowerPath.includes('physics/test-maker')) {
+      view = 'physics-test-maker';
+    } else if (lowerPath.includes('physics-topical') || lowerPath.includes('physics/topical') || lowerPath.includes('physics')) {
+      view = 'physics-topical';
+    } else if (lowerPath.includes('test-maker')) {
+      view = 'chemistry-test-maker';
+    } else if (lowerPath.includes('topical')) {
+      view = 'chemistry-topical';
+    }
+
+    let questionId: string | null = null;
+    if (hashQuery) {
+      const params = new URLSearchParams(hashQuery);
+      questionId = params.get('q');
+    }
+
+    return { view, questionId };
+  } catch {
+    return { view: 'home', questionId: null };
+  }
+};
+
 export const App: React.FC = () => {
   const [chemQuestions, setChemQuestions] = useState<QuestionItem[] | null>(null);
   const [physQuestions, setPhysQuestions] = useState<QuestionItem[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingSubject, setLoadingSubject] = useState<Subject | null>(null);
+  const [datasetError, setDatasetError] = useState<string | null>(null);
 
-  // View routing: 'home' | 'chemistry-topical' | 'chemistry-test-maker' | 'physics-topical' | 'physics-test-maker'
-  const getInitialView = (): AppView => {
-    try {
-      const hash = window.location.hash.toLowerCase();
-      if (hash.includes('physics-test-maker') || hash.includes('physics/test-maker')) return 'physics-test-maker';
-      if (hash.includes('physics-topical') || hash.includes('physics/topical') || hash.includes('physics')) return 'physics-topical';
-      if (hash.includes('test-maker')) return 'chemistry-test-maker';
-      if (hash.includes('topical')) return 'chemistry-topical';
-    } catch {
-      // fallback
-    }
-    return 'home';
-  };
-
-  const [currentView, setCurrentView] = useState<AppView>(getInitialView);
+  const initialRoute = useRef(parseHashRoute());
+  const [currentView, setCurrentView] = useState<AppView>(initialRoute.current.view);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialRoute.current.questionId);
 
   const activeSubject: Subject = currentView.startsWith('physics') ? 'physics' : 'chemistry';
 
   const handleNavigate = useCallback((view: AppView) => {
     setCurrentView(view);
     if (view === 'physics-topical') {
-      window.location.hash = '#/physics/topical';
+      window.location.hash = selectedQuestionId ? `#/physics/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/physics/topical';
     } else if (view === 'physics-test-maker') {
       window.location.hash = '#/physics/test-maker';
     } else if (view === 'chemistry-topical') {
-      window.location.hash = '#/topical';
+      window.location.hash = selectedQuestionId ? `#/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/topical';
     } else if (view === 'chemistry-test-maker') {
       window.location.hash = '#/test-maker';
     } else {
       window.location.hash = '#/';
     }
-  }, []);
+  }, [selectedQuestionId]);
 
   // Listen to popstate / hashchange for browser back and forward navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash.includes('physics-test-maker') || hash.includes('physics/test-maker')) {
-        setCurrentView('physics-test-maker');
-      } else if (hash.includes('physics-topical') || hash.includes('physics/topical') || hash.includes('physics')) {
-        setCurrentView('physics-topical');
-      } else if (hash.includes('test-maker')) {
-        setCurrentView('chemistry-test-maker');
-      } else if (hash.includes('topical')) {
-        setCurrentView('chemistry-topical');
-      } else {
-        setCurrentView('home');
+      const { view, questionId } = parseHashRoute();
+      setCurrentView((prev) => (prev !== view ? view : prev));
+      if (questionId) {
+        setSelectedQuestionId(questionId);
       }
     };
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // Sync selected question ID to URL hash in topical view
+  useEffect(() => {
+    if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical') return;
+    if (!selectedQuestionId) return;
+
+    const basePath = currentView === 'physics-topical' ? '#/physics/topical' : '#/topical';
+    const newHash = `${basePath}?q=${encodeURIComponent(selectedQuestionId)}`;
+    if (window.location.hash !== newHash) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [currentView, selectedQuestionId]);
 
   // Dynamic Browser Tab Title
   useEffect(() => {
@@ -96,8 +129,6 @@ export const App: React.FC = () => {
     return chemQuestions || [];
   }, [activeSubject, physQuestions, chemQuestions]);
 
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  
   // Default view: Question Only mode so answers aren't spoiled
   const [viewMode, setViewMode] = useState<ViewMode>('question-only');
 
@@ -205,44 +236,60 @@ export const App: React.FC = () => {
     }
   }, [activeSubject]);
 
-  // Load dataset.json and dataset_physics.json in parallel
+  // On-demand dataset loading per active subject (avoids fetching both concurrently on cold start)
   useEffect(() => {
+    if (currentView === 'home') {
+      return;
+    }
+
     let isMounted = true;
-    setLoading(true);
 
-    const loadChem = fetch('/dataset.json')
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to load Chemistry dataset: ${res.statusText}`);
-        return res.json();
-      })
-      .then((data: QuestionItem[]) => {
-        if (isMounted) setChemQuestions(data);
-        return data;
-      });
-
-    const loadPhys = fetch('/dataset_physics.json')
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to load Physics dataset: ${res.statusText}`);
-        return res.json();
-      })
-      .then((data: QuestionItem[]) => {
-        if (isMounted) setPhysQuestions(data);
-        return data;
-      });
-
-    Promise.allSettled([loadChem, loadPhys])
-      .then(([chemRes, physRes]) => {
-        if (!isMounted) return;
-        if (chemRes.status === 'rejected' && physRes.status === 'rejected') {
-          setError('Failed to load datasets.');
-        }
-        setLoading(false);
-      });
+    if (activeSubject === 'chemistry' && !chemQuestions) {
+      setLoadingSubject('chemistry');
+      setDatasetError(null);
+      fetch('/dataset.json')
+        .then((res) => {
+          if (!res.ok) throw new Error(`Failed to load Chemistry dataset: ${res.statusText}`);
+          return res.json();
+        })
+        .then((data: QuestionItem[]) => {
+          if (isMounted) {
+            setChemQuestions(data);
+            setLoadingSubject(null);
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            setDatasetError(err.message || 'Failed to load Chemistry dataset');
+            setLoadingSubject(null);
+          }
+        });
+    } else if (activeSubject === 'physics' && !physQuestions) {
+      setLoadingSubject('physics');
+      setDatasetError(null);
+      fetch('/dataset_physics.json')
+        .then((res) => {
+          if (!res.ok) throw new Error(`Failed to load Physics dataset: ${res.statusText}`);
+          return res.json();
+        })
+        .then((data: QuestionItem[]) => {
+          if (isMounted) {
+            setPhysQuestions(data);
+            setLoadingSubject(null);
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            setDatasetError(err.message || 'Failed to load Physics dataset');
+            setLoadingSubject(null);
+          }
+        });
+    }
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeSubject, currentView, chemQuestions, physQuestions]);
 
   // Active drawer tab: 'all' | 'bookmarked'
   const [activeTab, setActiveTab] = useState<'all' | 'bookmarked'>('all');
@@ -505,19 +552,31 @@ export const App: React.FC = () => {
     return filteredQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
   }, [filteredQuestions]);
 
-  if (loading) {
+  const isSubjectLoading = currentView !== 'home' && (
+    loadingSubject === activeSubject ||
+    (activeSubject === 'chemistry' && !chemQuestions) ||
+    (activeSubject === 'physics' && !physQuestions)
+  );
+
+  if (isSubjectLoading) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-        <p className="text-sm font-medium">Loading Edexcel IAL Topicals Hub...</p>
+        <p className="text-sm font-medium">Loading {activeSubject === 'physics' ? 'Physics' : 'Chemistry'} past papers & topical taxonomy...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (datasetError && currentView !== 'home' && questions.length === 0) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-rose-500 dark:text-rose-400 gap-3">
-        <p className="text-sm font-medium">Error: {error}</p>
+        <p className="text-sm font-medium">Error: {datasetError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-slate-200 dark:bg-dark-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-dark-750 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -531,30 +590,34 @@ export const App: React.FC = () => {
         cartCount={testCart.length}
         totalQuestions={questions.length}
         activeSubject={activeSubject}
-        chemCount={chemQuestions?.length ?? 0}
-        physCount={physQuestions?.length ?? 0}
+        chemCount={chemQuestions?.length ?? 5712}
+        physCount={physQuestions?.length ?? 4136}
       />
 
       {/* Main View Router */}
       {currentView === 'home' && (
-        <HomePage
-          onNavigate={handleNavigate}
-          questions={chemQuestions || []}
-          physicsQuestions={physQuestions || []}
-        />
+        <React.Suspense fallback={<ViewLoadingFallback />}>
+          <HomePage
+            onNavigate={handleNavigate}
+            questions={chemQuestions || []}
+            physicsQuestions={physQuestions || []}
+          />
+        </React.Suspense>
       )}
 
       {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker') && (
-        <TestMakerPage
-          questions={questions}
-          cartQuestionIds={testCart}
-          onAddToCart={handleAddToCart}
-          onRemoveFromCart={handleRemoveFromCart}
-          onClearCart={handleClearCart}
-          onReorderCart={handleReorderCart}
-          testTitle={testTitle}
-          onSetTestTitle={setTestTitle}
-        />
+        <React.Suspense fallback={<ViewLoadingFallback />}>
+          <TestMakerPage
+            questions={questions}
+            cartQuestionIds={testCart}
+            onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
+            onClearCart={handleClearCart}
+            onReorderCart={handleReorderCart}
+            testTitle={testTitle}
+            onSetTestTitle={setTestTitle}
+          />
+        </React.Suspense>
       )}
 
       {(currentView === 'chemistry-topical' || currentView === 'physics-topical') && (
@@ -591,25 +654,29 @@ export const App: React.FC = () => {
               onCloseDrawer={() => setIsQuestionDrawerOpen(false)}
             />
 
-            <SplitViewer
-              question={activeQuestion}
-              allQuestions={questions}
-              onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
-              viewMode={viewMode}
-              onToggleMarkScheme={handleToggleMarkScheme}
-              onSetViewMode={setViewMode}
-              onPrevQuestion={handlePrevQuestion}
-              onNextQuestion={handleNextQuestion}
-              hasPrev={hasPrev}
-              hasNext={hasNext}
-              currentIndex={currentIndex}
-              totalQuestions={filteredQuestions.length}
-              questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
-              onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
-              isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
-              onToggleBookmark={handleToggleActiveBookmark}
-              onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
-            />
+            <CanvasErrorBoundary>
+              <SplitViewer
+                question={activeQuestion}
+                prevQuestion={hasPrev ? filteredQuestions[currentIndex - 1] : null}
+                nextQuestion={hasNext ? filteredQuestions[currentIndex + 1] : null}
+                allQuestions={questions}
+                onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
+                viewMode={viewMode}
+                onToggleMarkScheme={handleToggleMarkScheme}
+                onSetViewMode={setViewMode}
+                onPrevQuestion={handlePrevQuestion}
+                onNextQuestion={handleNextQuestion}
+                hasPrev={hasPrev}
+                hasNext={hasNext}
+                currentIndex={currentIndex}
+                totalQuestions={filteredQuestions.length}
+                questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
+                onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
+                isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
+                onToggleBookmark={handleToggleActiveBookmark}
+                onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
+              />
+            </CanvasErrorBoundary>
           </div>
         </div>
       )}
