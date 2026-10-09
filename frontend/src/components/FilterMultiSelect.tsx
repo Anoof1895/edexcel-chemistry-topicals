@@ -17,6 +17,8 @@ interface FilterMultiSelectProps {
   showSearch?: boolean;
   align?: 'left' | 'right';
   badgeFontMono?: boolean;
+  fullWidth?: boolean;
+  className?: string;
 }
 
 export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
@@ -29,6 +31,8 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
   showSearch,
   align = 'left',
   badgeFontMono = false,
+  fullWidth = false,
+  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -79,44 +83,55 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
   const shouldShowSearch = showSearch ?? options.length > 5;
 
   return (
-    <div className="relative" ref={popoverRef}>
+    <div className={`relative ${fullWidth ? 'w-full' : ''} ${className}`} ref={popoverRef}>
       {/* Trigger Button */}
       <button
         type="button"
         title={`Filter by ${labelSingular}`}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all select-none ${
+        className={`${
+          fullWidth ? 'w-full' : ''
+        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none ${
           selectedValues.length > 0
             ? 'bg-cyan-50 dark:bg-blue-950/60 border-cyan-400 dark:border-blue-500/50 text-cyan-800 dark:text-blue-200 hover:border-cyan-500 dark:hover:border-blue-400'
             : 'bg-slate-100 dark:bg-dark-800/80 border-slate-200 dark:border-dark-700/80 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-600'
         }`}
       >
-        {icon}
-        <span className="truncate max-w-[130px] sm:max-w-[170px]">
-          {selectedValues.length === 0 ? (
-            `All ${labelPlural}`
-          ) : selectedValues.length === 1 ? (
-            options.find((o) => o.value === selectedValues[0])?.label || `${labelSingular}: ${selectedValues[0]}`
-          ) : (
-            `${selectedValues.length} ${labelPlural} Selected`
-          )}
-        </span>
-
-        {selectedValues.length > 0 && (
-          <span
-            onClick={handleClearAll}
-            title={`Clear ${labelPlural.toLowerCase()}`}
-            className="w-4 h-4 rounded-full bg-cyan-700 dark:bg-blue-800/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] ml-0.5 transition-colors"
-          >
-            <X className="w-2.5 h-2.5" />
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {icon}
+          <span className="truncate text-left">
+            {selectedValues.length === 0 ? (
+              `All ${labelPlural}`
+            ) : selectedValues.length === 1 ? (
+              options.find((o) => o.value === selectedValues[0])?.label || `${labelSingular}: ${selectedValues[0]}`
+            ) : (
+              `${selectedValues.length} ${labelPlural}`
+            )}
           </span>
-        )}
+        </div>
 
-        <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {selectedValues.length > 0 && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleClearAll}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleClearAll(e as any);
+              }}
+              title={`Clear ${labelPlural.toLowerCase()}`}
+              className="w-4 h-4 rounded-full bg-cyan-700 dark:bg-blue-800/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-2.5 h-2.5" />
+            </span>
+          )}
+
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          />
+        </div>
       </button>
 
       {/* Popover Dropdown */}

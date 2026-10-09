@@ -324,7 +324,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       <aside 
         className={`
           border-r border-slate-200 dark:border-dark-800 bg-white/95 md:bg-slate-50/70 dark:bg-dark-900/80 flex flex-col shrink-0 overflow-hidden
-          w-full md:w-80 lg:w-84 xl:w-96
+          w-full md:w-[360px] md:min-w-[350px]
           ${mobileTab === 'pool' ? 'flex flex-1 md:flex-none' : 'hidden md:flex'}
         `}
       >
@@ -340,7 +340,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             </span>
           </div>
 
-          {/* Search Input */}
+          {/* Row 1: Search Input */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
@@ -355,31 +355,38 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             />
           </div>
 
-          {/* Unit & Subtopic Filter Selectors */}
-          <div className="grid grid-cols-2 gap-2">
-            <FilterMultiSelect
-              labelSingular="Unit"
-              labelPlural="Units"
-              icon={<Layers className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />}
-              options={unitOptions}
-              selectedValues={filters.selectedUnits}
-              onChange={(units) => {
-                setFilters((prev) => ({ ...prev, selectedUnits: units }));
-                setCurrentPage(1);
-              }}
-            />
+          {/* Row 2: Unit (40%) & Subtopics (60%) Selectors */}
+          <div className="grid grid-cols-5 gap-2">
+            <div className="col-span-2 min-w-0">
+              <FilterMultiSelect
+                labelSingular="Unit"
+                labelPlural="Units"
+                icon={<Layers className="w-3 h-3 text-cyan-600 dark:text-cyan-400 shrink-0" />}
+                options={unitOptions}
+                selectedValues={filters.selectedUnits}
+                onChange={(units) => {
+                  setFilters((prev) => ({ ...prev, selectedUnits: units }));
+                  setCurrentPage(1);
+                }}
+                fullWidth
+              />
+            </div>
 
-            <SubtopicMultiSelect
-              hierarchy={subtopicHierarchy}
-              selectedSubtopics={filters.selectedSubtopics}
-              onChange={(subs) => {
-                setFilters((prev) => ({ ...prev, selectedSubtopics: subs }));
-                setCurrentPage(1);
-              }}
-            />
+            <div className="col-span-3 min-w-0">
+              <SubtopicMultiSelect
+                hierarchy={subtopicHierarchy}
+                selectedSubtopics={filters.selectedSubtopics}
+                onChange={(subs) => {
+                  setFilters((prev) => ({ ...prev, selectedSubtopics: subs }));
+                  setCurrentPage(1);
+                }}
+                fullWidth
+                align="right"
+              />
+            </div>
           </div>
 
-          {/* Year & Series Selectors */}
+          {/* Row 3: Year (50%) & Series (50%) Selectors */}
           <div className="grid grid-cols-2 gap-2">
             <FilterMultiSelect
               labelSingular="Year"
@@ -392,6 +399,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 setCurrentPage(1);
               }}
               badgeFontMono
+              fullWidth
             />
 
             <FilterMultiSelect
@@ -405,34 +413,61 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 setCurrentPage(1);
               }}
               showSearch={false}
+              fullWidth
+              align="right"
             />
           </div>
 
-          {/* Question Type & Marks Filter Row */}
-          <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-slate-100 dark:border-dark-800/80">
-            {/* Type Switcher */}
-            <div className="flex items-center bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-[10px]">
-              {(['all', 'mcq', 'theory'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    setFilters((prev) => ({ ...prev, questionType: t }));
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2 py-0.5 rounded capitalize font-medium transition-all ${
-                    filters.questionType === t
-                      ? 'bg-cyan-600 text-white font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+          {/* Row 4: Dedicated Question Type & Marks Filter Rows */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-dark-800/80">
+            {/* Line A: Question Type Segmented Switch & Reset */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="grid grid-cols-3 bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-xs font-medium flex-1">
+                {(['all', 'mcq', 'theory'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      setFilters((prev) => ({ ...prev, questionType: t }));
+                      setCurrentPage(1);
+                    }}
+                    className={`py-1 rounded-md capitalize text-center text-xs transition-all ${
+                      filters.questionType === t
+                        ? 'bg-cyan-600 text-white font-bold shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              {/* Reset Filters */}
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({
+                    selectedUnits: [],
+                    selectedSubtopics: [],
+                    selectedYears: [],
+                    selectedSeries: [],
+                    searchQuery: '',
+                    statusFilter: 'all',
+                    questionType: 'all',
+                    bookmarkedOnly: false,
+                  });
+                  setMarksFilter('all');
+                  setCurrentPage(1);
+                }}
+                title="Reset Search Filters"
+                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors shrink-0"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            {/* Marks Filter */}
-            <div className="flex items-center bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-[10px]">
+            {/* Line B: Marks Filter Pills Evenly Spaced */}
+            <div className="grid grid-cols-5 gap-1 bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-xs">
               {(['all', '1m', '2-3m', '4-5m', '6m'] as const).map((m) => (
                 <button
                   key={m}
@@ -441,7 +476,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     setMarksFilter(m);
                     setCurrentPage(1);
                   }}
-                  className={`px-1.5 py-0.5 rounded font-medium transition-all ${
+                  className={`py-1 rounded-md text-center text-xs font-medium transition-all ${
                     marksFilter === m
                       ? 'bg-cyan-600 dark:bg-cyan-500 text-white font-bold shadow-sm'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -451,29 +486,6 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 </button>
               ))}
             </div>
-
-            {/* Reset */}
-            <button
-              type="button"
-              onClick={() => {
-                setFilters({
-                  selectedUnits: [],
-                  selectedSubtopics: [],
-                  selectedYears: [],
-                  selectedSeries: [],
-                  searchQuery: '',
-                  statusFilter: 'all',
-                  questionType: 'all',
-                  bookmarkedOnly: false,
-                });
-                setMarksFilter('all');
-                setCurrentPage(1);
-              }}
-              title="Reset Search Filters"
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
 
