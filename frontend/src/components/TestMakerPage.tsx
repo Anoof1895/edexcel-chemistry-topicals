@@ -16,7 +16,10 @@ import {
   Printer,
   AlertCircle,
   X,
-  Eye
+  Eye,
+  Sparkles,
+  Zap,
+  ChevronDown
 } from 'lucide-react';
 import { QuestionItem, FilterState } from '../types';
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
@@ -24,6 +27,7 @@ import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
 import { getQuestionType } from '../utils/questionClassification';
 import { ImageCanvas } from './ImageCanvas';
+import { useProgress } from '../context/ProgressContext';
 
 interface TestMakerPageProps {
   questions: QuestionItem[];
@@ -34,6 +38,139 @@ interface TestMakerPageProps {
   onReorderCart: (newIds: string[]) => void;
   testTitle: string;
   onSetTestTitle: (title: string) => void;
+}
+
+export type SmartGenerateMode = 'balanced' | 'review_first' | 'unattempted_only';
+
+export function autoGenerateExam(
+  pool: QuestionItem[],
+  targetMarks: number,
+  mode: SmartGenerateMode,
+  questionStatuses: Record<string, string> = {}
+): { selected: QuestionItem[]; actualMarks: number } {
+  if (pool.length === 0) return { selected: [], actualMarks: 0 };
+
+  const validPool = pool.filter((q) => (q.marks || 0) > 0);
+  if (validPool.length === 0) return { selected: [], actualMarks: 0 };
+
+  let candidates: QuestionItem[] = [...validPool];
+
+  if (mode === 'unattempted_only') {
+    const unattempted = validPool.filter((q) => {
+      const st = questionStatuses[q.id];
+      return !st || st === 'unattempted';
+    });
+    if (unattempted.length > 0) {
+      candidates = unattempted;
+    }
+  }
+
+  const shuffle = <T,>(arr: T[]): T[] => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const runPass = () => {
+    let prioritized: QuestionItem[] = [];
+
+    if (mode === 'review_first') {
+      const reviewQs = shuffle(candidates.filter((q) => questionStatuses[q.id] === 'review' || questionStatuses[q.id] === 'incorrect'));
+      const unattemptedQs = shuffle(candidates.filter((q) => !questionStatuses[q.id] || questionStatuses[q.id] === 'unattempted'));
+      const masteredQs = shuffle(candidates.filter((q) => questionStatuses[q.id] === 'mastered' || questionStatuses[q.id] === 'correct'));
+      prioritized = [...reviewQs, ...unattemptedQs, ...masteredQs];
+    } else if (mode === 'balanced') {
+      const mcqs = shuffle(candidates.filter((q) => getQuestionType(q) === 'mcq'));
+      const theory = shuffle(candidates.filter((q) => getQuestionType(q) !== 'mcq'));
+
+      const targetMcqMarks = Math.round(targetMarks * 0.22);
+      let mcqMarksAcc = 0;
+      const chosenMcqs: QuestionItem[] = [];
+      for (const q of mcqs) {
+        if (mcqMarksAcc + (q.marks || 0) <= targetMcqMarks + 1) {
+          chosenMcqs.push(q);
+          mcqMarksAcc += q.marks;
+        }
+      }
+
+      const shortTheory = shuffle(theory.filter((q) => (q.marks || 0) <= 3));
+      const medTheory = shuffle(theory.filter((q) => (q.marks || 0) >= 4 && (q.marks || 0) <= 5));
+      const longTheory = shuffle(theory.filter((q) => (q.marks || 0) >= 6));
+
+      const interleavedTheory: QuestionItem[] = [];
+      const maxLen = Math.max(shortTheory.length, medTheory.length, longTheory.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (i < shortTheory.length) interleavedTheory.push(shortTheory[i]);
+        if (i < medTheory.length) interleavedTheory.push(medTheory[i]);
+        if (i < longTheory.length) interleavedTheory.push(longTheory[i]);
+      }
+
+      prioritized = [...chosenMcqs, ...interleavedTheory];
+    } else {
+      prioritized = shuffle(candidates);
+    }
+
+    const selected: QuestionItem[] = [];
+    const usedIds = new Set<string>();
+    let currentMarks = 0;
+
+    for (const q of prioritized) {
+      if (usedIds.has(q.id)) continue;
+      const m = q.marks || 0;
+      if (currentMarks + m <= targetMarks + 2) {
+        selected.push(q);
+        usedIds.add(q.id);
+        currentMarks += m;
+      }
+      if (Math.abs(currentMarks - targetMarks) <= 2) {
+        break;
+      }
+    }
+
+    if (targetMarks - currentMarks >= 1) {
+      for (const q of prioritized) {
+        if (usedIds.has(q.id)) continue;
+        const m = q.marks || 0;
+        if (currentMarks + m <= targetMarks + 2) {
+          selected.push(q);
+          usedIds.add(q.id);
+          currentMarks += m;
+          if (Math.abs(currentMarks - targetMarks) <= 2) break;
+        }
+      }
+    }
+
+    return { selected, currentMarks };
+  };
+
+  let bestSelected: QuestionItem[] = [];
+  let bestDiff = Infinity;
+  let bestMarks = 0;
+
+  for (let trial = 0; trial < 40; trial++) {
+    const { selected, currentMarks } = runPass();
+    const diff = Math.abs(currentMarks - targetMarks);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestSelected = selected;
+      bestMarks = currentMarks;
+    }
+    if (diff === 0) break;
+  }
+
+  const sorted = [...bestSelected].sort((a, b) => {
+    const aType = getQuestionType(a);
+    const bType = getQuestionType(b);
+    if (aType === 'mcq' && bType !== 'mcq') return -1;
+    if (aType !== 'mcq' && bType === 'mcq') return 1;
+    if (a.unit !== b.unit) return a.unit.localeCompare(b.unit);
+    return a.questionNumber.localeCompare(b.questionNumber, undefined, { numeric: true });
+  });
+
+  return { selected: sorted, actualMarks: bestMarks };
 }
 
 const PAGE_SIZE = 15;
@@ -77,6 +214,14 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
   // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m'
   const [marksFilter, setMarksFilter] = useState<'all' | '1m' | '2-3m' | '4-5m' | '6m'>('all');
+
+  // Smart Auto-Generate Mock Exam State
+  const [targetMarks, setTargetMarks] = useState<number>(80);
+  const [generateMode, setGenerateMode] = useState<SmartGenerateMode>('balanced');
+  const [isSmartGenerateOpen, setIsSmartGenerateOpen] = useState<boolean>(true);
+  const [lastGeneratedInfo, setLastGeneratedInfo] = useState<string | null>(null);
+
+  const { questionStatuses } = useProgress();
 
   // Debounced search input
   const [searchInput, setSearchInput] = useState(filters.searchQuery);
@@ -231,6 +376,25 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   const targetTimeMinutes = useMemo(() => {
     return Math.round(totalCartMarks * 1.2);
   }, [totalCartMarks]);
+
+  const handleSmartGenerate = () => {
+    const pool = filteredPool.length > 0 ? filteredPool : questions;
+    if (pool.length === 0) {
+      alert('No questions available in the current filter pool. Please clear some filters.');
+      return;
+    }
+    const { selected, actualMarks } = autoGenerateExam(pool, targetMarks, generateMode, questionStatuses);
+    if (selected.length === 0) {
+      alert('Could not match questions to target marks. Please broaden your filters.');
+      return;
+    }
+    const newIds = selected.map((q) => q.id);
+    onReorderCart(newIds);
+    setPreviewQuestionId(newIds[0]);
+    const unitDescriptor = filters.selectedUnits.length > 0 ? filters.selectedUnits.join(' & ') : 'Complete Specification';
+    onSetTestTitle(`${unitDescriptor} Mock Exam (${actualMarks}m)`);
+    setLastGeneratedInfo(`${selected.length} Qs • ${actualMarks}m`);
+  };
 
   const handleMoveUp = (index: number) => {
     if (index <= 0) return;
@@ -873,6 +1037,126 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 {targetTimeMinutes}m
               </div>
             </div>
+          </div>
+
+          {/* Smart Auto-Generate Mock Exam Panel */}
+          <div className="rounded-xl border border-amber-500/30 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 transition-all">
+            <button
+              type="button"
+              onClick={() => setIsSmartGenerateOpen(!isSmartGenerateOpen)}
+              className="w-full flex items-center justify-between text-left focus:outline-none"
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                </span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                  ⚡ Smart Auto-Generate
+                </span>
+                {lastGeneratedInfo && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                    {lastGeneratedInfo}
+                  </span>
+                )}
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                  isSmartGenerateOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isSmartGenerateOpen && (
+              <div className="mt-2.5 space-y-2 pt-2 border-t border-amber-200/50 dark:border-amber-900/30">
+                {/* Target Marks Presets */}
+                <div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-1">
+                    <span>Target Paper Marks</span>
+                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{targetMarks} marks</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { marks: 25, label: '25m', desc: 'Mini Quiz' },
+                      { marks: 50, label: '50m', desc: 'Unit 3/6' },
+                      { marks: 80, label: '80m', desc: 'AS Paper' },
+                      { marks: 90, label: '90m', desc: 'IA2 Paper' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.marks}
+                        type="button"
+                        onClick={() => setTargetMarks(preset.marks)}
+                        className={`py-1 px-1 rounded text-center transition-all border ${
+                          targetMarks === preset.marks
+                            ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-sm'
+                            : 'bg-white/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-750 hover:bg-amber-50 dark:hover:bg-dark-750'
+                        }`}
+                      >
+                        <div className="text-[11px] font-mono leading-tight">{preset.label}</div>
+                        <div
+                          className={`text-[8.5px] leading-tight truncate ${
+                            targetMarks === preset.marks ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {preset.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selection Modes */}
+                <div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-1">
+                    Selection Mode
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(
+                      [
+                        { id: 'balanced', label: 'Balanced Mix' },
+                        { id: 'review_first', label: 'Review First' },
+                        { id: 'unattempted_only', label: 'Unattempted' },
+                      ] as const
+                    ).map((mode) => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setGenerateMode(mode.id)}
+                        className={`py-1 px-1 text-[10px] rounded text-center font-medium transition-all border ${
+                          generateMode === mode.id
+                            ? 'bg-cyan-500 text-white font-semibold border-cyan-600 shadow-sm'
+                            : 'bg-white/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-750 hover:bg-cyan-50 dark:hover:bg-dark-750'
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions: Generate & Reshuffle */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSmartGenerate}
+                    className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <span>Generate Test ({targetMarks}m)</span>
+                  </button>
+
+                  {cartQuestions.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleSmartGenerate}
+                      title="Reshuffle with current settings"
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-750 bg-white dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

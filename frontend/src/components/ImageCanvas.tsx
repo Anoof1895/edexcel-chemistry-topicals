@@ -18,7 +18,19 @@ import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
 
 // Module-scoped in-memory cache for annotations across view mode toggles / remounts
 // Kept purely in RAM; zero localStorage, sessionStorage, or backend persistence
+const MAX_CACHE_ENTRIES = 30;
 const inMemoryDrawingCache = new Map<string, HTMLCanvasElement>();
+
+function enforceCacheLimit<K, V>(map: Map<K, V>, limit: number = MAX_CACHE_ENTRIES) {
+  while (map.size > limit) {
+    const firstKey = map.keys().next().value;
+    if (firstKey !== undefined) {
+      map.delete(firstKey);
+    } else {
+      break;
+    }
+  }
+}
 
 export interface TextAnnotation {
   id: string;
@@ -168,6 +180,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     if (!offscreen) {
       offscreen = document.createElement('canvas');
       inMemoryDrawingCache.set(cacheKey, offscreen);
+      enforceCacheLimit(inMemoryDrawingCache);
     }
     if (offscreen.width !== sourceCanvas.width || offscreen.height !== sourceCanvas.height) {
       offscreen.width = sourceCanvas.width;
@@ -222,7 +235,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     if (trimmed.length === 0) {
       setTextAnnotations((prev) => {
         const next = prev.filter((item) => item.id !== current.id);
-        if (cacheKey) inMemoryTextCache.set(cacheKey, next);
+        if (cacheKey) {
+          inMemoryTextCache.set(cacheKey, next);
+          enforceCacheLimit(inMemoryTextCache);
+        }
         return next;
       });
     } else {
@@ -234,7 +250,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
         } else {
           next = [...prev, { ...current, text: current.text }];
         }
-        if (cacheKey) inMemoryTextCache.set(cacheKey, next);
+        if (cacheKey) {
+          inMemoryTextCache.set(cacheKey, next);
+          enforceCacheLimit(inMemoryTextCache);
+        }
         return next;
       });
     }
@@ -251,7 +270,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     setTextAnnotations((prev) => {
       const next = prev.filter((item) => item.id !== id);
       const cacheKey = questionId || src;
-      if (cacheKey) inMemoryTextCache.set(cacheKey, next);
+      if (cacheKey) {
+        inMemoryTextCache.set(cacheKey, next);
+        enforceCacheLimit(inMemoryTextCache);
+      }
       return next;
     });
   }, [questionId, src]);
@@ -423,6 +445,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     setHasError(false);
     setUseLocalFallback(false);
     setZoom(1);
+    strokeHistoryRef.current = [];
+    setCanUndo(false);
     syncCanvasDimensions();
   }, [src, syncCanvasDimensions]);
 
@@ -526,7 +550,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       if (canvas.width > 0 && canvas.height > 0) {
         const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
         strokeHistoryRef.current.push(snapshot);
-        if (strokeHistoryRef.current.length > 20) {
+        if (strokeHistoryRef.current.length > 10) {
           strokeHistoryRef.current.shift();
         }
         setCanUndo(true);
@@ -828,6 +852,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           {/* Undo Button */}
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleUndo}
             disabled={!canUndo}
             title="Undo drawing stroke (Ctrl+Z)"
@@ -844,6 +869,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           {/* Clear Button */}
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleClearCanvas}
             title="Clear all annotations on this question"
             className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
@@ -860,10 +886,15 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const renderTextAnnotations = (isLightbox: boolean) => {
     if (!enableAnnotation) return null;
 
+    const activeImg = isLightbox ? lightboxImgRef.current : imgRef.current;
+    const currentWidth = activeImg?.clientWidth || (isLightbox ? 900 : 700);
+    const scaleFactor = Math.max(0.6, Math.min(2.0, currentWidth / 700));
+
     return (
       <>
         {textAnnotations.map((item) => {
           if (editingItem?.id === item.id) return null;
+          const displayFontSize = Math.round(item.fontSize * scaleFactor);
           return (
             <div
               key={item.id}
@@ -893,7 +924,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               style={{
                 left: `${item.xPercent}%`,
                 top: `${item.yPercent}%`,
-                fontSize: `${item.fontSize}px`,
+                fontSize: `${displayFontSize}px`,
               }}
               title={
                 isAnnotating
@@ -924,9 +955,13 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             onBlur={commitEditingText}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
                 e.preventDefault();
                 commitEditingText();
               } else if (e.key === 'Escape') {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
                 e.preventDefault();
                 commitEditingText();
               }
@@ -940,7 +975,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             style={{
               left: `${editingItem.xPercent}%`,
               top: `${editingItem.yPercent}%`,
-              fontSize: `${editingItem.fontSize}px`,
+              fontSize: `${Math.round(editingItem.fontSize * scaleFactor)}px`,
               width: `${Math.max(8, editingItem.text.length + 1)}ch`,
               maxWidth: '90%',
             }}

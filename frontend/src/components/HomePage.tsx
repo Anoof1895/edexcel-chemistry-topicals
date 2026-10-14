@@ -22,8 +22,8 @@ interface HomePageProps {
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physicsQuestions = [] }) => {
   const { chemTotal, chemPapers, chemMarks, physTotal, physPapers, physMarks } = useMemo(() => {
     const chemTot = questions.length || 5712;
-    const chemP = new Set(questions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 142;
-    const chemM = questions.reduce((sum, q) => sum + (q.marks || 0), 0) || 12850;
+    const chemP = new Set(questions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 140;
+    const chemM = questions.reduce((sum, q) => sum + (q.marks || 0), 0) || 10041;
 
     const physTot = physicsQuestions.length || 4136;
     const physP = new Set(physicsQuestions.map((q) => q.paperId || `${q.unitCode}_${q.year}_${q.session}`)).size || 140;
@@ -310,7 +310,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physi
           <div className="flex flex-wrap items-center gap-3">
             <span>Chemistry (Units 1–6)</span>
             <span>•</span>
-            <span>Physics (Units 1–2)</span>
+            <span>Physics (Units 1–6)</span>
             <span>•</span>
             <button 
               onClick={() => onNavigate('chemistry-topical')} 

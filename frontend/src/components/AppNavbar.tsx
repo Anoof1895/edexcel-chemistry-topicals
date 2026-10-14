@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   LogIn,
-  LogOut
+  LogOut,
+  BookOpen
 } from 'lucide-react';
 import { AppView, Subject } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -26,6 +27,7 @@ interface AppNavbarProps {
   activeSubject?: Subject;
   chemCount?: number;
   physCount?: number;
+  onOpenDataBooklet?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -35,7 +37,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   totalQuestions = 5712,
   activeSubject = 'chemistry',
   chemCount = 5712,
-  physCount = 4136
+  physCount = 4136,
+  onOpenDataBooklet
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -168,6 +171,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               )}
             </button>
           </nav>
+
+          {/* Official Data Booklet & Formula Sheet Trigger */}
+          {onOpenDataBooklet && (
+            <button
+              type="button"
+              onClick={onOpenDataBooklet}
+              title="Official Pearson IAL Formula Sheet & Data Booklet (Press 'D')"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 hover:bg-cyan-100 dark:hover:bg-cyan-500/25 transition-all active:scale-95 shadow-xs"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <span className="hidden xl:inline">Data &amp; Formulae</span>
+              <span className="xl:hidden">Data</span>
+              <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-cyan-200/60 dark:bg-cyan-400/20 text-cyan-800 dark:text-cyan-200 font-bold border border-cyan-400/30">
+                D
+              </span>
+            </button>
+          )}
 
           {/* Theme Toggle Button (Desktop/Tablet) */}
           <button
@@ -506,6 +526,29 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </span>
               )}
             </button>
+
+            {/* Official Data Booklet in Mobile Drawer */}
+            {onOpenDataBooklet && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenDataBooklet();
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-800 dark:text-cyan-200 hover:bg-cyan-500/20 text-sm font-semibold transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <BookOpen className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                  <div className="flex flex-col text-left">
+                    <span>Data &amp; Formula Booklet</span>
+                    <span className="text-[11px] opacity-75 font-normal">Official IAL constants &amp; equations</span>
+                  </div>
+                </div>
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-cyan-500/20 font-bold border border-cyan-500/30">
+                  D
+                </span>
+              </button>
+            )}
 
             {/* Theme Toggle in Mobile Drawer */}
             <button

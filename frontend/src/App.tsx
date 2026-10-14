@@ -7,6 +7,7 @@ import { getQuestionType } from './utils/questionClassification';
 import { QuestionList } from './components/QuestionList';
 import { SplitViewer } from './components/SplitViewer';
 import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
+import { DataBookletDrawer } from './components/DataBookletDrawer';
 import { AuthModal } from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
 import { useProgress } from './context/ProgressContext';
@@ -59,6 +60,33 @@ export const App: React.FC = () => {
   const [physQuestions, setPhysQuestions] = useState<QuestionItem[] | null>(null);
   const [loadingSubject, setLoadingSubject] = useState<Subject | null>(null);
   const [datasetError, setDatasetError] = useState<string | null>(null);
+  const [isDataBookletOpen, setIsDataBookletOpen] = useState<boolean>(false);
+  const [isDataBookletExpanded, setIsDataBookletExpanded] = useState<boolean>(false);
+
+  // Global keyboard shortcut: 'D' to toggle Official Data Booklet Drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setIsDataBookletOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const initialRoute = useRef(parseHashRoute());
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.current.view);
@@ -495,8 +523,15 @@ export const App: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical') return;
 
-      // Don't trigger shortcuts if typing inside an input or textarea
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      // Don't trigger shortcuts if typing inside an input, textarea, select, or contenteditable
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
         return;
       }
 
@@ -507,9 +542,11 @@ export const App: React.FC = () => {
         e.preventDefault();
         handleNextQuestion();
       } else if (e.key === ' ' || e.code === 'Space' || e.key === 'm' || e.key === 'M') {
+        if (e.repeat) return;
         e.preventDefault();
         handleToggleMarkScheme();
       } else if (e.key === 'b' || e.key === 'B') {
+        if (e.repeat) return;
         e.preventDefault();
         handleToggleActiveBookmark();
       }
@@ -592,6 +629,7 @@ export const App: React.FC = () => {
         activeSubject={activeSubject}
         chemCount={chemQuestions?.length ?? 5712}
         physCount={physQuestions?.length ?? 4136}
+        onOpenDataBooklet={() => setIsDataBookletOpen(true)}
       />
 
       {/* Main View Router */}
@@ -606,22 +644,28 @@ export const App: React.FC = () => {
       )}
 
       {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker') && (
-        <React.Suspense fallback={<ViewLoadingFallback />}>
-          <TestMakerPage
-            questions={questions}
-            cartQuestionIds={testCart}
-            onAddToCart={handleAddToCart}
-            onRemoveFromCart={handleRemoveFromCart}
-            onClearCart={handleClearCart}
-            onReorderCart={handleReorderCart}
-            testTitle={testTitle}
-            onSetTestTitle={setTestTitle}
-          />
-        </React.Suspense>
+        <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
+          isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+        }`}>
+          <React.Suspense fallback={<ViewLoadingFallback />}>
+            <TestMakerPage
+              questions={questions}
+              cartQuestionIds={testCart}
+              onAddToCart={handleAddToCart}
+              onRemoveFromCart={handleRemoveFromCart}
+              onClearCart={handleClearCart}
+              onReorderCart={handleReorderCart}
+              testTitle={testTitle}
+              onSetTestTitle={setTestTitle}
+            />
+          </React.Suspense>
+        </div>
       )}
 
       {(currentView === 'chemistry-topical' || currentView === 'physics-topical') && (
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
+          isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+        }`}>
           {/* Top Filter & Search Bar */}
           <TopBar
             filters={filters}
@@ -681,6 +725,12 @@ export const App: React.FC = () => {
         </div>
       )}
 
+      <DataBookletDrawer
+        isOpen={isDataBookletOpen}
+        onClose={() => setIsDataBookletOpen(false)}
+        activeSubject={activeSubject}
+        onExpandedChange={setIsDataBookletExpanded}
+      />
       <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
       <Analytics />
     </div>
