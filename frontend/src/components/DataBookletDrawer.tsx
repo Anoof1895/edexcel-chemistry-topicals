@@ -234,7 +234,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     return ELECTRODE_POTENTIALS.filter(
       (item) =>
         item.equation.toLowerCase().includes(query) ||
-        item.potential.toLowerCase().includes(query)
+        item.potential.toLowerCase().includes(query) ||
+        (item.latex && item.latex.toLowerCase().includes(query))
     );
   }, [query]);
 
@@ -345,7 +346,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>Physics (Appendix 8 &amp; 9)</span>
+                <span>Physics (Appendix 7 &amp; 8)</span>
               </button>
               <button
                 type="button"
@@ -1018,39 +1019,69 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
 
           {subject === 'chemistry' && chemistryTab === 'redox' && (
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
-                <span>Standard Electrode Potentials at 298 K (Page 104)</span>
-                <span>{filteredRedox.length} half-equations</span>
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1 border-b border-slate-200/60 dark:border-dark-800">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Standard Electrode Potentials at 298 K (Page 104)
+                </span>
+                <span className="font-mono text-[11px]">{filteredRedox.length} of 31 half-equations</span>
               </div>
-              <div className="space-y-1.5">
+
+              {/* High-Density Specification Table */}
+              <div className="border border-slate-200 dark:border-dark-750 rounded-xl overflow-hidden divide-y divide-slate-200/70 dark:divide-dark-800 bg-white dark:bg-dark-900 shadow-xs">
                 {filteredRedox.map((item) => {
                   const id = `redox-${item.id}`;
                   const isCopied = copiedId === id;
                   const isPositive = item.numericValue > 0;
                   const isZero = item.numericValue === 0;
+                  const isSHE = item.id === 11 || isZero;
 
                   return (
                     <div
                       key={item.id}
-                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 flex items-center justify-between gap-3 text-xs group hover:border-cyan-500/40 transition-all"
+                      className={`px-3 py-2 flex items-center justify-between gap-3 text-xs group transition-colors ${
+                        isSHE
+                          ? 'bg-cyan-50/70 dark:bg-cyan-950/25 ring-1 ring-inset ring-cyan-500/40'
+                          : 'hover:bg-slate-50/80 dark:hover:bg-dark-850/60'
+                      }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono text-[10px] text-slate-400 w-5 shrink-0">
-                          #{item.id}
+                      {/* Left Column: Subtle Index Badge + KaTeX Half-Equation */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span
+                          className={`font-mono text-[10px] w-5 h-5 rounded flex items-center justify-center shrink-0 font-bold ${
+                            isSHE
+                              ? 'bg-cyan-500 text-white'
+                              : 'bg-slate-100 dark:bg-dark-800 text-slate-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {item.id}
                         </span>
-                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate">
-                          {item.equation}
-                        </span>
+
+                        <div className="overflow-x-auto overflow-y-hidden py-0.5 select-text min-w-0 text-slate-900 dark:text-slate-100">
+                          {item.latex ? (
+                            <MathFormula latex={item.latex} displayMode={false} className="text-[12.5px] sm:text-[13px]" />
+                          ) : (
+                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                              {item.equation}
+                            </span>
+                          )}
+                        </div>
+
+                        {isSHE && (
+                          <span className="hidden sm:inline-flex items-center text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700/50 shrink-0">
+                            SHE Reference
+                          </span>
+                        )}
                       </div>
 
+                      {/* Right Column: Color-coded Voltage Pill + Copy Button */}
                       <div className="flex items-center gap-2 shrink-0">
                         <span
-                          className={`font-mono font-bold text-xs px-2 py-0.5 rounded border ${
+                          className={`font-mono font-bold text-xs px-2.5 py-0.5 rounded-full border shadow-2xs ${
                             isZero
-                              ? 'bg-slate-200 dark:bg-dark-750 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-dark-600'
+                              ? 'bg-cyan-100/70 dark:bg-cyan-950/50 text-cyan-800 dark:text-cyan-200 border-cyan-400/60 dark:border-cyan-500/50 font-extrabold'
                               : isPositive
-                              ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
-                              : 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-500/30'
+                              ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-500/30'
+                              : 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-300/80 dark:border-rose-500/30'
                           }`}
                         >
                           {item.potential} V
@@ -1058,10 +1089,10 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                         <button
                           type="button"
                           onClick={() => copyToClipboard(`${item.equation}  E° = ${item.potential} V`, id)}
-                          className="p-1 rounded bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 opacity-60 group-hover:opacity-100 transition-all"
-                          title="Copy half-equation"
+                          className="p-1 rounded-md bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 opacity-60 group-hover:opacity-100 transition-all"
+                          title="Copy half-equation and E°"
                         >
-                          {isCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>

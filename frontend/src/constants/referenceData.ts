@@ -46,6 +46,7 @@ export interface ChemicalShiftItem {
 export interface ElectrodePotentialItem {
   id: number;
   equation: string;
+  latex?: string;
   potential: string; // E° / V
   numericValue: number;
 }
@@ -317,39 +318,37 @@ export const CARBON_NMR_SHIFTS: ChemicalShiftItem[] = [
 ];
 
 export const ELECTRODE_POTENTIALS: ElectrodePotentialItem[] = [
-  { id: 1, equation: 'Li⁺ + e⁻ ⇌ Li', potential: '-3.04', numericValue: -3.04 },
-  { id: 2, equation: 'K⁺ + e⁻ ⇌ K', potential: '-2.92', numericValue: -2.92 },
-  { id: 3, equation: 'Ca²⁺ + 2e⁻ ⇌ Ca', potential: '-2.87', numericValue: -2.87 },
-  { id: 4, equation: 'Na⁺ + e⁻ ⇌ Na', potential: '-2.71', numericValue: -2.71 },
-  { id: 5, equation: 'Mg²⁺ + 2e⁻ ⇌ Mg', potential: '-2.38', numericValue: -2.38 },
-  { id: 6, equation: 'Al³⁺ + 3e⁻ ⇌ Al', potential: '-1.66', numericValue: -1.66 },
-  { id: 7, equation: 'Mn²⁺ + 2e⁻ ⇌ Mn', potential: '-1.18', numericValue: -1.18 },
-  { id: 8, equation: 'V²⁺ + 2e⁻ ⇌ V', potential: '-1.20', numericValue: -1.20 },
-  { id: 9, equation: '2H₂O + 2e⁻ ⇌ H₂ + 2OH⁻', potential: '-0.83', numericValue: -0.83 },
-  { id: 10, equation: 'Zn²⁺ + 2e⁻ ⇌ Zn', potential: '-0.76', numericValue: -0.76 },
-  { id: 11, equation: 'Cr³⁺ + 3e⁻ ⇌ Cr', potential: '-0.74', numericValue: -0.74 },
-  { id: 12, equation: 'Fe²⁺ + 2e⁻ ⇌ Fe', potential: '-0.44', numericValue: -0.44 },
-  { id: 13, equation: 'Cr³⁺ + e⁻ ⇌ Cr²⁺', potential: '-0.41', numericValue: -0.41 },
-  { id: 14, equation: 'Ni²⁺ + 2e⁻ ⇌ Ni', potential: '-0.25', numericValue: -0.25 },
-  { id: 15, equation: 'Sn²⁺ + 2e⁻ ⇌ Sn', potential: '-0.14', numericValue: -0.14 },
-  { id: 16, equation: 'Pb²⁺ + 2e⁻ ⇌ Pb', potential: '-0.13', numericValue: -0.13 },
-  { id: 17, equation: 'Fe³⁺ + 3e⁻ ⇌ Fe', potential: '-0.04', numericValue: -0.04 },
-  { id: 18, equation: '2H⁺ + 2e⁻ ⇌ H₂ (Standard Reference)', potential: '0.00', numericValue: 0.00 },
-  { id: 19, equation: 'V³⁺ + e⁻ ⇌ V²⁺', potential: '-0.26', numericValue: -0.26 },
-  { id: 20, equation: 'SO₄²⁻ + 4H⁺ + 2e⁻ ⇌ H₂SO₃ + H₂O', potential: '+0.17', numericValue: 0.17 },
-  { id: 21, equation: 'Cu²⁺ + 2e⁻ ⇌ Cu', potential: '+0.34', numericValue: 0.34 },
-  { id: 22, equation: 'VO²⁺ + 2H⁺ + e⁻ ⇌ V³⁺ + H₂O', potential: '+0.34', numericValue: 0.34 },
-  { id: 23, equation: 'I₂ + 2e⁻ ⇌ 2I⁻', potential: '+0.54', numericValue: 0.54 },
-  { id: 24, equation: 'O₂ + 2H₂O + 4e⁻ ⇌ 4OH⁻', potential: '+0.40', numericValue: 0.40 },
-  { id: 25, equation: 'Fe³⁺ + e⁻ ⇌ Fe²⁺', potential: '+0.77', numericValue: 0.77 },
-  { id: 26, equation: 'Ag⁺ + e⁻ ⇌ Ag', potential: '+0.80', numericValue: 0.80 },
-  { id: 27, equation: 'NO₃⁻ + 2H⁺ + e⁻ ⇌ NO₂ + H₂O', potential: '+0.80', numericValue: 0.80 },
-  { id: 28, equation: 'Br₂ + 2e⁻ ⇌ 2Br⁻', potential: '+1.09', numericValue: 1.09 },
-  { id: 29, equation: 'O₂ + 4H⁺ + 4e⁻ ⇌ 2H₂O', potential: '+1.23', numericValue: 1.23 },
-  { id: 30, equation: 'Cr₂O₇²⁻ + 14H⁺ + 6e⁻ ⇌ 2Cr³⁺ + 7H₂O', potential: '+1.33', numericValue: 1.33 },
-  { id: 31, equation: 'Cl₂ + 2e⁻ ⇌ 2Cl⁻', potential: '+1.36', numericValue: 1.36 },
-  { id: 32, equation: 'MnO₄⁻ + 8H⁺ + 5e⁻ ⇌ Mn²⁺ + 4H₂O', potential: '+1.51', numericValue: 1.51 },
-  { id: 33, equation: 'H₂O₂ + 2H⁺ + 2e⁻ ⇌ 2H₂O', potential: '+1.77', numericValue: 1.77 },
+  { id: 1, equation: 'Na⁺ + e⁻ ⇌ Na', latex: '\\text{Na}^+ + \\text{e}^- \\rightleftharpoons \\text{Na}', potential: '-2.71', numericValue: -2.71 },
+  { id: 2, equation: 'Mg²⁺ + 2e⁻ ⇌ Mg', latex: '\\text{Mg}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{Mg}', potential: '-2.37', numericValue: -2.37 },
+  { id: 3, equation: 'Al³⁺ + 3e⁻ ⇌ Al', latex: '\\text{Al}^{3+} + 3\\text{e}^- \\rightleftharpoons \\text{Al}', potential: '-1.66', numericValue: -1.66 },
+  { id: 4, equation: 'V²⁺ + 2e⁻ ⇌ V', latex: '\\text{V}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{V}', potential: '-1.18', numericValue: -1.18 },
+  { id: 5, equation: 'Zn²⁺ + 2e⁻ ⇌ Zn', latex: '\\text{Zn}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{Zn}', potential: '-0.76', numericValue: -0.76 },
+  { id: 6, equation: 'Cr³⁺ + 3e⁻ ⇌ Cr', latex: '\\text{Cr}^{3+} + 3\\text{e}^- \\rightleftharpoons \\text{Cr}', potential: '-0.74', numericValue: -0.74 },
+  { id: 7, equation: 'Fe²⁺ + 2e⁻ ⇌ Fe', latex: '\\text{Fe}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{Fe}', potential: '-0.44', numericValue: -0.44 },
+  { id: 8, equation: 'Cr³⁺ + e⁻ ⇌ Cr²⁺', latex: '\\text{Cr}^{3+} + \\text{e}^- \\rightleftharpoons \\text{Cr}^{2+}', potential: '-0.41', numericValue: -0.41 },
+  { id: 9, equation: 'V³⁺ + e⁻ ⇌ V²⁺', latex: '\\text{V}^{3+} + \\text{e}^- \\rightleftharpoons \\text{V}^{2+}', potential: '-0.26', numericValue: -0.26 },
+  { id: 10, equation: 'Ni²⁺ + 2e⁻ ⇌ Ni', latex: '\\text{Ni}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{Ni}', potential: '-0.25', numericValue: -0.25 },
+  { id: 11, equation: 'H⁺ + e⁻ ⇌ 1/2 H₂', latex: '\\text{H}^+ + \\text{e}^- \\rightleftharpoons \\tfrac{1}{2}\\text{H}_2', potential: '0.00', numericValue: 0.00 },
+  { id: 12, equation: 'S₄O₆²⁻ + 2e⁻ ⇌ 2S₂O₃²⁻', latex: '\\text{S}_4\\text{O}_6^{2-} + 2\\text{e}^- \\rightleftharpoons 2\\text{S}_2\\text{O}_3^{2-}', potential: '+0.09', numericValue: 0.09 },
+  { id: 13, equation: 'Cu²⁺ + e⁻ ⇌ Cu⁺', latex: '\\text{Cu}^{2+} + \\text{e}^- \\rightleftharpoons \\text{Cu}^+', potential: '+0.15', numericValue: 0.15 },
+  { id: 14, equation: 'Cu²⁺ + 2e⁻ ⇌ Cu', latex: '\\text{Cu}^{2+} + 2\\text{e}^- \\rightleftharpoons \\text{Cu}', potential: '+0.34', numericValue: 0.34 },
+  { id: 15, equation: 'VO²⁺ + 2H⁺ + e⁻ ⇌ V³⁺ + H₂O', latex: '\\text{VO}^{2+} + 2\\text{H}^+ + \\text{e}^- \\rightleftharpoons \\text{V}^{3+} + \\text{H}_2\\text{O}', potential: '+0.34', numericValue: 0.34 },
+  { id: 16, equation: 'O₂ + 2H₂O + 4e⁻ ⇌ 4OH⁻', latex: '\\text{O}_2 + 2\\text{H}_2\\text{O} + 4\\text{e}^- \\rightleftharpoons 4\\text{OH}^-', potential: '+0.40', numericValue: 0.40 },
+  { id: 17, equation: 'S₂O₃²⁻ + 6H⁺ + 4e⁻ ⇌ 2S + 3H₂O', latex: '\\text{S}_2\\text{O}_3^{2-} + 6\\text{H}^+ + 4\\text{e}^- \\rightleftharpoons 2\\text{S} + 3\\text{H}_2\\text{O}', potential: '+0.47', numericValue: 0.47 },
+  { id: 18, equation: 'Cu⁺ + e⁻ ⇌ Cu', latex: '\\text{Cu}^+ + \\text{e}^- \\rightleftharpoons \\text{Cu}', potential: '+0.52', numericValue: 0.52 },
+  { id: 19, equation: 'I₂ + 2e⁻ ⇌ 2I⁻', latex: '\\text{I}_2 + 2\\text{e}^- \\rightleftharpoons 2\\text{I}^-', potential: '+0.54', numericValue: 0.54 },
+  { id: 20, equation: 'O₂ + 2H⁺ + 2e⁻ ⇌ H₂O₂', latex: '\\text{O}_2 + 2\\text{H}^+ + 2\\text{e}^- \\rightleftharpoons \\text{H}_2\\text{O}_2', potential: '+0.68', numericValue: 0.68 },
+  { id: 21, equation: 'Fe³⁺ + e⁻ ⇌ Fe²⁺', latex: '\\text{Fe}^{3+} + \\text{e}^- \\rightleftharpoons \\text{Fe}^{2+}', potential: '+0.77', numericValue: 0.77 },
+  { id: 22, equation: 'Ag⁺ + e⁻ ⇌ Ag', latex: '\\text{Ag}^+ + \\text{e}^- \\rightleftharpoons \\text{Ag}', potential: '+0.80', numericValue: 0.80 },
+  { id: 23, equation: 'NO₃⁻ + 2H⁺ + e⁻ ⇌ NO₂ + H₂O', latex: '\\text{NO}_3^- + 2\\text{H}^+ + \\text{e}^- \\rightleftharpoons \\text{NO}_2 + \\text{H}_2\\text{O}', potential: '+0.80', numericValue: 0.80 },
+  { id: 24, equation: 'ClO⁻ + H₂O + 2e⁻ ⇌ Cl⁻ + 2OH⁻', latex: '\\text{ClO}^- + \\text{H}_2\\text{O} + 2\\text{e}^- \\rightleftharpoons \\text{Cl}^- + 2\\text{OH}^-', potential: '+0.89', numericValue: 0.89 },
+  { id: 25, equation: 'VO₂⁺ + 2H⁺ + e⁻ ⇌ VO²⁺ + H₂O', latex: '\\text{VO}_2^+ + 2\\text{H}^+ + \\text{e}^- \\rightleftharpoons \\text{VO}^{2+} + \\text{H}_2\\text{O}', potential: '+1.00', numericValue: 1.00 },
+  { id: 26, equation: 'Br₂ + 2e⁻ ⇌ 2Br⁻', latex: '\\text{Br}_2 + 2\\text{e}^- \\rightleftharpoons 2\\text{Br}^-', potential: '+1.09', numericValue: 1.09 },
+  { id: 27, equation: 'O₂ + 4H⁺ + 4e⁻ ⇌ 2H₂O', latex: '\\text{O}_2 + 4\\text{H}^+ + 4\\text{e}^- \\rightleftharpoons 2\\text{H}_2\\text{O}', potential: '+1.23', numericValue: 1.23 },
+  { id: 28, equation: 'Cr₂O₇²⁻ + 14H⁺ + 6e⁻ ⇌ 2Cr³⁺ + 7H₂O', latex: '\\text{Cr}_2\\text{O}_7^{2-} + 14\\text{H}^+ + 6\\text{e}^- \\rightleftharpoons 2\\text{Cr}^{3+} + 7\\text{H}_2\\text{O}', potential: '+1.33', numericValue: 1.33 },
+  { id: 29, equation: 'Cl₂ + 2e⁻ ⇌ 2Cl⁻', latex: '\\text{Cl}_2 + 2\\text{e}^- \\rightleftharpoons 2\\text{Cl}^-', potential: '+1.36', numericValue: 1.36 },
+  { id: 30, equation: 'MnO₄⁻ + 8H⁺ + 5e⁻ ⇌ Mn²⁺ + 4H₂O', latex: '\\text{MnO}_4^- + 8\\text{H}^+ + 5\\text{e}^- \\rightleftharpoons \\text{Mn}^{2+} + 4\\text{H}_2\\text{O}', potential: '+1.51', numericValue: 1.51 },
+  { id: 31, equation: 'H₂O₂ + 2H⁺ + 2e⁻ ⇌ 2H₂O', latex: '\\text{H}_2\\text{O}_2 + 2\\text{H}^+ + 2\\text{e}^- \\rightleftharpoons 2\\text{H}_2\\text{O}', potential: '+1.77', numericValue: 1.77 },
 ];
 
 export const PERIODIC_ELEMENTS: PeriodicElement[] = [
