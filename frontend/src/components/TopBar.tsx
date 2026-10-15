@@ -211,7 +211,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="relative z-40 h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
+      <header className="relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -602,7 +602,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* ===================================================================== */}
       {isMobileDrawerOpen && (
         <div 
-          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-sm lg:hidden flex justify-end animate-in fade-in duration-150"
+          className="fixed inset-0 z-[60] bg-black/60 dark:bg-black/70 backdrop-blur-sm lg:hidden flex justify-end animate-in fade-in duration-150"
           onClick={() => setIsMobileDrawerOpen(false)}
         >
           <div 

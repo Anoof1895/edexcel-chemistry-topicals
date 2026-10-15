@@ -622,7 +622,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* Full Question Modal / Drawer */}
       {isFullQuestionOpen && (
         <div 
-          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-sm flex justify-end animate-in fade-in duration-150 select-text"
+          className="fixed inset-0 z-[60] bg-black/60 dark:bg-black/75 backdrop-blur-sm flex justify-end animate-in fade-in duration-150 select-text"
           onClick={() => setIsFullQuestionOpen(false)}
         >
           <div 

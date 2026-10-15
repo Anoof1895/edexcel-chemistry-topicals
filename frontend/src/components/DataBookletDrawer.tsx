@@ -500,7 +500,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex justify-end bg-transparent select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-[60] flex justify-end bg-transparent select-none animate-in fade-in duration-150"
       onClick={onClose}
     >
       {/* Drawer Container */}

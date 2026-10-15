@@ -1134,7 +1134,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Full-Screen Lightbox Modal */}
       {isLightboxOpen && src && !hasError && (
         <div 
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col animate-in fade-in duration-150"
+          className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-md flex flex-col animate-in fade-in duration-150"
           onClick={closeLightbox}
         >
           {/* Lightbox Header */}

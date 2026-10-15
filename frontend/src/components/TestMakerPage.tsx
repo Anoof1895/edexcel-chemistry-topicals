@@ -443,7 +443,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
         `}
       >
         {/* Filter Controls Header */}
-        <div className="p-3 sm:p-3.5 border-b border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 space-y-2.5">
+        <div className="p-3 sm:p-3.5 border-b border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 space-y-2.5 relative z-30">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />

@@ -105,7 +105,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
   return (
     <>
-      <header className="h-14 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 z-30 relative transition-colors">
+      <header className="h-14 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
         {/* Brand Logo & Name */}
         <div 
           onClick={() => handleNavClick('home')}
