@@ -54,6 +54,12 @@ def parse_args():
         help="Number of concurrent worker threads (default: 25)",
     )
     parser.add_argument(
+        "--subject",
+        choices=["all", "chemistry", "physics", "math"],
+        default="all",
+        help="Filter uploads by subject: all, chemistry, physics, or math (default: all)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Preview files to upload without making network requests",
@@ -61,7 +67,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def collect_image_files(base_search_dir: str | None = None):
+def collect_image_files(base_search_dir: str | None = None, subject: str = "all"):
     """
     Collects all question and mark scheme image files to upload.
     Returns a list of (absolute_local_path, s3_key).
@@ -77,15 +83,23 @@ def collect_image_files(base_search_dir: str | None = None):
         abs_base = os.path.abspath(base_search_dir)
         search_dirs.append(abs_base)
     else:
-        # Default scan targets across Chemistry and Physics
-        for sub in ["extracted", "crops", "ms_crops", "crops_physics"]:
+        # Default scan targets across Chemistry, Physics, and Mathematics
+        targets = []
+        if subject in ("all", "chemistry"):
+            targets.extend(["extracted", "crops", "ms_crops"])
+        if subject in ("all", "physics"):
+            targets.append("crops_physics")
+        if subject in ("all", "math"):
+            targets.append("crops_math")
+
+        for sub in targets:
             target = os.path.join(public_dir, sub)
             if os.path.exists(target):
                 search_dirs.append(target)
-            elif sub == "crops_physics":
-                root_physics = os.path.join(project_root, "crops_physics")
-                if os.path.exists(root_physics):
-                    search_dirs.append(root_physics)
+            elif sub in ("crops_physics", "crops_math"):
+                root_target = os.path.join(project_root, sub)
+                if os.path.exists(root_target):
+                    search_dirs.append(root_target)
 
     image_extensions = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -100,6 +114,9 @@ def collect_image_files(base_search_dir: str | None = None):
                     if "/crops_physics/" in normalized_path:
                         parts = normalized_path.split("/crops_physics/")
                         s3_key = f"crops_physics/{parts[-1]}"
+                    elif "/crops_math/" in normalized_path:
+                        parts = normalized_path.split("/crops_math/")
+                        s3_key = f"crops_math/{parts[-1]}"
                     elif full_local_path.startswith(public_dir):
                         s3_key = os.path.relpath(full_local_path, public_dir).replace("\\", "/").lstrip("/")
                     else:
@@ -147,7 +164,7 @@ def main():
     )
 
     # 1. Collect candidate files
-    candidates = collect_image_files(args.upload_dir)
+    candidates = collect_image_files(args.upload_dir, subject=args.subject)
     print(f"Discovered {len(candidates):,} local image assets.")
     if not candidates:
         print("No image assets found to upload. Exiting.")

@@ -4,7 +4,9 @@
  * Falls back to local relative paths (e.g. /extracted/questions/...) when unset.
  */
 export const IMAGE_BASE_URL: string = (
-  import.meta.env.VITE_IMAGE_BASE_URL || ''
+  import.meta.env.VITE_R2_PUBLIC_URL ||
+  import.meta.env.VITE_IMAGE_BASE_URL ||
+  ''
 ).replace(/\/+$/, '');
 
 /**
@@ -13,7 +15,7 @@ export const IMAGE_BASE_URL: string = (
  * Override with a comma-separated VITE_IMAGE_CDN_PREFIXES, e.g. "/extracted/,/crops_physics/".
  */
 export const IMAGE_CDN_PREFIXES: string[] = (
-  import.meta.env.VITE_IMAGE_CDN_PREFIXES || '/extracted/,/crops_physics/'
+  import.meta.env.VITE_IMAGE_CDN_PREFIXES || '/extracted/,/crops_physics/,/crops_math/'
 )
   .split(',')
   .map((p: string) => p.trim())
@@ -36,6 +38,14 @@ export function getLocalImageUrl(path: string | null | undefined): string {
 export function getFullImageUrl(path: string | null | undefined): string {
   const cleanPath = getLocalImageUrl(path);
   if (!cleanPath || cleanPath.startsWith('http')) return cleanPath;
+
+  // When running in local dev, allow loading newly extracted crops directly from local server
+  if (import.meta.env.DEV) {
+    if (cleanPath.startsWith('/crops_math/')) {
+      return cleanPath;
+    }
+  }
+
   if (!IMAGE_BASE_URL) return cleanPath;
   const onCdn = IMAGE_CDN_PREFIXES.some((prefix) => cleanPath.startsWith(prefix));
   return onCdn ? `${IMAGE_BASE_URL}${cleanPath}` : cleanPath;

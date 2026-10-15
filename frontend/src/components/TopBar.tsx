@@ -77,6 +77,27 @@ export const TopBar: React.FC<TopBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isSecondaryPopoverOpen]);
 
+  // Detect if Mathematics is active
+  const isMath = useMemo(() => {
+    return (
+      allQuestions?.some(
+        (q) =>
+          q.unitCode?.startsWith('WMA') ||
+          q.unitCode?.startsWith('WME') ||
+          q.unitCode?.startsWith('WST')
+      ) ||
+      availableUnits.some(
+        (u) =>
+          u.startsWith('WMA') ||
+          u.startsWith('WME') ||
+          u.startsWith('WST') ||
+          u.includes('Pure') ||
+          u.includes('Mechanics 1') ||
+          u.includes('Statistics 1')
+      )
+    );
+  }, [allQuestions, availableUnits]);
+
   // Precompute options with question counts
   const unitOptions: FilterOption[] = useMemo(() => {
     const counts = new Map<string, number>();
@@ -190,7 +211,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 z-20 transition-colors">
+      <header className="relative z-40 h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -313,42 +334,44 @@ export const TopBar: React.FC<TopBarProps> = ({
             onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
           />
 
-          {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch */}
-          <div className="flex items-center bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 p-0.5 rounded-lg text-xs shrink-0">
-            <button
-              type="button"
-              onClick={() => onFilterChange({ questionType: 'all' })}
-              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
-                filters.questionType === 'all'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => onFilterChange({ questionType: 'mcq' })}
-              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
-                filters.questionType === 'mcq'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              MCQ
-            </button>
-            <button
-              type="button"
-              onClick={() => onFilterChange({ questionType: 'theory' })}
-              className={`px-2 py-0.5 rounded-md transition-all font-medium ${
-                filters.questionType === 'theory'
-                  ? 'bg-cyan-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              Theory
-            </button>
-          </div>
+          {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
+          {!isMath && (
+            <div className="flex items-center bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 p-0.5 rounded-lg text-xs shrink-0">
+              <button
+                type="button"
+                onClick={() => onFilterChange({ questionType: 'all' })}
+                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                  filters.questionType === 'all'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => onFilterChange({ questionType: 'mcq' })}
+                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                  filters.questionType === 'mcq'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                MCQ
+              </button>
+              <button
+                type="button"
+                onClick={() => onFilterChange({ questionType: 'theory' })}
+                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                  filters.questionType === 'theory'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                Theory
+              </button>
+            </div>
+          )}
 
           {/* Consolidate Secondary Filters into "Filters" Popover */}
           <div className="relative shrink-0" ref={secondaryPopoverRef}>
@@ -696,28 +719,30 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </div>
               </div>
 
-              {/* Question Type Filter */}
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1.5">
-                  Question Format
-                </label>
-                <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-dark-800 p-1 rounded-xl border border-slate-200 dark:border-dark-750 text-xs">
-                  {(['all', 'mcq', 'theory'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => onFilterChange({ questionType: t })}
-                      className={`py-2 rounded-lg font-bold capitalize transition-all ${
-                        filters.questionType === t
-                          ? 'bg-cyan-600 text-white shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      {t === 'all' ? 'All' : t.toUpperCase()}
-                    </button>
-                  ))}
+              {/* Question Type Filter - Hidden in Mathematics */}
+              {!isMath && (
+                <div>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1.5">
+                    Question Format
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-dark-800 p-1 rounded-xl border border-slate-200 dark:border-dark-750 text-xs">
+                    {(['all', 'mcq', 'theory'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => onFilterChange({ questionType: t })}
+                        className={`py-2 rounded-lg font-bold capitalize transition-all ${
+                          filters.questionType === t
+                            ? 'bg-cyan-600 text-white shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        {t === 'all' ? 'All' : t.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Status Filter */}
               <div>

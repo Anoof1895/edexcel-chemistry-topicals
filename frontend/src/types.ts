@@ -61,14 +61,16 @@ export interface FilterState {
   series?: string;
 }
 
-export type Subject = 'chemistry' | 'physics';
+export type Subject = 'chemistry' | 'physics' | 'mathematics';
 
 export type AppView = 
   | 'home' 
   | 'chemistry-topical' 
   | 'chemistry-test-maker'
   | 'physics-topical'
-  | 'physics-test-maker';
+  | 'physics-test-maker'
+  | 'mathematics-topical'
+  | 'mathematics-test-maker';
 
 export interface TestPaperConfig {
   title: string;

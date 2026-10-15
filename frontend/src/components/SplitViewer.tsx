@@ -127,7 +127,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         return samePaper && sameParent;
       })
       .sort((a, b) =>
-        a.questionNumber.localeCompare(b.questionNumber, undefined, {
+        (a.questionNumber || '').localeCompare(b.questionNumber || '', undefined, {
           numeric: true,
           sensitivity: 'base',
         })
@@ -164,7 +164,16 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     || (question as any).correctAnswer 
     || (question as any).key;
 
-  const isMcq = qType === 'mcq' || !!mcqAnswer;
+  const isMath = 
+    question.unitCode?.startsWith('WMA') || 
+    question.unitCode?.startsWith('WME') || 
+    question.unitCode?.startsWith('WST') || 
+    question.questionImagePath?.includes('/crops_math/') ||
+    (question as any).paperId?.toLowerCase().startsWith('wma') ||
+    (question as any).paperId?.toLowerCase().startsWith('wme') ||
+    (question as any).paperId?.toLowerCase().startsWith('wst');
+
+  const isMcq = !isMath && (qType === 'mcq' || !!mcqAnswer);
   const normalizedKey = mcqAnswer ? String(mcqAnswer).trim().toUpperCase() : '';
   const isMcqAnswerRevealed = isMarkSchemeVisible || mobileTab === 'ms' || selectedMcqOption !== null;
 
@@ -204,7 +213,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           >
             <List className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="font-mono font-bold">
-              Q{question.questionNumber}
+              Q{question.questionNumber || (question as any).question_number || question.id?.split('_').pop()?.replace(/^q/i, '') || ''}
             </span>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
               ({currentIndex + 1}/{totalQuestions})
@@ -213,7 +222,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
           {/* Question ID Badge (shown on desktop >= 1024px) */}
           <span className="hidden lg:inline-flex font-mono font-bold text-xs tracking-tight text-cyan-700 dark:text-cyan-300 px-2 py-0.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 shrink-0">
-            Q{question.questionNumber}
+            Q{question.questionNumber || (question as any).question_number || question.id?.split('_').pop()?.replace(/^q/i, '') || ''}
           </span>
 
           {/* Marks Badge */}
@@ -221,16 +230,18 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             {question.marks}m
           </span>
 
-          {/* Question Type Badge */}
-          <span
-            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0 ${
-              qType === 'mcq'
-                ? 'bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30'
-                : 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30'
-            }`}
-          >
-            {qType === 'mcq' ? 'MCQ' : 'Theory'}
-          </span>
+          {/* Question Type Badge (Omitted for Mathematics) */}
+          {!isMath && (
+            <span
+              className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0 ${
+                qType === 'mcq'
+                  ? 'bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30'
+                  : 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30'
+              }`}
+            >
+              {qType === 'mcq' ? 'MCQ' : 'Theory'}
+            </span>
+          )}
 
           {/* MCQ Answer Key Badge in Header - only shown once revealed (anti-spoiler) */}
           {isMcq && mcqAnswer && isMcqAnswerRevealed && (
@@ -245,7 +256,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           {/* Paper Series & Year */}
           <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
             <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500" />
-            {question.series || question.session} {question.year}
+            {question.series && question.year && question.series.includes(String(question.year))
+              ? question.series
+              : `${question.series || question.session} ${question.year}`}
           </span>
 
           {/* Cleanly Truncated Topic & Subtopic */}
@@ -630,7 +643,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                     </span>
                   </h2>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    {question.unit} • {question.series || question.session} {question.year}
+                    {question.unit} • {question.series && question.year && question.series.includes(String(question.year))
+                      ? question.series
+                      : `${question.series || question.session} ${question.year}`}
                   </p>
                 </div>
               </div>

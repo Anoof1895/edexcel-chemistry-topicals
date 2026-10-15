@@ -398,12 +398,334 @@ export const OFFICIAL_IAL_PHYSICS_TAXONOMY: UnitDefinition[] = [
   },
 ];
 
+export const OFFICIAL_IAL_MATHEMATICS_TAXONOMY: UnitDefinition[] = [
+  {
+    unitCode: 'WMA11',
+    unitName: 'Unit 1: Pure Mathematics 1 (P1)',
+    title: 'Pure Mathematics 1 (P1)',
+    topics: [
+      {
+        topicName: 'Topic 1: Algebra and Functions',
+        subtopics: [
+          '1.1: Laws of Indices & Surds',
+          '1.2: Quadratic Functions, Discriminant & Completing the Square',
+          '1.3: Simultaneous Equations & Inequalities',
+          '1.4: Polynomials, Curve Sketching & Transformations',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Coordinate Geometry in the (x, y) Plane',
+        subtopics: [
+          '2.1: Straight Lines, Gradients, Parallel & Perpendicular Lines',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Trigonometry',
+        subtopics: [
+          '3.1: Sine & Cosine Rules, Area of a Triangle',
+          '3.2: Radian Measure, Arc Length & Sector Area',
+          '3.3: Trigonometric Graphs & Periodicity',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Differentiation',
+        subtopics: [
+          '4.1: Derivatives of x^n, First & Second Order Derivatives',
+          '4.2: Gradients, Tangents, Normals & Rates of Change',
+        ],
+      },
+      {
+        topicName: 'Topic 5: Integration',
+        subtopics: [
+          '5.1: Indefinite Integration of x^n & Finding Equations of Curves',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WMA12',
+    unitName: 'Unit 2: Pure Mathematics 2 (P2)',
+    title: 'Pure Mathematics 2 (P2)',
+    topics: [
+      {
+        topicName: 'Topic 1: Proof',
+        subtopics: [
+          '1.1: Structure of Proof, Proof by Exhaustion & Counter-Example',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Algebra and Functions',
+        subtopics: [
+          '2.1: Algebraic Division, Factor & Remainder Theorems',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Coordinate Geometry in the (x, y) Plane',
+        subtopics: [
+          '3.1: Coordinate Geometry of the Circle',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Sequences and Series',
+        subtopics: [
+          '4.1: Nth Term & Recurrence Relations',
+          '4.2: Arithmetic Sequences & Series',
+          '4.3: Geometric Sequences, Series & Sum to Infinity',
+          '4.4: Binomial Expansion for Positive Integer n',
+        ],
+      },
+      {
+        topicName: 'Topic 5: Exponentials and Logarithms',
+        subtopics: [
+          '5.1: Exponential Functions, Laws of Logarithms & Equations a^x = b',
+        ],
+      },
+      {
+        topicName: 'Topic 6: Trigonometry',
+        subtopics: [
+          '6.1: Trigonometric Identities & Equations in a Given Interval',
+        ],
+      },
+      {
+        topicName: 'Topic 7: Differentiation',
+        subtopics: [
+          '7.1: Stationary Points, Maxima/Minima & Increasing/Decreasing Functions',
+        ],
+      },
+      {
+        topicName: 'Topic 8: Integration',
+        subtopics: [
+          '8.1: Definite Integrals & Area Under/Between Curves',
+          '8.2: Trapezium Rule',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WMA13',
+    unitName: 'Unit 3: Pure Mathematics 3 (P3)',
+    title: 'Pure Mathematics 3 (P3)',
+    topics: [
+      {
+        topicName: 'Topic 1: Algebra and Functions',
+        subtopics: [
+          '1.1: Rational Expressions & Algebraic Division',
+          '1.2: Functions, Domain/Range, Composite & Inverse Functions',
+          '1.3: Modulus Function & Combinations of Transformations',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Trigonometry',
+        subtopics: [
+          '2.1: Secant, Cosecant, Cotangent & Inverse Trig Functions',
+          '2.2: Compound Angle, Double Angle & R sin/cos(θ ± α) Formulae',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Exponentials and Logarithms',
+        subtopics: [
+          '3.1: e^x, ln x & Logarithmic Graphs (Linear Reduction)',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Differentiation',
+        subtopics: [
+          '4.1: Differentiating e^kx, ln x, Trig Functions',
+          '4.2: Product, Quotient, Chain Rules & dx/dy',
+          '4.3: Exponential Growth & Decay Modelling',
+        ],
+      },
+      {
+        topicName: 'Topic 5: Integration',
+        subtopics: [
+          '5.1: Integrating e^kx, 1/x, Trig Functions & Reverse Chain Rule',
+        ],
+      },
+      {
+        topicName: 'Topic 6: Numerical Methods',
+        subtopics: [
+          '6.1: Change of Sign & Fixed-Point Iteration x_{n+1} = f(x_n)',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WMA14',
+    unitName: 'Unit 4: Pure Mathematics 4 (P4)',
+    title: 'Pure Mathematics 4 (P4)',
+    topics: [
+      {
+        topicName: 'Topic 1: Proof',
+        subtopics: [
+          '1.1: Proof by Contradiction',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Algebra and Functions',
+        subtopics: [
+          '2.1: Partial Fractions',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Coordinate Geometry in the (x, y) Plane',
+        subtopics: [
+          '3.1: Parametric Equations & Cartesian Conversion',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Binomial Expansion',
+        subtopics: [
+          '4.1: Binomial Series for Rational n & Partial Fraction Expansions',
+        ],
+      },
+      {
+        topicName: 'Topic 5: Differentiation',
+        subtopics: [
+          '5.1: Implicit & Parametric Differentiation',
+          '5.2: Connected Rates of Change & Differential Equations',
+        ],
+      },
+      {
+        topicName: 'Topic 6: Integration',
+        subtopics: [
+          '6.1: Volumes of Revolution & Parametric Area',
+          '6.2: Integration by Substitution, Parts & Partial Fractions',
+          '6.3: First-Order Separable Differential Equations',
+        ],
+      },
+      {
+        topicName: 'Topic 7: Vectors',
+        subtopics: [
+          '7.1: 2D/3D Vectors, Magnitude, Position Vectors & Distance',
+          '7.2: Vector Equations of Lines, Intersecting/Skew Lines & Scalar Product',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WME01',
+    unitName: 'Unit 5: Mechanics 1 (M1)',
+    title: 'Mechanics 1 (M1)',
+    topics: [
+      {
+        topicName: 'Topic 1: Mathematical Models & Vectors in Mechanics',
+        subtopics: [
+          '1.1: Modelling Assumptions & 2D Vectors (Velocity, Acceleration, Force)',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Kinematics of a Particle Moving in a Straight Line',
+        subtopics: [
+          '2.1: Constant Acceleration Formulae (SUVAT) & Motion Graphs',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Dynamics of a Particle',
+        subtopics: [
+          '3.1: Newton\'s Laws, Inclined Planes, Friction & Connected Particles/Pulleys',
+          '3.2: Momentum, Impulse & Conservation of Linear Momentum',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Statics of a Particle',
+        subtopics: [
+          '4.1: Equilibrium of Coplanar Forces, Tension, Thrust & Limiting Friction',
+        ],
+      },
+      {
+        topicName: 'Topic 5: Moments',
+        subtopics: [
+          '5.1: Moments of Coplanar Parallel Forces & Equilibrium of Rigid Rods',
+        ],
+      },
+    ],
+  },
+  {
+    unitCode: 'WST01',
+    unitName: 'Unit 6: Statistics 1 (S1)',
+    title: 'Statistics 1 (S1)',
+    topics: [
+      {
+        topicName: 'Topic 1: Representation and Summary of Data',
+        subtopics: [
+          '1.1: Histograms, Stem & Leaf Diagrams, Box Plots & Outliers',
+          '1.2: Measures of Location & Dispersion, Coding & Skewness',
+        ],
+      },
+      {
+        topicName: 'Topic 2: Probability',
+        subtopics: [
+          '2.1: Elementary & Conditional Probability, Tree & Venn Diagrams, Independence',
+        ],
+      },
+      {
+        topicName: 'Topic 3: Correlation and Regression',
+        subtopics: [
+          '3.1: Scatter Diagrams, Least Squares Linear Regression & PMCC',
+        ],
+      },
+      {
+        topicName: 'Topic 4: Discrete Random Variables',
+        subtopics: [
+          '4.1: Probability & Cumulative Distribution Functions, E(X), Var(X) & Discrete Uniform',
+        ],
+      },
+      {
+        topicName: 'Topic 5: The Normal Distribution',
+        subtopics: [
+          '5.1: Standardisation Z = (X - μ)/σ & Cumulative Normal Tables',
+        ],
+      },
+    ],
+  },
+];
+
 export interface SubtopicGroup {
   topicName: string;
   subtopics: {
     name: string;
     count: number;
   }[];
+}
+
+/**
+ * Returns the canonical taxonomy for a given subject.
+ */
+export function getTaxonomyForSubject(subject: 'chemistry' | 'physics' | 'mathematics'): UnitDefinition[] {
+  if (subject === 'physics') return OFFICIAL_IAL_PHYSICS_TAXONOMY;
+  if (subject === 'mathematics') return OFFICIAL_IAL_MATHEMATICS_TAXONOMY;
+  return OFFICIAL_IAL_CHEMISTRY_TAXONOMY;
+}
+
+/**
+ * Helper to check whether a taxonomy unit definition matches a unit filter string.
+ * Supports exact unitName, unitCode, title, or prefix matching (e.g. "Unit 1" matches "Unit 1: Pure Mathematics 1 (P1)").
+ */
+export function isUnitMatch(unitDef: UnitDefinition, filterUnit: string): boolean {
+  if (!filterUnit) return false;
+  const fLower = filterUnit.trim().toLowerCase();
+  const uNameLower = unitDef.unitName.trim().toLowerCase();
+  const uCodeLower = unitDef.unitCode.trim().toLowerCase();
+  const uTitleLower = unitDef.title.trim().toLowerCase();
+
+  // Exact match with unitName, unitCode, or title
+  if (uNameLower === fLower || uCodeLower === fLower || uTitleLower === fLower) {
+    return true;
+  }
+
+  // Prefix match (e.g. "Unit 1" matching "Unit 1: Pure Mathematics 1 (P1)")
+  const uPrefix = uNameLower.split(':')[0].trim();
+  const fPrefix = fLower.split(':')[0].trim();
+  if (uPrefix && fPrefix && uPrefix === fPrefix) {
+    return true;
+  }
+
+  // Substring / containment match
+  if (fLower.includes(uCodeLower) || uNameLower.includes(fLower)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -414,7 +736,7 @@ export interface SubtopicGroup {
 export function buildStaticSubtopicHierarchy(
   unitFilter: string | string[],
   questions: { subtopic?: string; subtopics?: string[]; unit?: string; unitCode?: string; paperId?: string }[],
-  subject?: 'chemistry' | 'physics'
+  subject?: 'chemistry' | 'physics' | 'mathematics'
 ): SubtopicGroup[] {
   // Normalize unitFilter to an array of unit identifiers
   const unitList: string[] = Array.isArray(unitFilter)
@@ -425,13 +747,30 @@ export function buildStaticSubtopicHierarchy(
   let taxonomy = OFFICIAL_IAL_CHEMISTRY_TAXONOMY;
   if (subject === 'physics') {
     taxonomy = OFFICIAL_IAL_PHYSICS_TAXONOMY;
+  } else if (subject === 'mathematics') {
+    taxonomy = OFFICIAL_IAL_MATHEMATICS_TAXONOMY;
   } else if (!subject && questions.length > 0) {
+    const isMath = questions.some((q) => {
+      const code = (q.unitCode || '').toUpperCase();
+      const pid = (q.paperId || '').toLowerCase();
+      return (
+        code.startsWith('WMA') ||
+        code.startsWith('WME') ||
+        code.startsWith('WST') ||
+        pid.startsWith('wma') ||
+        pid.startsWith('wme') ||
+        pid.startsWith('wst')
+      );
+    });
     const isPhys = questions.some((q) => {
       const code = (q.unitCode || '').toUpperCase();
       const pid = (q.paperId || '').toLowerCase();
       return code.startsWith('WPH') || pid.startsWith('wph');
     });
-    if (isPhys) {
+
+    if (isMath) {
+      taxonomy = OFFICIAL_IAL_MATHEMATICS_TAXONOMY;
+    } else if (isPhys) {
       taxonomy = OFFICIAL_IAL_PHYSICS_TAXONOMY;
     }
   }
@@ -439,7 +778,16 @@ export function buildStaticSubtopicHierarchy(
   // Precompute subtopic frequency across the questions
   const subtopicCounts = new Map<string, number>();
   for (const q of questions) {
-    if (unitList.length > 0 && q.unit && !unitList.includes(q.unit)) continue;
+    if (unitList.length > 0 && q.unit) {
+      const qUnit = q.unit;
+      const matchesAnyUnit = unitList.some((filterUnit) => {
+        if (filterUnit === qUnit) return true;
+        const qPrefix = qUnit.split(':')[0].trim().toLowerCase();
+        const fPrefix = filterUnit.split(':')[0].trim().toLowerCase();
+        return qPrefix === fPrefix;
+      });
+      if (!matchesAnyUnit) continue;
+    }
     const subs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : (q.subtopic ? [q.subtopic] : []);
     for (const s of subs) {
       if (!s) continue;
@@ -451,7 +799,7 @@ export function buildStaticSubtopicHierarchy(
   const relevantUnits = unitList.length === 0
     ? taxonomy
     : taxonomy.filter(
-        (u) => unitList.includes(u.unitName) || unitList.includes(u.unitCode)
+        (u) => unitList.some((filterUnit) => isUnitMatch(u, filterUnit))
       );
 
   const groups: SubtopicGroup[] = [];
@@ -474,9 +822,16 @@ export function buildStaticSubtopicHierarchy(
 }
 
 /**
- * Resolves the canonical parent topic for any subtopic string across Physics and Chemistry.
+ * Resolves the canonical parent topic for any subtopic string across Mathematics, Physics, and Chemistry.
  */
 export function getParentTopicForSubtopic(subtopic: string): string {
+  for (const unit of OFFICIAL_IAL_MATHEMATICS_TAXONOMY) {
+    for (const topic of unit.topics) {
+      if (topic.subtopics.includes(subtopic)) {
+        return topic.topicName;
+      }
+    }
+  }
   for (const unit of OFFICIAL_IAL_PHYSICS_TAXONOMY) {
     for (const topic of unit.topics) {
       if (topic.subtopics.includes(subtopic)) {
@@ -495,9 +850,16 @@ export function getParentTopicForSubtopic(subtopic: string): string {
 }
 
 /**
- * Resolves the canonical Unit for any subtopic string across Physics and Chemistry.
+ * Resolves the canonical Unit for any subtopic string across Mathematics, Physics, and Chemistry.
  */
 export function getUnitForSubtopic(subtopic: string): string {
+  for (const unit of OFFICIAL_IAL_MATHEMATICS_TAXONOMY) {
+    for (const topic of unit.topics) {
+      if (topic.subtopics.includes(subtopic)) {
+        return unit.unitName;
+      }
+    }
+  }
   for (const unit of OFFICIAL_IAL_PHYSICS_TAXONOMY) {
     for (const topic of unit.topics) {
       if (topic.subtopics.includes(subtopic)) {

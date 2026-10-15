@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { QuestionItem } from '../types';
 import { getFullImageUrl } from './imageUrl';
+import { calculateExamDurationMinutes } from './examDuration';
 
 export interface PDFExportOptions {
   title: string;
@@ -98,7 +99,9 @@ export async function generateQuestionPaperPDF({
   const printableHeight = pageHeight - marginTop - marginBottom; // 266mm / 267mm
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
-  const timeAllowedMins = Math.round(totalMarks * 1.2);
+  const isMath = questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'));
+  const selectedUnits = Array.from(new Set(questions.map((q) => q.unit || q.unitCode || '')));
+  const timeAllowedMins = calculateExamDurationMinutes(totalMarks, isMath, selectedUnits);
 
   let cursorY = marginTop;
 
@@ -214,7 +217,10 @@ export async function generateQuestionPaperPDF({
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
     const qNumberLabel = `Question ${i + 1}`;
-    const qOriginMeta = `${q.unit || ''} • ${q.series || ''} ${q.year || ''} (${q.questionNumber})`.trim();
+    const seriesYearStr = q.series && q.year && q.series.includes(String(q.year))
+      ? q.series
+      : `${q.series || ''} ${q.year || ''}`.trim();
+    const qOriginMeta = `${q.unit || ''} • ${seriesYearStr} (${q.questionNumber})`.trim();
     const marksLabel = `(${q.marks} ${q.marks === 1 ? 'mark' : 'marks'})`;
 
     if (onProgress) {
@@ -410,7 +416,10 @@ export async function generateMarkSchemePDF({
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
     const qNumberLabel = `Question ${i + 1} Mark Scheme`;
-    const qOriginMeta = `${q.unit || ''} • ${q.series || ''} ${q.year || ''} (${q.questionNumber})`.trim();
+    const seriesYearStr = q.series && q.year && q.series.includes(String(q.year))
+      ? q.series
+      : `${q.series || ''} ${q.year || ''}`.trim();
+    const qOriginMeta = `${q.unit || ''} • ${seriesYearStr} (${q.questionNumber})`.trim();
     const marksLabel = `[${q.marks} ${q.marks === 1 ? 'mark' : 'marks'}]`;
 
     if (onProgress) {

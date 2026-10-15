@@ -6,7 +6,10 @@ import {
   Check, 
   BookOpen, 
   FlaskConical, 
-  Zap
+  Zap,
+  Sigma,
+  AlertTriangle,
+  Calculator
 } from 'lucide-react';
 import { Subject } from '../types';
 import {
@@ -21,6 +24,13 @@ import {
   CARBON_NMR_SHIFTS,
   ELECTRODE_POTENTIALS,
   PERIODIC_ELEMENTS,
+  MathFormulaItem,
+  PURE_MATH_FORMULAE,
+  MECHANICS_FORMULAE,
+  STATISTICS_FORMULAE,
+  NORMAL_TABLE_5COL,
+  NORMAL_PERCENTAGE_POINTS,
+  calculatePhi,
 } from '../constants/referenceData';
 import { MathFormula } from './MathFormula';
 
@@ -33,6 +43,7 @@ interface DataBookletDrawerProps {
 
 type PhysicsTab = 'constants' | 'ias' | 'ia2';
 type ChemistryTab = 'periodic_table' | 'constants_indicators' | 'spectroscopy' | 'redox';
+type MathTab = 'pure' | 'mechanics' | 'statistics';
 type PeriodicTableView = 'grid' | 'cards';
 
 function getElementCategoryStyle(category?: string) {
@@ -69,6 +80,10 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
   const [subject, setSubject] = useState<Subject>(activeSubject);
   const [physicsTab, setPhysicsTab] = useState<PhysicsTab>('constants');
   const [chemistryTab, setChemistryTab] = useState<ChemistryTab>('periodic_table');
+  const [mathTab, setMathTab] = useState<MathTab>('pure');
+  const [mathFilter, setMathFilter] = useState<'all' | 'in_booklet' | 'must_memorise'>('all');
+  const [zLookup, setZLookup] = useState<string>('');
+  const [showPhiTable, setShowPhiTable] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [periodicView, setPeriodicView] = useState<PeriodicTableView>(() => {
@@ -250,6 +265,67 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     );
   }, [query]);
 
+  const parsedZ = useMemo(() => {
+    if (!zLookup.trim()) return null;
+    const val = parseFloat(zLookup.trim());
+    return isNaN(val) ? null : val;
+  }, [zLookup]);
+
+  // Filtered Mathematics Data
+  const filteredPureMath = useMemo(() => {
+    let items = PURE_MATH_FORMULAE;
+    if (mathFilter === 'in_booklet') {
+      items = items.filter((item) => item.inBooklet);
+    } else if (mathFilter === 'must_memorise') {
+      items = items.filter((item) => !item.inBooklet);
+    }
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.unit.toLowerCase().includes(query) ||
+        item.latex.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query))
+    );
+  }, [query, mathFilter]);
+
+  const filteredMechanics = useMemo(() => {
+    let items = MECHANICS_FORMULAE;
+    if (mathFilter === 'in_booklet') {
+      items = items.filter((item) => item.inBooklet);
+    } else if (mathFilter === 'must_memorise') {
+      items = items.filter((item) => !item.inBooklet);
+    }
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.unit.toLowerCase().includes(query) ||
+        item.latex.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query))
+    );
+  }, [query, mathFilter]);
+
+  const filteredStatistics = useMemo(() => {
+    let items = STATISTICS_FORMULAE;
+    if (mathFilter === 'in_booklet') {
+      items = items.filter((item) => item.inBooklet);
+    } else if (mathFilter === 'must_memorise') {
+      items = items.filter((item) => !item.inBooklet);
+    }
+    if (!query) return items;
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query) ||
+        item.unit.toLowerCase().includes(query) ||
+        item.latex.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query))
+    );
+  }, [query, mathFilter]);
+
   const isGridActive = subject === 'chemistry' && chemistryTab === 'periodic_table' && !query && periodicView === 'grid';
 
   useEffect(() => {
@@ -281,6 +357,144 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     }
     return groups;
   }, [filteredIr]);
+
+  const groupedPureMath = useMemo(() => {
+    const groups: Record<string, typeof PURE_MATH_FORMULAE> = {};
+    for (const item of filteredPureMath) {
+      if (!groups[item.category]) {
+        groups[item.category] = [];
+      }
+      groups[item.category].push(item);
+    }
+    return groups;
+  }, [filteredPureMath]);
+
+  const groupedMechanics = useMemo(() => {
+    const groups: Record<string, typeof MECHANICS_FORMULAE> = {};
+    for (const item of filteredMechanics) {
+      if (!groups[item.category]) {
+        groups[item.category] = [];
+      }
+      groups[item.category].push(item);
+    }
+    return groups;
+  }, [filteredMechanics]);
+
+  const groupedStatistics = useMemo(() => {
+    const groups: Record<string, typeof STATISTICS_FORMULAE> = {};
+    for (const item of filteredStatistics) {
+      if (!groups[item.category]) {
+        groups[item.category] = [];
+      }
+      groups[item.category].push(item);
+    }
+    return groups;
+  }, [filteredStatistics]);
+
+  const renderMathFormulaCard = (item: MathFormulaItem) => {
+    const isCopied = copiedId === item.id;
+    const isLongFormula = item.latex.length > 42;
+
+    if (isLongFormula) {
+      return (
+        <div
+          key={item.id}
+          className="p-3 flex flex-col gap-2 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shrink-0">
+                {item.unit}
+              </span>
+              <span
+                className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold tracking-wide shrink-0 ${
+                  item.inBooklet
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                }`}
+              >
+                {item.inBooklet ? 'IN BOOKLET' : 'MUST MEMORISE'}
+              </span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                {item.title}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(item.latex, item.id)}
+              className="p-1.5 rounded-lg bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
+              title="Copy LaTeX formula"
+            >
+              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          <div className="w-full overflow-x-auto px-3 py-2 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center min-h-[38px]">
+            <MathFormula latex={item.latex} className="text-xs sm:text-[13px] whitespace-nowrap" />
+          </div>
+
+          {item.description && (
+            <div className="text-[10.5px] text-slate-500 dark:text-slate-400 italic">
+              {item.description.includes('\\') ? (
+                <MathFormula latex={item.description} className="text-[11px]" />
+              ) : (
+                item.description
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={item.id}
+        className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+      >
+        <div className="sm:max-w-[44%] min-w-[140px] space-y-1 shrink-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shrink-0">
+              {item.unit}
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-[9.5px] font-semibold tracking-wide shrink-0 ${
+                item.inBooklet
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+              }`}
+            >
+              {item.inBooklet ? 'IN BOOKLET' : 'MUST MEMORISE'}
+            </span>
+          </div>
+          <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+            {item.title}
+          </div>
+          {item.description && (
+            <div className="text-[10.5px] text-slate-500 dark:text-slate-400 italic">
+              {item.description.includes('\\') ? (
+                <MathFormula latex={item.description} className="text-[11px]" />
+              ) : (
+                item.description
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between sm:justify-end gap-2 flex-1 min-w-0 max-w-full">
+          <div className="overflow-x-auto max-w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center min-h-[36px]">
+            <MathFormula latex={item.latex} className="text-xs sm:text-sm whitespace-nowrap" />
+          </div>
+          <button
+            type="button"
+            onClick={() => copyToClipboard(item.latex, item.id)}
+            className="p-1.5 rounded-lg bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
+            title="Copy LaTeX formula"
+          >
+            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   if (!isOpen) return null;
 
@@ -335,18 +549,18 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
 
           {/* Subject Switcher Segmented Control */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center bg-slate-200/70 dark:bg-dark-800 p-0.5 rounded-lg text-xs w-full">
+            <div className="flex items-center bg-slate-200/70 dark:bg-dark-800 p-0.5 rounded-lg text-xs w-full gap-0.5">
               <button
                 type="button"
                 onClick={() => setSubject('physics')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md font-bold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md font-bold transition-all truncate ${
                   subject === 'physics'
                     ? 'bg-cyan-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Physics (Appendix 7 &amp; 8)</span>
+                <Zap className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Physics</span>
               </button>
               <button
                 type="button"
@@ -354,14 +568,29 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   setSubject('chemistry');
                   setChemistryTab('periodic_table');
                 }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md font-bold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md font-bold transition-all truncate ${
                   subject === 'chemistry'
                     ? 'bg-cyan-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <FlaskConical className="w-3.5 h-3.5" />
-                <span>Chemistry (Appendix 9)</span>
+                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Chemistry</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubject('mathematics');
+                  setMathTab('pure');
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md font-bold transition-all truncate ${
+                  subject === 'mathematics'
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Sigma className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Mathematics</span>
               </button>
             </div>
           </div>
@@ -374,6 +603,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
               placeholder={
                 subject === 'physics'
                   ? 'Search constants, equations (e.g. g, Stokes, de Broglie, SHM)...'
+                  : subject === 'mathematics'
+                  ? 'Search formulae (e.g. binomial, quotient, suvat, normal, correlation)...'
                   : 'Search constants, indicators, NMR shifts, electrode potentials...'
               }
               value={searchQuery}
@@ -428,6 +659,83 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                 >
                   IA2 Equations
                 </button>
+              </div>
+            ) : subject === 'mathematics' ? (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-1 w-full text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMathTab('pure')}
+                    className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
+                      mathTab === 'pure'
+                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                    }`}
+                  >
+                    Pure (P1–P4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMathTab('mechanics')}
+                    className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
+                      mathTab === 'mechanics'
+                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                    }`}
+                  >
+                    Mechanics (M1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMathTab('statistics')}
+                    className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
+                      mathTab === 'statistics'
+                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                    }`}
+                  >
+                    Statistics (S1)
+                  </button>
+                </div>
+
+                {/* 3-Way Formula Filter Segmented Control */}
+                <div className="flex items-center bg-slate-200/70 dark:bg-dark-800 p-0.5 rounded-lg text-xs gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setMathFilter('all')}
+                    className={`flex-1 py-1 px-1.5 rounded-md font-bold text-center transition-all truncate text-[11px] ${
+                      mathFilter === 'all'
+                        ? 'bg-white dark:bg-dark-700 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    All Formulae
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMathFilter('in_booklet')}
+                    className={`flex-1 py-1 px-1.5 rounded-md font-bold text-center transition-all truncate text-[11px] flex items-center justify-center gap-1 ${
+                      mathFilter === 'in_booklet'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                    <span className="truncate">In Yellow Booklet</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMathFilter('must_memorise')}
+                    className={`flex-1 py-1 px-1.5 rounded-md font-bold text-center transition-all truncate text-[11px] flex items-center justify-center gap-1 ${
+                      mathFilter === 'must_memorise'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-500/10'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                    <span className="truncate">Must Memorise</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-1 w-full text-xs">
@@ -1336,6 +1644,412 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* MATHEMATICS TABS                                                  */}
+          {/* ================================================================= */}
+          {subject === 'mathematics' && mathTab === 'pure' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
+                <span>Pure Mathematics (Units P1–P4)</span>
+                <span>{filteredPureMath.length} formulae</span>
+              </div>
+              {filteredPureMath.length === 0 ? (
+                <div className="text-center py-12 rounded-xl border border-dashed border-slate-200 dark:border-dark-750 p-6 space-y-1.5">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    No formulae found for this filter
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Try switching between "All Formulae", "In Yellow Booklet", or "Must Memorise"
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(groupedPureMath).map(([category, items]) => (
+                    <div
+                      key={category}
+                      className="rounded-xl border border-slate-200 dark:border-dark-750 overflow-hidden bg-white dark:bg-dark-850 shadow-xs"
+                    >
+                      <div className="bg-slate-100/80 dark:bg-dark-800 px-3.5 py-2 border-b border-slate-200 dark:border-dark-750 flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                          {category}
+                        </h4>
+                        <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                          {items.length} {items.length === 1 ? 'formula' : 'formulae'}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-dark-800">
+                        {items.map(renderMathFormulaCard)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {subject === 'mathematics' && mathTab === 'mechanics' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
+                <span>Mechanics (Unit M1)</span>
+                <span>{filteredMechanics.length} formulae</span>
+              </div>
+
+              {mathFilter === 'in_booklet' && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+                        Official Notice: No Formula Sheet for Mechanics 1 (M1)
+                      </h4>
+                      <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                        The official Pearson Edexcel Yellow Booklet (Issue 2) provides <strong>no formulae</strong> for Mechanics 1. All kinematic (SUVAT), dynamic (Newton's laws, friction), momentum, impulse, moments, and vector equations are expected to be known and must be memorised.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setMathFilter('must_memorise')}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                      Show M1 Must-Memorise Formulae ({MECHANICS_FORMULAE.length})
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {filteredMechanics.length > 0 && (
+                <div className="space-y-3">
+                  {Object.entries(groupedMechanics).map(([category, items]) => (
+                    <div
+                      key={category}
+                      className="rounded-xl border border-slate-200 dark:border-dark-750 overflow-hidden bg-white dark:bg-dark-850 shadow-xs"
+                    >
+                      <div className="bg-slate-100/80 dark:bg-dark-800 px-3.5 py-2 border-b border-slate-200 dark:border-dark-750 flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                          {category}
+                        </h4>
+                        <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                          {items.length} {items.length === 1 ? 'formula' : 'formulae'}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-dark-800">
+                        {items.map(renderMathFormulaCard)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {filteredMechanics.length === 0 && mathFilter !== 'in_booklet' && (
+                <div className="text-center py-12 rounded-xl border border-dashed border-slate-200 dark:border-dark-750 p-6 space-y-1.5">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    No formulae found for this filter
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {subject === 'mathematics' && mathTab === 'statistics' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-1">
+                <span>Statistics (Unit S1)</span>
+                <span>{filteredStatistics.length} formulae &amp; tables</span>
+              </div>
+
+              {filteredStatistics.length > 0 && (
+                <div className="space-y-3">
+                  {Object.entries(groupedStatistics).map(([category, items]) => (
+                    <div
+                      key={category}
+                      className="rounded-xl border border-slate-200 dark:border-dark-750 overflow-hidden bg-white dark:bg-dark-850 shadow-xs"
+                    >
+                      <div className="bg-slate-100/80 dark:bg-dark-800 px-3.5 py-2 border-b border-slate-200 dark:border-dark-750 flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                          {category}
+                        </h4>
+                        <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                          {items.length} {items.length === 1 ? 'formula' : 'formulae'}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-dark-800">
+                        {items.map(renderMathFormulaCard)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Table 1: Standard Normal Cumulative Distribution Function Phi(z) */}
+              {(mathFilter === 'all' || mathFilter === 'in_booklet') && (
+                <div className="rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 overflow-hidden bg-white dark:bg-dark-850 shadow-xs">
+                  <div className="bg-cyan-50/70 dark:bg-cyan-950/30 px-3.5 py-2.5 border-b border-cyan-100 dark:border-cyan-900/40 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-cyan-900 dark:text-cyan-200 uppercase tracking-wider">
+                          Table 1: Standard Normal Distribution Φ(z)
+                        </h4>
+                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          IN BOOKLET
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Cumulative probability <span className="font-mono font-semibold">Φ(z) = P(Z ≤ z)</span> for <span className="font-mono">Z ~ N(0, 1)</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPhiTable(!showPhiTable)}
+                      className="px-2 py-1 rounded-lg bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25 border border-cyan-500/30 text-[11px] font-bold transition-colors"
+                    >
+                      {showPhiTable ? 'Collapse Table' : 'Expand Table'}
+                    </button>
+                  </div>
+
+                  {/* Interactive z Search / Lookup Box */}
+                  <div className="p-3 bg-slate-50 dark:bg-dark-800/60 border-b border-slate-100 dark:border-dark-750 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
+                        <Calculator className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                        <span>Interactive z Lookup</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        Instant CDF probability
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-mono text-xs text-slate-400 font-bold">
+                          z =
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Enter z value (e.g. 1.96, 0.5, 2.33, -1.5)"
+                          value={zLookup}
+                          onChange={(e) => setZLookup(e.target.value)}
+                          className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-700 rounded-lg text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+                        />
+                      </div>
+                      {zLookup && (
+                        <button
+                          type="button"
+                          onClick={() => setZLookup('')}
+                          className="px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {parsedZ !== null && !isNaN(parsedZ) && (
+                      <div className="p-2.5 rounded-lg bg-white dark:bg-dark-900 border border-cyan-200 dark:border-cyan-800/60 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Φ(z) = P(Z ≤ {parsedZ})</span>
+                          <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 text-sm">
+                            {calculatePhi(parsedZ).toFixed(4)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">P(Z &gt; {parsedZ}) = 1 − Φ(z)</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">
+                            {(1 - calculatePhi(parsedZ)).toFixed(4)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block font-medium">Central: P(−|z| ≤ Z ≤ |z|)</span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                            {(2 * calculatePhi(Math.abs(parsedZ)) - 1).toFixed(4)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5-Column-Pair Table (Page 16 Yellow Booklet) */}
+                  {showPhiTable && (
+                    <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+                      <table className="w-full text-center text-xs border-collapse">
+                        <thead className="bg-slate-100 dark:bg-dark-800 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold sticky top-0 z-10 shadow-xs">
+                          <tr className="border-b border-slate-200 dark:border-dark-750">
+                            <th colSpan={2} className="py-1 px-1 border-r border-slate-200/80 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
+                              0.00 – 0.49
+                            </th>
+                            <th colSpan={2} className="py-1 px-1 border-r border-slate-200/80 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
+                              0.50 – 0.99
+                            </th>
+                            <th colSpan={2} className="py-1 px-1 border-r border-slate-200/80 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
+                              1.00 – 1.49
+                            </th>
+                            <th colSpan={2} className="py-1 px-1 border-r border-slate-200/80 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
+                              1.50 – 1.99
+                            </th>
+                            <th colSpan={2} className="py-1 px-1 text-cyan-700 dark:text-cyan-300">
+                              2.00 – 4.00
+                            </th>
+                          </tr>
+                          <tr className="border-b border-slate-200 dark:border-dark-750 font-mono text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-dark-850">
+                            <th className="py-0.5 px-1 w-[8%]">z</th>
+                            <th className="py-0.5 px-1 w-[12%] border-r border-slate-200/80 dark:border-dark-750">Φ(z)</th>
+                            <th className="py-0.5 px-1 w-[8%]">z</th>
+                            <th className="py-0.5 px-1 w-[12%] border-r border-slate-200/80 dark:border-dark-750">Φ(z)</th>
+                            <th className="py-0.5 px-1 w-[8%]">z</th>
+                            <th className="py-0.5 px-1 w-[12%] border-r border-slate-200/80 dark:border-dark-750">Φ(z)</th>
+                            <th className="py-0.5 px-1 w-[8%]">z</th>
+                            <th className="py-0.5 px-1 w-[12%] border-r border-slate-200/80 dark:border-dark-750">Φ(z)</th>
+                            <th className="py-0.5 px-1 w-[8%]">z</th>
+                            <th className="py-0.5 px-1 w-[12%]">Φ(z)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-dark-800 font-mono text-[11px]">
+                          {NORMAL_TABLE_5COL.map((row, rowIdx) => {
+                            const targetZStr = parsedZ !== null ? (Math.round(parsedZ * 100) / 100).toFixed(2) : null;
+                            const isM1 = targetZStr !== null && row.c1.z === targetZStr;
+                            const isM2 = targetZStr !== null && row.c2.z === targetZStr;
+                            const isM3 = targetZStr !== null && row.c3.z === targetZStr;
+                            const isM4 = targetZStr !== null && row.c4.z === targetZStr;
+                            const isM5 = targetZStr !== null && row.c5.z === targetZStr;
+
+                            return (
+                              <tr key={rowIdx} className="hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors">
+                                {/* Col Group 1 */}
+                                <td className={`py-0.5 px-1 text-slate-500 dark:text-slate-400 bg-slate-50/40 dark:bg-dark-900/30 font-medium ${isM1 ? 'bg-cyan-500 text-white font-extrabold' : ''}`}>
+                                  {row.c1.z}
+                                </td>
+                                <td className={`py-0.5 px-1 border-r border-slate-200/80 dark:border-dark-750 font-semibold text-slate-800 dark:text-slate-200 ${isM1 ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-extrabold' : ''}`}>
+                                  {row.c1.phi}
+                                </td>
+
+                                {/* Col Group 2 */}
+                                <td className={`py-0.5 px-1 text-slate-500 dark:text-slate-400 bg-slate-50/40 dark:bg-dark-900/30 font-medium ${isM2 ? 'bg-cyan-500 text-white font-extrabold' : ''}`}>
+                                  {row.c2.z}
+                                </td>
+                                <td className={`py-0.5 px-1 border-r border-slate-200/80 dark:border-dark-750 font-semibold text-slate-800 dark:text-slate-200 ${isM2 ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-extrabold' : ''}`}>
+                                  {row.c2.phi}
+                                </td>
+
+                                {/* Col Group 3 */}
+                                <td className={`py-0.5 px-1 text-slate-500 dark:text-slate-400 bg-slate-50/40 dark:bg-dark-900/30 font-medium ${isM3 ? 'bg-cyan-500 text-white font-extrabold' : ''}`}>
+                                  {row.c3.z}
+                                </td>
+                                <td className={`py-0.5 px-1 border-r border-slate-200/80 dark:border-dark-750 font-semibold text-slate-800 dark:text-slate-200 ${isM3 ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-extrabold' : ''}`}>
+                                  {row.c3.phi}
+                                </td>
+
+                                {/* Col Group 4 */}
+                                <td className={`py-0.5 px-1 text-slate-500 dark:text-slate-400 bg-slate-50/40 dark:bg-dark-900/30 font-medium ${isM4 ? 'bg-cyan-500 text-white font-extrabold' : ''}`}>
+                                  {row.c4.z}
+                                </td>
+                                <td className={`py-0.5 px-1 border-r border-slate-200/80 dark:border-dark-750 font-semibold text-slate-800 dark:text-slate-200 ${isM4 ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-extrabold' : ''}`}>
+                                  {row.c4.phi}
+                                </td>
+
+                                {/* Col Group 5 */}
+                                <td className={`py-0.5 px-1 text-slate-500 dark:text-slate-400 bg-slate-50/40 dark:bg-dark-900/30 font-medium ${isM5 ? 'bg-cyan-500 text-white font-extrabold' : ''}`}>
+                                  {row.c5.z}
+                                </td>
+                                <td className={`py-0.5 px-1 font-semibold text-slate-800 dark:text-slate-200 ${isM5 ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-extrabold' : ''}`}>
+                                  {row.c5.phi}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Table 2: Percentage Points of the Normal Distribution */}
+              {(mathFilter === 'all' || mathFilter === 'in_booklet') && (
+                <div className="rounded-xl border border-cyan-500/30 dark:border-cyan-500/20 overflow-hidden bg-white dark:bg-dark-850 shadow-xs">
+                  <div className="bg-cyan-50/70 dark:bg-cyan-950/30 px-3.5 py-2.5 border-b border-cyan-100 dark:border-cyan-900/40 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-cyan-900 dark:text-cyan-200 uppercase tracking-wider">
+                          Table 2: Normal Distribution Percentage Points
+                        </h4>
+                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          IN BOOKLET
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Critical values of <span className="font-mono font-semibold">z</span> such that <span className="font-mono">P(Z &gt; z) = p</span>
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+                      Standard N(0, 1)
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 dark:bg-dark-800 text-[10.5px] text-slate-500 dark:text-slate-400 uppercase font-semibold border-b border-slate-100 dark:border-dark-750">
+                        <tr>
+                          <th className="px-3 py-2">p = P(Z &gt; z)</th>
+                          <th className="px-3 py-2 border-r border-slate-200/80 dark:border-dark-750">z (Critical)</th>
+                          <th className="px-3 py-2">p = P(Z &gt; z)</th>
+                          <th className="px-3 py-2">z (Critical)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-dark-800 font-mono text-[11px]">
+                        {[0, 1, 2, 3, 4, 5].map((idx) => {
+                          const p1 = NORMAL_PERCENTAGE_POINTS[idx];
+                          const p2 = NORMAL_PERCENTAGE_POINTS[idx + 6];
+                          const id1 = `norm-pt-${idx}`;
+                          const id2 = `norm-pt-${idx + 6}`;
+                          const isCopied1 = copiedId === id1;
+                          const isCopied2 = copiedId === id2;
+                          return (
+                            <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors">
+                              <td className="px-3 py-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                {p1.p}
+                              </td>
+                              <td className="px-3 py-1.5 border-r border-slate-200/80 dark:border-dark-750">
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <span className="font-extrabold text-cyan-700 dark:text-cyan-300">{p1.z}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(`z = ${p1.z} (p = ${p1.p})`, id1)}
+                                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors"
+                                    title="Copy value"
+                                  >
+                                    {isCopied1 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="px-3 py-1.5 font-bold text-slate-700 dark:text-slate-300">
+                                {p2.p}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <span className="font-extrabold text-cyan-700 dark:text-cyan-300">{p2.z}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(`z = ${p2.z} (p = ${p2.p})`, id2)}
+                                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 transition-colors"
+                                    title="Copy value"
+                                  >
+                                    {isCopied2 ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>

@@ -266,6 +266,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               const status = questionStatuses[q.id] || 'unattempted';
               const statusCfg = getStatusConfig(status);
               const qType = getQuestionType(q);
+              const isMath = q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST');
               const paperInfo = formatPaperSeriesYear(q);
               const rawSubtopic = q.subtopic || q.topic || '';
               const cleanedSubtopic = cleanSubtopic(rawSubtopic);
@@ -290,7 +291,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {/* Prominent Question Number */}
                       <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-cyan-950 dark:text-white' : 'text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-white'}`}>
-                        Q{q.questionNumber}
+                        Q{q.questionNumber || (q as any).question_number || q.id?.split('_').pop()?.replace(/^q/i, '') || ''}
                       </span>
 
                       {/* Marks Badge */}
@@ -298,16 +299,18 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                         {q.marks}m
                       </span>
 
-                      {/* Question Type Pill */}
-                      <span
-                        className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-                          qType === 'mcq'
-                            ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30'
-                            : 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30'
-                        }`}
-                      >
-                        {qType === 'mcq' ? 'MCQ' : 'Theory'}
-                      </span>
+                      {/* Question Type Pill (Omitted for Mathematics since all questions are structured whole questions) */}
+                      {!isMath && (
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                            qType === 'mcq'
+                              ? 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30'
+                              : 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                          }`}
+                        >
+                          {qType === 'mcq' ? 'MCQ' : 'Theory'}
+                        </span>
+                      )}
 
                       {/* Stitched Shared Stem Indicator */}
                       {q.hasStem && (

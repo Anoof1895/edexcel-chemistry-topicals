@@ -16,9 +16,29 @@ import { QuestionItem } from '../types';
  * 5. Under NO circumstances should questions be classified as MCQ based on marks == 1.
  */
 export function isMCQ(q: QuestionItem): boolean {
+  // Rule 0: Mathematics papers strictly have 0 MCQs (all structured whole questions)
+  const unitCode = (q.unitCode || '').toUpperCase();
+  const paperId = (q.paperId || (q as any).paper_id || '').toLowerCase();
+  const imgPath = (q.questionImagePath || (q as any).image || '').toLowerCase();
+  const qId = (q.id || '').toLowerCase();
+  if (
+    unitCode.startsWith('WMA') ||
+    unitCode.startsWith('WME') ||
+    unitCode.startsWith('WST') ||
+    paperId.startsWith('wma') ||
+    paperId.startsWith('wme') ||
+    paperId.startsWith('wst') ||
+    qId.startsWith('wma') ||
+    qId.startsWith('wme') ||
+    qId.startsWith('wst') ||
+    imgPath.includes('/crops_math/') ||
+    imgPath.includes('crops_math')
+  ) {
+    return false;
+  }
+
   // Rule 1: Practical papers have 0 MCQs
   const unit = (q.unit || '').toLowerCase();
-  const unitCode = (q.unitCode || '').toUpperCase();
   if (
     unit.includes('unit 3') || 
     unit.includes('unit 6') || 

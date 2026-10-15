@@ -1078,7 +1078,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           <div className="flex flex-col justify-start items-center pt-2 pb-12 w-full max-w-full">
             {/* Minimal Floating Annotation Controls */}
             {enableAnnotation && (
-              <div className="sticky top-2 z-20 mb-3 flex items-center justify-center pointer-events-auto">
+              <div className="sticky top-2 z-10 mb-3 flex items-center justify-center pointer-events-auto">
                 {renderAnnotationToolbar()}
               </div>
             )}

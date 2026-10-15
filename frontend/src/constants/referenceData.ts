@@ -436,3 +436,268 @@ export const PERIODIC_ELEMENTS: PeriodicElement[] = [
   { atomicNumber: 85, symbol: 'At', name: 'Astatine', atomicMass: '[210]', electronegativity: 2.2, period: 6, group: 17, category: 'halogen' },
   { atomicNumber: 86, symbol: 'Rn', name: 'Radon', atomicMass: '[222]', period: 6, group: 18, category: 'noble-gas' },
 ];
+
+// =============================================================================
+// OFFICIAL IAL MATHEMATICS FORMULAE & STATISTICAL TABLES
+// =============================================================================
+
+export interface MathFormulaItem {
+  id: string;
+  section: string; // 'Pure Mathematics' | 'Mechanics' | 'Statistics'
+  category: string;
+  title: string;
+  latex: string;
+  description?: string;
+  inBooklet: boolean;
+  unit: 'P1' | 'P2' | 'P3' | 'P4' | 'M1' | 'S1';
+}
+
+export interface NormalDistributionPoint {
+  p: string;
+  z: string;
+}
+
+export interface NormalTablePair {
+  z: string;
+  phi: string;
+}
+
+export interface NormalTableRow5Col {
+  c1: NormalTablePair;
+  c2: NormalTablePair;
+  c3: NormalTablePair;
+  c4: NormalTablePair;
+  c5: NormalTablePair;
+}
+
+export const PURE_MATH_FORMULAE: MathFormulaItem[] = [
+  // Mensuration
+  { id: 'pm-surf-sphere', section: 'Pure Mathematics', category: 'Mensuration', title: 'Surface area of sphere', latex: String.raw`A = 4\pi r^2`, inBooklet: true, unit: 'P1' },
+  { id: 'pm-vol-sphere', section: 'Pure Mathematics', category: 'Mensuration', title: 'Volume of sphere', latex: String.raw`V = \frac{4}{3}\pi r^3`, inBooklet: false, unit: 'P1' },
+  { id: 'pm-cone-area', section: 'Pure Mathematics', category: 'Mensuration', title: 'Curved surface area of cone', latex: String.raw`A = \pi r l`, description: 'l = slant height', inBooklet: true, unit: 'P1' },
+  { id: 'pm-sector-area', section: 'Pure Mathematics', category: 'Mensuration', title: 'Area of sector', latex: String.raw`A = \frac{1}{2}r^2\theta`, description: 'θ in radians', inBooklet: false, unit: 'P1' },
+  { id: 'pm-arc-length', section: 'Pure Mathematics', category: 'Mensuration', title: 'Arc length', latex: String.raw`s = r\theta`, description: 'θ in radians', inBooklet: false, unit: 'P1' },
+
+  // Algebra & Coordinate Geometry (P1 & P2)
+  { id: 'p1-quad-form', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Quadratic formula', latex: String.raw`x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-discrim', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Discriminant nature of roots', latex: String.raw`\Delta = b^2 - 4ac > 0\text{ (2 real)},\; = 0\text{ (repeated)},\; < 0\text{ (no real)}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-line-grad', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Gradient of a straight line', latex: String.raw`m = \frac{y_2 - y_1}{x_2 - x_1}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-line-eq', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Equation of a straight line', latex: String.raw`y - y_1 = m(x - x_1)`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-perp-grad', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Perpendicular gradients', latex: String.raw`m_1 m_2 = -1 \iff m_2 = -\frac{1}{m_1}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-dist', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Distance between two points', latex: String.raw`d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-midpoint', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Midpoint of line segment', latex: String.raw`M = \left(\frac{x_1 + x_2}{2},\; \frac{y_1 + y_2}{2}\right)`, inBooklet: false, unit: 'P1' },
+  { id: 'p2-circle-eq', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Equation of a circle', latex: String.raw`(x - a)^2 + (y - b)^2 = r^2`, description: 'centre (a, b), radius r', inBooklet: false, unit: 'P2' },
+  { id: 'p2-factor-thm', section: 'Pure Mathematics', category: 'Algebra & Coordinate Geometry', title: 'Factor theorem', latex: String.raw`f(a) = 0 \iff (x - a)\text{ is a factor of }f(x)`, inBooklet: false, unit: 'P2' },
+
+  // Trigonometric Identities & Rules
+  { id: 'p1-sine-rule', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Sine rule', latex: String.raw`\frac{a}{\sin A} = \frac{b}{\sin B} = \frac{c}{\sin C}`, inBooklet: false, unit: 'P1' },
+  { id: 'p1-cosine-rule', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Cosine rule', latex: String.raw`a^2 = b^2 + c^2 - 2bc\cos A`, inBooklet: true, unit: 'P1' },
+  { id: 'p1-area-tri', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Area of a triangle', latex: String.raw`\text{Area} = \frac{1}{2}ab\sin C`, inBooklet: false, unit: 'P1' },
+  { id: 'p2-trig-pythag', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Pythagorean trig identity', latex: String.raw`\sin^2\theta + \cos^2\theta = 1,\quad \tan\theta = \frac{\sin\theta}{\cos\theta}`, inBooklet: false, unit: 'P2' },
+  { id: 'p3-trig-recip', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Reciprocal trig definitions', latex: String.raw`\sec\theta = \frac{1}{\cos\theta},\quad \operatorname{cosec}\theta = \frac{1}{\sin\theta},\quad \cot\theta = \frac{1}{\tan\theta}`, inBooklet: false, unit: 'P3' },
+  { id: 'p3-trig-pythag-vars', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Pythagorean identities (sec & cosec)', latex: String.raw`1 + \tan^2\theta = \sec^2\theta,\quad 1 + \cot^2\theta = \operatorname{cosec}^2\theta`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-trig-sin-add', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Sine addition / subtraction', latex: String.raw`\sin(A \pm B) = \sin A\cos B \pm \cos A\sin B`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-cos-add', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Cosine addition / subtraction', latex: String.raw`\cos(A \pm B) = \cos A\cos B \mp \sin A\sin B`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-tan-add', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Tangent addition / subtraction', latex: String.raw`\tan(A \pm B) = \frac{\tan A \pm \tan B}{1 \mp \tan A\tan B}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-factor-sin-add', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Factor formula: sin A + sin B', latex: String.raw`\sin A + \sin B = 2\sin\frac{A+B}{2}\cos\frac{A-B}{2}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-factor-sin-sub', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Factor formula: sin A - sin B', latex: String.raw`\sin A - \sin B = 2\cos\frac{A+B}{2}\sin\frac{A-B}{2}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-factor-cos-add', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Factor formula: cos A + cos B', latex: String.raw`\cos A + \cos B = 2\cos\frac{A+B}{2}\cos\frac{A-B}{2}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-factor-cos-sub', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Factor formula: cos A - cos B', latex: String.raw`\cos A - \cos B = -2\sin\frac{A+B}{2}\sin\frac{A-B}{2}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-trig-sin2a', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Double angle: sin 2A', latex: String.raw`\sin 2A = 2\sin A\cos A`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-trig-cos2a', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Double angle: cos 2A', latex: String.raw`\cos 2A = \cos^2 A - \sin^2 A = 2\cos^2 A - 1 = 1 - 2\sin^2 A`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-trig-tan2a', section: 'Pure Mathematics', category: 'Trigonometry', title: 'Double angle: tan 2A', latex: String.raw`\tan 2A = \frac{2\tan A}{1 - \tan^2 A}`, inBooklet: false, unit: 'P3' },
+
+  // Sequences & Series
+  { id: 'pm-ap-nth', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Arithmetic sequence nth term', latex: String.raw`u_n = a + (n - 1)d`, inBooklet: true, unit: 'P2' },
+  { id: 'pm-ap-sum', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Arithmetic series sum', latex: String.raw`S_n = \frac{n}{2}(2a + (n - 1)d) = \frac{n}{2}(a + l)`, inBooklet: true, unit: 'P2' },
+  { id: 'pm-gp-nth', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Geometric sequence nth term', latex: String.raw`u_n = ar^{n-1}`, inBooklet: true, unit: 'P2' },
+  { id: 'pm-gp-sum', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Geometric series sum', latex: String.raw`S_n = \frac{a(1 - r^n)}{1 - r}`, description: 'r ≠ 1', inBooklet: true, unit: 'P2' },
+  { id: 'pm-gp-inf', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Geometric sum to infinity', latex: String.raw`S_\infty = \frac{a}{1 - r}`, description: '|r| < 1', inBooklet: true, unit: 'P2' },
+  { id: 'pm-binom-nat', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Binomial series (natural n)', latex: String.raw`(a + b)^n = a^n + \binom{n}{1}a^{n-1}b + \binom{n}{2}a^{n-2}b^2 + \dots + \binom{n}{r}a^{n-r}b^r + \dots + b^n`, description: 'where (n r) = n! / (r!(n - r)!), n ∈ ℕ', inBooklet: true, unit: 'P2' },
+  { id: 'pm-binom-1', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Binomial series (rational n)', latex: String.raw`(1 + x)^n = 1 + nx + \frac{n(n - 1)}{2!}x^2 + \dots + \frac{n(n - 1)\dots(n - r + 1)}{r!}x^r + \dots`, description: '|x| < 1, n ∈ ℚ', inBooklet: true, unit: 'P4' },
+  { id: 'pm-binom-2', section: 'Pure Mathematics', category: 'Sequences & Series', title: 'Binomial expansion: (a + bx)^n', latex: String.raw`(a + bx)^n = a^n\left(1 + \frac{b}{a}x\right)^n`, description: '|bx/a| < 1', inBooklet: false, unit: 'P4' },
+
+  // Logarithms & Exponentials
+  { id: 'pm-log-laws', section: 'Pure Mathematics', category: 'Logarithms & Exponentials', title: 'Laws of logarithms', latex: String.raw`\log(xy) = \log x + \log y,\quad \log(x/y) = \log x - \log y,\quad \log(x^k) = k\log x`, inBooklet: false, unit: 'P2' },
+  { id: 'pm-log-base', section: 'Pure Mathematics', category: 'Logarithms & Exponentials', title: 'Change of base formula', latex: String.raw`\log_a x = \frac{\log_b x}{\log_b a}`, inBooklet: true, unit: 'P2' },
+  { id: 'pm-exp-identity', section: 'Pure Mathematics', category: 'Logarithms & Exponentials', title: 'Exponential function identity', latex: String.raw`\mathrm{e}^{x\ln a} = a^x`, inBooklet: true, unit: 'P3' },
+
+  // Differentiation
+  { id: 'p1-diff-power', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of x^n', latex: String.raw`\frac{d}{dx}(x^n) = nx^{n-1}`, inBooklet: false, unit: 'P1' },
+  { id: 'pm-diff-tan', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of tan kx', latex: String.raw`\frac{d}{dx}(\tan kx) = k\sec^2 kx`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-diff-sec', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of sec kx', latex: String.raw`\frac{d}{dx}(\sec kx) = k\sec kx\tan kx`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-diff-cot', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of cot kx', latex: String.raw`\frac{d}{dx}(\cot kx) = -k\operatorname{cosec}^2 kx`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-diff-cosec', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of cosec kx', latex: String.raw`\frac{d}{dx}(\operatorname{cosec} kx) = -k\operatorname{cosec} kx\cot kx`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-diff-exp', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of e^(kx)', latex: String.raw`\frac{d}{dx}(e^{kx}) = ke^{kx}`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-diff-ln', section: 'Pure Mathematics', category: 'Differentiation', title: 'Derivative of ln x', latex: String.raw`\frac{d}{dx}(\ln x) = \frac{1}{x}`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-diff-prod', section: 'Pure Mathematics', category: 'Differentiation', title: 'Product rule', latex: String.raw`\frac{d}{dx}(uv) = u\frac{dv}{dx} + v\frac{du}{dx}`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-diff-quot', section: 'Pure Mathematics', category: 'Differentiation', title: 'Quotient rule', latex: String.raw`\frac{d}{dx}\left(\frac{u}{v}\right) = \frac{v\frac{du}{dx} - u\frac{dv}{dx}}{v^2}`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-diff-chain', section: 'Pure Mathematics', category: 'Differentiation', title: 'Chain rule', latex: String.raw`\frac{dy}{dx} = \frac{dy}{du}\frac{du}{dx}`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-diff-param', section: 'Pure Mathematics', category: 'Differentiation', title: 'Parametric differentiation', latex: String.raw`\frac{dy}{dx} = \frac{dy/dt}{dx/dt}`, inBooklet: false, unit: 'P4' },
+
+  // Integration
+  { id: 'p1-int-power', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of x^n', latex: String.raw`\int x^n\,dx = \frac{x^{n+1}}{n+1} + c,\quad n \neq -1`, inBooklet: false, unit: 'P1' },
+  { id: 'pm-int-oneoverx', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of 1/x', latex: String.raw`\int \frac{1}{x}\,dx = \ln|x| + c`, inBooklet: false, unit: 'P3' },
+  { id: 'pm-int-sec2', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of sec^2 kx', latex: String.raw`\int \sec^2 kx\,dx = \frac{1}{k}\tan kx + c`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-int-tan', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of tan x', latex: String.raw`\int \tan x\,dx = \ln|\sec x| + c`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-int-sec', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of sec x', latex: String.raw`\int \sec x\,dx = \ln|\sec x + \tan x| + c`, inBooklet: true, unit: 'P4' },
+  { id: 'pm-int-cot', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of cot x', latex: String.raw`\int \cot x\,dx = \ln|\sin x| + c`, inBooklet: true, unit: 'P3' },
+  { id: 'pm-int-cosec', section: 'Pure Mathematics', category: 'Integration', title: 'Integral of cosec x', latex: String.raw`\int \operatorname{cosec} x\,dx = -\ln|\operatorname{cosec} x + \cot x| + c`, inBooklet: true, unit: 'P4' },
+  { id: 'pm-int-parts', section: 'Pure Mathematics', category: 'Integration', title: 'Integration by parts', latex: String.raw`\int u\frac{dv}{dx}\,dx = uv - \int v\frac{du}{dx}\,dx`, inBooklet: true, unit: 'P4' },
+  { id: 'pm-int-vol', section: 'Pure Mathematics', category: 'Integration', title: 'Volume of revolution (x-axis)', latex: String.raw`V = \pi \int_a^b y^2\,dx`, inBooklet: false, unit: 'P4' },
+  { id: 'pm-diff-eq-sep', section: 'Pure Mathematics', category: 'Integration', title: 'Separable differential equations', latex: String.raw`\int \frac{1}{g(y)}\,dy = \int f(x)\,dx`, inBooklet: false, unit: 'P4' },
+
+  // Numerical Methods
+  { id: 'pm-int-trap', section: 'Pure Mathematics', category: 'Numerical Methods', title: 'Trapezium rule', latex: String.raw`\int_a^b y\,dx \approx \frac{1}{2}h\left[(y_0 + y_n) + 2(y_1 + y_2 + \dots + y_{n-1})\right]`, description: 'h = (b − a) / n', inBooklet: true, unit: 'P2' },
+  { id: 'pm-iter', section: 'Pure Mathematics', category: 'Numerical Methods', title: 'Fixed-point iteration', latex: String.raw`x_{n+1} = g(x_n)`, inBooklet: false, unit: 'P3' },
+
+  // Vectors
+  { id: 'pm-vec-dot', section: 'Pure Mathematics', category: 'Vectors', title: 'Scalar product (dot product)', latex: String.raw`\mathbf{a}\cdot\mathbf{b} = |\mathbf{a}||\mathbf{b}|\cos\theta = a_1b_1 + a_2b_2 + a_3b_3`, inBooklet: false, unit: 'P4' },
+  { id: 'pm-vec-line', section: 'Pure Mathematics', category: 'Vectors', title: 'Vector equation of a straight line', latex: String.raw`\mathbf{r} = \mathbf{a} + \lambda\mathbf{b}`, description: 'a = position vector, b = direction vector', inBooklet: false, unit: 'P4' },
+];
+
+export const MECHANICS_FORMULAE: MathFormulaItem[] = [
+  // Kinematics (Constant Acceleration)
+  { id: 'm1-suvat-1', section: 'Mechanics', category: 'Kinematics (Constant Acceleration)', title: 'Velocity-Time relation', latex: String.raw`v = u + at`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-suvat-2', section: 'Mechanics', category: 'Kinematics (Constant Acceleration)', title: 'Displacement with average velocity', latex: String.raw`s = \frac{(u + v)t}{2}`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-suvat-3', section: 'Mechanics', category: 'Kinematics (Constant Acceleration)', title: 'Displacement with initial velocity', latex: String.raw`s = ut + \frac{1}{2}at^2`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-suvat-4', section: 'Mechanics', category: 'Kinematics (Constant Acceleration)', title: 'Timeless kinematic equation', latex: String.raw`v^2 = u^2 + 2as`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-suvat-5', section: 'Mechanics', category: 'Kinematics (Constant Acceleration)', title: 'Displacement with final velocity', latex: String.raw`s = vt - \frac{1}{2}at^2`, inBooklet: false, unit: 'M1' },
+
+  // Dynamics & Friction
+  { id: 'm1-newt2', section: 'Mechanics', category: 'Dynamics & Friction', title: "Newton's Second Law", latex: String.raw`\Sigma \mathbf{F} = m\mathbf{a}`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-weight', section: 'Mechanics', category: 'Dynamics & Friction', title: 'Weight', latex: String.raw`W = mg,\quad g = 9.8\text{ m s}^{-2}`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-fric', section: 'Mechanics', category: 'Dynamics & Friction', title: 'Friction law', latex: String.raw`F \le \mu R,\quad F_{\max} = \mu R`, description: 'μ = coefficient of friction, R = normal reaction', inBooklet: false, unit: 'M1' },
+
+  // Momentum & Impulse
+  { id: 'm1-mom', section: 'Mechanics', category: 'Momentum & Impulse', title: 'Linear momentum', latex: String.raw`p = mv`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-imp', section: 'Mechanics', category: 'Momentum & Impulse', title: 'Impulse', latex: String.raw`I = F\Delta t = m(v - u)`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-mom-cons', section: 'Mechanics', category: 'Momentum & Impulse', title: 'Conservation of linear momentum', latex: String.raw`m_1 u_1 + m_2 u_2 = m_1 v_1 + m_2 v_2`, inBooklet: false, unit: 'M1' },
+
+  // Statics & Equilibrium
+  { id: 'm1-moment', section: 'Mechanics', category: 'Statics & Equilibrium', title: 'Moment of a force', latex: String.raw`\text{Moment} = F \times d`, description: 'd = perpendicular distance from pivot', inBooklet: false, unit: 'M1' },
+  { id: 'm1-equil', section: 'Mechanics', category: 'Statics & Equilibrium', title: 'Equilibrium conditions', latex: String.raw`\Sigma F_x = 0,\quad \Sigma F_y = 0,\quad \Sigma M_P = 0`, inBooklet: false, unit: 'M1' },
+
+  // Vectors in Kinematics
+  { id: 'm1-vec-pos', section: 'Mechanics', category: 'Vectors in Kinematics', title: 'Position vector with constant velocity', latex: String.raw`\mathbf{r} = \mathbf{r}_0 + \mathbf{v}t`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-vec-speed', section: 'Mechanics', category: 'Vectors in Kinematics', title: 'Speed from velocity components', latex: String.raw`|\mathbf{v}| = \sqrt{v_x^2 + v_y^2}`, inBooklet: false, unit: 'M1' },
+  { id: 'm1-vec-bearing', section: 'Mechanics', category: 'Vectors in Kinematics', title: 'Bearing from velocity', latex: String.raw`\text{Bearing} = \arctan\left(\frac{v_x}{v_y}\right)\text{ clockwise from North}`, inBooklet: false, unit: 'M1' },
+];
+
+export const STATISTICS_FORMULAE: MathFormulaItem[] = [
+  // Measures of Location & Dispersion
+  { id: 's1-mean', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Mean', latex: String.raw`\bar{x} = \frac{\sum x}{n} = \frac{\sum fx}{\sum f}`, inBooklet: false, unit: 'S1' },
+  { id: 's1-var', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Variance', latex: String.raw`s^2 = \frac{\sum(x - \bar{x})^2}{n} = \frac{\sum x^2}{n} - \bar{x}^2`, inBooklet: false, unit: 'S1' },
+  { id: 's1-sd', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Standard deviation', latex: String.raw`s = \sqrt{\text{Variance}} = \sqrt{\frac{\sum x^2}{n} - \bar{x}^2}`, inBooklet: false, unit: 'S1' },
+  { id: 's1-coding', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Linear coding (mean & variance)', latex: String.raw`y = \frac{x - a}{b} \implies \bar{y} = \frac{\bar{x} - a}{b},\quad s_y^2 = \frac{s_x^2}{b^2}`, inBooklet: false, unit: 'S1' },
+  { id: 's1-outliers-iqr', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Outlier rule: IQR definition', latex: String.raw`\text{Outlier if } x < Q_1 - 1.5 \times \text{IQR}\;\text{ or }\; x > Q_3 + 1.5 \times \text{IQR}`, inBooklet: false, unit: 'S1' },
+  { id: 's1-outliers-sd', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Outlier rule: Standard deviation', latex: String.raw`\text{Outlier if } |x - \bar{x}| > 2s\;\text{ (or } 3s\text{)}`, inBooklet: false, unit: 'S1' },
+  { id: 's1-histogram', section: 'Statistics', category: 'Measures of Location & Dispersion', title: 'Histogram: Frequency density', latex: String.raw`\text{Frequency Density} = \frac{\text{Frequency}}{\text{Class Width}},\quad \text{Area} \propto \text{Frequency}`, inBooklet: false, unit: 'S1' },
+
+  // Correlation & Regression
+  { id: 's1-sxx', section: 'Statistics', category: 'Correlation & Regression', title: 'Summary statistic Sxx', latex: String.raw`S_{xx} = \sum x^2 - \frac{(\sum x)^2}{n}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-syy', section: 'Statistics', category: 'Correlation & Regression', title: 'Summary statistic Syy', latex: String.raw`S_{yy} = \sum y^2 - \frac{(\sum y)^2}{n}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-sxy', section: 'Statistics', category: 'Correlation & Regression', title: 'Summary statistic Sxy', latex: String.raw`S_{xy} = \sum xy - \frac{\sum x\sum y}{n}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-pmcc', section: 'Statistics', category: 'Correlation & Regression', title: 'PMCC (Pearson correlation coefficient)', latex: String.raw`r = \frac{S_{xy}}{\sqrt{S_{xx}S_{yy}}}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-reg-grad', section: 'Statistics', category: 'Correlation & Regression', title: 'Regression line gradient (b)', latex: String.raw`b = \frac{S_{xy}}{S_{xx}}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-reg-int', section: 'Statistics', category: 'Correlation & Regression', title: 'Regression line intercept (a)', latex: String.raw`a = \bar{y} - b\bar{x}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-reg-eq', section: 'Statistics', category: 'Correlation & Regression', title: 'Least squares regression line', latex: String.raw`y = a + bx`, inBooklet: true, unit: 'S1' },
+
+  // Probability
+  { id: 's1-prob-add', section: 'Statistics', category: 'Probability', title: 'Addition rule', latex: String.raw`P(A \cup B) = P(A) + P(B) - P(A \cap B)`, inBooklet: true, unit: 'S1' },
+  { id: 's1-prob-cond', section: 'Statistics', category: 'Probability', title: 'Conditional probability', latex: String.raw`P(A \mid B) = \frac{P(A \cap B)}{P(B)}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-prob-bayes', section: 'Statistics', category: 'Probability', title: "Bayes' theorem", latex: String.raw`P(A \mid B) = \frac{P(B \mid A)P(A)}{P(B \mid A)P(A) + P(B \mid A')P(A')}`, inBooklet: true, unit: 'S1' },
+  { id: 's1-prob-indep', section: 'Statistics', category: 'Probability', title: 'Independent events', latex: String.raw`P(A \cap B) = P(A)P(B) \iff P(A \mid B) = P(A)`, inBooklet: false, unit: 'S1' },
+  { id: 's1-prob-mutex', section: 'Statistics', category: 'Probability', title: 'Mutually exclusive events', latex: String.raw`P(A \cap B) = 0 \implies P(A \cup B) = P(A) + P(B)`, inBooklet: false, unit: 'S1' },
+
+  // Discrete Random Variables
+  { id: 's1-drv-mean', section: 'Statistics', category: 'Discrete Random Variables', title: 'Discrete random variable: E(X)', latex: String.raw`E(X) = \mu = \sum x P(X = x)`, inBooklet: true, unit: 'S1' },
+  { id: 's1-drv-var', section: 'Statistics', category: 'Discrete Random Variables', title: 'Discrete random variable: Var(X)', latex: String.raw`\operatorname{Var}(X) = \sigma^2 = \sum x^2 P(X = x) - \mu^2`, inBooklet: true, unit: 'S1' },
+  { id: 's1-drv-exp-func', section: 'Statistics', category: 'Discrete Random Variables', title: 'Expectation of a function: E(g(X))', latex: String.raw`E(g(X)) = \sum g(x) P(X = x)`, inBooklet: true, unit: 'S1' },
+  { id: 's1-drv-linear', section: 'Statistics', category: 'Discrete Random Variables', title: 'Linear transform of random variables', latex: String.raw`E(aX + b) = aE(X) + b,\quad \operatorname{Var}(aX + b) = a^2\operatorname{Var}(X)`, inBooklet: false, unit: 'S1' },
+  { id: 's1-unif', section: 'Statistics', category: 'Discrete Random Variables', title: 'Discrete uniform distribution', latex: String.raw`E(X) = \frac{n + 1}{2},\quad \operatorname{Var}(X) = \frac{n^2 - 1}{12}`, description: 'X ∈ {1, 2, ..., n}', inBooklet: false, unit: 'S1' },
+
+  // Normal Distribution
+  { id: 's1-norm-z', section: 'Statistics', category: 'Normal Distribution', title: 'Standardisation formula', latex: String.raw`Z = \frac{X - \mu}{\sigma} \sim \mathrm{N}(0, 1)`, inBooklet: false, unit: 'S1' },
+  { id: 's1-norm-sym', section: 'Statistics', category: 'Normal Distribution', title: 'Normal distribution symmetry', latex: String.raw`P(Z < -z) = 1 - \Phi(z),\quad P(Z > z) = 1 - \Phi(z)`, inBooklet: false, unit: 'S1' },
+  { id: 's1-norm-interval', section: 'Statistics', category: 'Normal Distribution', title: 'Central interval probability', latex: String.raw`P(-z < Z < z) = 2\Phi(z) - 1`, inBooklet: false, unit: 'S1' },
+];
+
+export const NORMAL_TABLE_5COL: NormalTableRow5Col[] = [
+  { c1: { z: '0.00', phi: '0.5000' }, c2: { z: '0.50', phi: '0.6915' }, c3: { z: '1.00', phi: '0.8413' }, c4: { z: '1.50', phi: '0.9332' }, c5: { z: '2.00', phi: '0.9772' } },
+  { c1: { z: '0.01', phi: '0.5040' }, c2: { z: '0.51', phi: '0.6950' }, c3: { z: '1.01', phi: '0.8438' }, c4: { z: '1.51', phi: '0.9345' }, c5: { z: '2.02', phi: '0.9783' } },
+  { c1: { z: '0.02', phi: '0.5080' }, c2: { z: '0.52', phi: '0.6985' }, c3: { z: '1.02', phi: '0.8461' }, c4: { z: '1.52', phi: '0.9357' }, c5: { z: '2.04', phi: '0.9793' } },
+  { c1: { z: '0.03', phi: '0.5120' }, c2: { z: '0.53', phi: '0.7019' }, c3: { z: '1.03', phi: '0.8485' }, c4: { z: '1.53', phi: '0.9370' }, c5: { z: '2.06', phi: '0.9803' } },
+  { c1: { z: '0.04', phi: '0.5160' }, c2: { z: '0.54', phi: '0.7054' }, c3: { z: '1.04', phi: '0.8508' }, c4: { z: '1.54', phi: '0.9382' }, c5: { z: '2.08', phi: '0.9812' } },
+  { c1: { z: '0.05', phi: '0.5199' }, c2: { z: '0.55', phi: '0.7088' }, c3: { z: '1.05', phi: '0.8531' }, c4: { z: '1.55', phi: '0.9394' }, c5: { z: '2.10', phi: '0.9821' } },
+  { c1: { z: '0.06', phi: '0.5239' }, c2: { z: '0.56', phi: '0.7123' }, c3: { z: '1.06', phi: '0.8554' }, c4: { z: '1.56', phi: '0.9406' }, c5: { z: '2.12', phi: '0.9830' } },
+  { c1: { z: '0.07', phi: '0.5279' }, c2: { z: '0.57', phi: '0.7157' }, c3: { z: '1.07', phi: '0.8577' }, c4: { z: '1.57', phi: '0.9418' }, c5: { z: '2.14', phi: '0.9838' } },
+  { c1: { z: '0.08', phi: '0.5319' }, c2: { z: '0.58', phi: '0.7190' }, c3: { z: '1.08', phi: '0.8599' }, c4: { z: '1.58', phi: '0.9429' }, c5: { z: '2.16', phi: '0.9846' } },
+  { c1: { z: '0.09', phi: '0.5359' }, c2: { z: '0.59', phi: '0.7224' }, c3: { z: '1.09', phi: '0.8621' }, c4: { z: '1.59', phi: '0.9441' }, c5: { z: '2.18', phi: '0.9854' } },
+  { c1: { z: '0.10', phi: '0.5398' }, c2: { z: '0.60', phi: '0.7257' }, c3: { z: '1.10', phi: '0.8643' }, c4: { z: '1.60', phi: '0.9452' }, c5: { z: '2.20', phi: '0.9861' } },
+  { c1: { z: '0.11', phi: '0.5438' }, c2: { z: '0.61', phi: '0.7291' }, c3: { z: '1.11', phi: '0.8665' }, c4: { z: '1.61', phi: '0.9463' }, c5: { z: '2.22', phi: '0.9868' } },
+  { c1: { z: '0.12', phi: '0.5478' }, c2: { z: '0.62', phi: '0.7324' }, c3: { z: '1.12', phi: '0.8686' }, c4: { z: '1.62', phi: '0.9474' }, c5: { z: '2.24', phi: '0.9875' } },
+  { c1: { z: '0.13', phi: '0.5517' }, c2: { z: '0.63', phi: '0.7357' }, c3: { z: '1.13', phi: '0.8708' }, c4: { z: '1.63', phi: '0.9484' }, c5: { z: '2.26', phi: '0.9881' } },
+  { c1: { z: '0.14', phi: '0.5557' }, c2: { z: '0.64', phi: '0.7389' }, c3: { z: '1.14', phi: '0.8729' }, c4: { z: '1.64', phi: '0.9495' }, c5: { z: '2.28', phi: '0.9887' } },
+  { c1: { z: '0.15', phi: '0.5596' }, c2: { z: '0.65', phi: '0.7422' }, c3: { z: '1.15', phi: '0.8749' }, c4: { z: '1.65', phi: '0.9505' }, c5: { z: '2.30', phi: '0.9893' } },
+  { c1: { z: '0.16', phi: '0.5636' }, c2: { z: '0.66', phi: '0.7454' }, c3: { z: '1.16', phi: '0.8770' }, c4: { z: '1.66', phi: '0.9515' }, c5: { z: '2.32', phi: '0.9898' } },
+  { c1: { z: '0.17', phi: '0.5675' }, c2: { z: '0.67', phi: '0.7486' }, c3: { z: '1.17', phi: '0.8790' }, c4: { z: '1.67', phi: '0.9525' }, c5: { z: '2.34', phi: '0.9904' } },
+  { c1: { z: '0.18', phi: '0.5714' }, c2: { z: '0.68', phi: '0.7517' }, c3: { z: '1.18', phi: '0.8810' }, c4: { z: '1.68', phi: '0.9535' }, c5: { z: '2.36', phi: '0.9909' } },
+  { c1: { z: '0.19', phi: '0.5753' }, c2: { z: '0.69', phi: '0.7549' }, c3: { z: '1.19', phi: '0.8830' }, c4: { z: '1.69', phi: '0.9545' }, c5: { z: '2.38', phi: '0.9913' } },
+  { c1: { z: '0.20', phi: '0.5793' }, c2: { z: '0.70', phi: '0.7580' }, c3: { z: '1.20', phi: '0.8849' }, c4: { z: '1.70', phi: '0.9554' }, c5: { z: '2.40', phi: '0.9918' } },
+  { c1: { z: '0.21', phi: '0.5832' }, c2: { z: '0.71', phi: '0.7611' }, c3: { z: '1.21', phi: '0.8869' }, c4: { z: '1.71', phi: '0.9564' }, c5: { z: '2.42', phi: '0.9922' } },
+  { c1: { z: '0.22', phi: '0.5871' }, c2: { z: '0.72', phi: '0.7642' }, c3: { z: '1.22', phi: '0.8888' }, c4: { z: '1.72', phi: '0.9573' }, c5: { z: '2.44', phi: '0.9927' } },
+  { c1: { z: '0.23', phi: '0.5910' }, c2: { z: '0.73', phi: '0.7673' }, c3: { z: '1.23', phi: '0.8907' }, c4: { z: '1.73', phi: '0.9582' }, c5: { z: '2.46', phi: '0.9931' } },
+  { c1: { z: '0.24', phi: '0.5948' }, c2: { z: '0.74', phi: '0.7704' }, c3: { z: '1.24', phi: '0.8925' }, c4: { z: '1.74', phi: '0.9591' }, c5: { z: '2.48', phi: '0.9934' } },
+  { c1: { z: '0.25', phi: '0.5987' }, c2: { z: '0.75', phi: '0.7734' }, c3: { z: '1.25', phi: '0.8944' }, c4: { z: '1.75', phi: '0.9599' }, c5: { z: '2.50', phi: '0.9938' } },
+  { c1: { z: '0.26', phi: '0.6026' }, c2: { z: '0.76', phi: '0.7764' }, c3: { z: '1.26', phi: '0.8962' }, c4: { z: '1.76', phi: '0.9608' }, c5: { z: '2.55', phi: '0.9946' } },
+  { c1: { z: '0.27', phi: '0.6064' }, c2: { z: '0.77', phi: '0.7794' }, c3: { z: '1.27', phi: '0.8980' }, c4: { z: '1.77', phi: '0.9616' }, c5: { z: '2.60', phi: '0.9953' } },
+  { c1: { z: '0.28', phi: '0.6103' }, c2: { z: '0.78', phi: '0.7823' }, c3: { z: '1.28', phi: '0.8997' }, c4: { z: '1.78', phi: '0.9625' }, c5: { z: '2.65', phi: '0.9960' } },
+  { c1: { z: '0.29', phi: '0.6141' }, c2: { z: '0.79', phi: '0.7852' }, c3: { z: '1.29', phi: '0.9015' }, c4: { z: '1.79', phi: '0.9633' }, c5: { z: '2.70', phi: '0.9965' } },
+  { c1: { z: '0.30', phi: '0.6179' }, c2: { z: '0.80', phi: '0.7881' }, c3: { z: '1.30', phi: '0.9032' }, c4: { z: '1.80', phi: '0.9641' }, c5: { z: '2.75', phi: '0.9970' } },
+  { c1: { z: '0.31', phi: '0.6217' }, c2: { z: '0.81', phi: '0.7910' }, c3: { z: '1.31', phi: '0.9049' }, c4: { z: '1.81', phi: '0.9649' }, c5: { z: '2.80', phi: '0.9974' } },
+  { c1: { z: '0.32', phi: '0.6255' }, c2: { z: '0.82', phi: '0.7939' }, c3: { z: '1.32', phi: '0.9066' }, c4: { z: '1.82', phi: '0.9656' }, c5: { z: '2.85', phi: '0.9978' } },
+  { c1: { z: '0.33', phi: '0.6293' }, c2: { z: '0.83', phi: '0.7967' }, c3: { z: '1.33', phi: '0.9082' }, c4: { z: '1.83', phi: '0.9664' }, c5: { z: '2.90', phi: '0.9981' } },
+  { c1: { z: '0.34', phi: '0.6331' }, c2: { z: '0.84', phi: '0.7995' }, c3: { z: '1.34', phi: '0.9099' }, c4: { z: '1.84', phi: '0.9671' }, c5: { z: '2.95', phi: '0.9984' } },
+  { c1: { z: '0.35', phi: '0.6368' }, c2: { z: '0.85', phi: '0.8023' }, c3: { z: '1.35', phi: '0.9115' }, c4: { z: '1.85', phi: '0.9678' }, c5: { z: '3.00', phi: '0.9987' } },
+  { c1: { z: '0.36', phi: '0.6406' }, c2: { z: '0.86', phi: '0.8051' }, c3: { z: '1.36', phi: '0.9131' }, c4: { z: '1.86', phi: '0.9686' }, c5: { z: '3.05', phi: '0.9989' } },
+  { c1: { z: '0.37', phi: '0.6443' }, c2: { z: '0.87', phi: '0.8078' }, c3: { z: '1.37', phi: '0.9147' }, c4: { z: '1.87', phi: '0.9693' }, c5: { z: '3.10', phi: '0.9990' } },
+  { c1: { z: '0.38', phi: '0.6480' }, c2: { z: '0.88', phi: '0.8106' }, c3: { z: '1.38', phi: '0.9162' }, c4: { z: '1.88', phi: '0.9699' }, c5: { z: '3.15', phi: '0.9992' } },
+  { c1: { z: '0.39', phi: '0.6517' }, c2: { z: '0.89', phi: '0.8133' }, c3: { z: '1.39', phi: '0.9177' }, c4: { z: '1.89', phi: '0.9706' }, c5: { z: '3.20', phi: '0.9993' } },
+  { c1: { z: '0.40', phi: '0.6554' }, c2: { z: '0.90', phi: '0.8159' }, c3: { z: '1.40', phi: '0.9192' }, c4: { z: '1.90', phi: '0.9713' }, c5: { z: '3.25', phi: '0.9994' } },
+  { c1: { z: '0.41', phi: '0.6591' }, c2: { z: '0.91', phi: '0.8186' }, c3: { z: '1.41', phi: '0.9207' }, c4: { z: '1.91', phi: '0.9719' }, c5: { z: '3.30', phi: '0.9995' } },
+  { c1: { z: '0.42', phi: '0.6628' }, c2: { z: '0.92', phi: '0.8212' }, c3: { z: '1.42', phi: '0.9222' }, c4: { z: '1.92', phi: '0.9726' }, c5: { z: '3.35', phi: '0.9996' } },
+  { c1: { z: '0.43', phi: '0.6664' }, c2: { z: '0.93', phi: '0.8238' }, c3: { z: '1.43', phi: '0.9236' }, c4: { z: '1.93', phi: '0.9732' }, c5: { z: '3.40', phi: '0.9997' } },
+  { c1: { z: '0.44', phi: '0.6700' }, c2: { z: '0.94', phi: '0.8264' }, c3: { z: '1.44', phi: '0.9251' }, c4: { z: '1.94', phi: '0.9738' }, c5: { z: '3.50', phi: '0.9998' } },
+  { c1: { z: '0.45', phi: '0.6736' }, c2: { z: '0.95', phi: '0.8289' }, c3: { z: '1.45', phi: '0.9265' }, c4: { z: '1.95', phi: '0.9744' }, c5: { z: '3.60', phi: '0.9998' } },
+  { c1: { z: '0.46', phi: '0.6772' }, c2: { z: '0.96', phi: '0.8315' }, c3: { z: '1.46', phi: '0.9279' }, c4: { z: '1.96', phi: '0.9750' }, c5: { z: '3.70', phi: '0.9999' } },
+  { c1: { z: '0.47', phi: '0.6808' }, c2: { z: '0.97', phi: '0.8340' }, c3: { z: '1.47', phi: '0.9292' }, c4: { z: '1.97', phi: '0.9756' }, c5: { z: '3.80', phi: '0.9999' } },
+  { c1: { z: '0.48', phi: '0.6844' }, c2: { z: '0.98', phi: '0.8365' }, c3: { z: '1.48', phi: '0.9306' }, c4: { z: '1.98', phi: '0.9761' }, c5: { z: '3.90', phi: '1.0000' } },
+  { c1: { z: '0.49', phi: '0.6879' }, c2: { z: '0.99', phi: '0.8389' }, c3: { z: '1.49', phi: '0.9319' }, c4: { z: '1.99', phi: '0.9767' }, c5: { z: '4.00', phi: '1.0000' } },
+];
+
+export const NORMAL_PERCENTAGE_POINTS: NormalDistributionPoint[] = [
+  { p: '0.5000', z: '0.0000' },
+  { p: '0.4000', z: '0.2533' },
+  { p: '0.3000', z: '0.5244' },
+  { p: '0.2000', z: '0.8416' },
+  { p: '0.1500', z: '1.0364' },
+  { p: '0.1000', z: '1.2816' },
+  { p: '0.0500', z: '1.6449' },
+  { p: '0.0250', z: '1.9600' },
+  { p: '0.0100', z: '2.3263' },
+  { p: '0.0050', z: '2.5758' },
+  { p: '0.0010', z: '3.0902' },
+  { p: '0.0005', z: '3.2905' },
+];
+
+export function calculatePhi(z: number): number {
+  if (isNaN(z)) return NaN;
+  if (z < 0) return Math.round((1 - calculatePhi(-z)) * 10000) / 10000;
+  if (z >= 3.9) return 1.0;
+  // Rational Chebyshev approximation of erf
+  const t = 1.0 / (1.0 + 0.2316419 * z);
+  const d = 0.3989422804014327 * Math.exp((-z * z) / 2);
+  const prob = 1.0 - d * t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return Math.round(prob * 10000) / 10000;
+}

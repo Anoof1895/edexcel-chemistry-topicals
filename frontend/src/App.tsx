@@ -33,7 +33,11 @@ const parseHashRoute = (): { view: AppView; questionId: string | null } => {
     const lowerPath = (hashPath || '').toLowerCase();
 
     let view: AppView = 'home';
-    if (lowerPath.includes('physics-test-maker') || lowerPath.includes('physics/test-maker')) {
+    if (lowerPath.includes('math') && (lowerPath.includes('test-maker') || lowerPath.includes('testmaker'))) {
+      view = 'mathematics-test-maker';
+    } else if (lowerPath.includes('math')) {
+      view = 'mathematics-topical';
+    } else if (lowerPath.includes('physics-test-maker') || lowerPath.includes('physics/test-maker')) {
       view = 'physics-test-maker';
     } else if (lowerPath.includes('physics-topical') || lowerPath.includes('physics/topical') || lowerPath.includes('physics')) {
       view = 'physics-topical';
@@ -58,6 +62,7 @@ const parseHashRoute = (): { view: AppView; questionId: string | null } => {
 export const App: React.FC = () => {
   const [chemQuestions, setChemQuestions] = useState<QuestionItem[] | null>(null);
   const [physQuestions, setPhysQuestions] = useState<QuestionItem[] | null>(null);
+  const [mathQuestions, setMathQuestions] = useState<QuestionItem[] | null>(null);
   const [loadingSubject, setLoadingSubject] = useState<Subject | null>(null);
   const [datasetError, setDatasetError] = useState<string | null>(null);
   const [isDataBookletOpen, setIsDataBookletOpen] = useState<boolean>(false);
@@ -92,7 +97,11 @@ export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.current.view);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialRoute.current.questionId);
 
-  const activeSubject: Subject = currentView.startsWith('physics') ? 'physics' : 'chemistry';
+  const activeSubject: Subject = currentView.startsWith('physics')
+    ? 'physics'
+    : currentView.startsWith('mathematics')
+    ? 'mathematics'
+    : 'chemistry';
 
   const handleNavigate = useCallback((view: AppView) => {
     setCurrentView(view);
@@ -100,6 +109,10 @@ export const App: React.FC = () => {
       window.location.hash = selectedQuestionId ? `#/physics/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/physics/topical';
     } else if (view === 'physics-test-maker') {
       window.location.hash = '#/physics/test-maker';
+    } else if (view === 'mathematics-topical') {
+      window.location.hash = selectedQuestionId ? `#/mathematics/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/mathematics/topical';
+    } else if (view === 'mathematics-test-maker') {
+      window.location.hash = '#/mathematics/test-maker';
     } else if (view === 'chemistry-topical') {
       window.location.hash = selectedQuestionId ? `#/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/topical';
     } else if (view === 'chemistry-test-maker') {
@@ -125,10 +138,14 @@ export const App: React.FC = () => {
 
   // Sync selected question ID to URL hash in topical view
   useEffect(() => {
-    if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical') return;
+    if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical' && currentView !== 'mathematics-topical') return;
     if (!selectedQuestionId) return;
 
-    const basePath = currentView === 'physics-topical' ? '#/physics/topical' : '#/topical';
+    const basePath = currentView === 'physics-topical'
+      ? '#/physics/topical'
+      : currentView === 'mathematics-topical'
+      ? '#/mathematics/topical'
+      : '#/topical';
     const newHash = `${basePath}?q=${encodeURIComponent(selectedQuestionId)}`;
     if (window.location.hash !== newHash) {
       window.history.replaceState(null, '', newHash);
@@ -141,6 +158,10 @@ export const App: React.FC = () => {
       document.title = 'Physics Topicals | Edexcel IAL Topicals';
     } else if (currentView === 'physics-test-maker') {
       document.title = 'Physics Test Maker | Edexcel IAL Topicals';
+    } else if (currentView === 'mathematics-topical') {
+      document.title = 'Mathematics Topicals | Edexcel IAL Topicals';
+    } else if (currentView === 'mathematics-test-maker') {
+      document.title = 'Mathematics Test Maker | Edexcel IAL Topicals';
     } else if (currentView === 'chemistry-topical') {
       document.title = 'Chemistry Topicals | Edexcel IAL Topicals';
     } else if (currentView === 'chemistry-test-maker') {
@@ -154,8 +175,11 @@ export const App: React.FC = () => {
     if (activeSubject === 'physics') {
       return physQuestions || [];
     }
+    if (activeSubject === 'mathematics') {
+      return mathQuestions || [];
+    }
     return chemQuestions || [];
-  }, [activeSubject, physQuestions, chemQuestions]);
+  }, [activeSubject, physQuestions, mathQuestions, chemQuestions]);
 
   // Default view: Question Only mode so answers aren't spoiled
   const [viewMode, setViewMode] = useState<ViewMode>('question-only');
@@ -188,7 +212,20 @@ export const App: React.FC = () => {
     }
   });
 
-  const testCart = activeSubject === 'physics' ? physTestCart : chemTestCart;
+  const [mathTestCart, setMathTestCart] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('math_test_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const testCart = activeSubject === 'physics'
+    ? physTestCart
+    : activeSubject === 'mathematics'
+    ? mathTestCart
+    : chemTestCart;
 
   const [chemTestTitle, setChemTestTitle] = useState<string>(() => {
     try {
@@ -206,11 +243,25 @@ export const App: React.FC = () => {
     }
   });
 
-  const testTitle = activeSubject === 'physics' ? physTestTitle : chemTestTitle;
+  const [mathTestTitle, setMathTestTitle] = useState<string>(() => {
+    try {
+      return localStorage.getItem('math_test_title') || 'Custom Mathematics Mock Exam';
+    } catch {
+      return 'Custom Mathematics Mock Exam';
+    }
+  });
+
+  const testTitle = activeSubject === 'physics'
+    ? physTestTitle
+    : activeSubject === 'mathematics'
+    ? mathTestTitle
+    : chemTestTitle;
 
   const setTestTitle = useCallback((title: string) => {
     if (activeSubject === 'physics') {
       setPhysTestTitle(title);
+    } else if (activeSubject === 'mathematics') {
+      setMathTestTitle(title);
     } else {
       setChemTestTitle(title);
     }
@@ -225,6 +276,10 @@ export const App: React.FC = () => {
   }, [physTestCart]);
 
   useEffect(() => {
+    localStorage.setItem('math_test_cart', JSON.stringify(mathTestCart));
+  }, [mathTestCart]);
+
+  useEffect(() => {
     localStorage.setItem('chem_test_title', chemTestTitle);
   }, [chemTestTitle]);
 
@@ -232,9 +287,15 @@ export const App: React.FC = () => {
     localStorage.setItem('phys_test_title', physTestTitle);
   }, [physTestTitle]);
 
+  useEffect(() => {
+    localStorage.setItem('math_test_title', mathTestTitle);
+  }, [mathTestTitle]);
+
   const handleAddToCart = useCallback((id: string) => {
     if (activeSubject === 'physics') {
       setPhysTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    } else if (activeSubject === 'mathematics') {
+      setMathTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
     } else {
       setChemTestCart((prev) => (prev.includes(id) ? prev : [...prev, id]));
     }
@@ -243,6 +304,8 @@ export const App: React.FC = () => {
   const handleRemoveFromCart = useCallback((id: string) => {
     if (activeSubject === 'physics') {
       setPhysTestCart((prev) => prev.filter((item) => item !== id));
+    } else if (activeSubject === 'mathematics') {
+      setMathTestCart((prev) => prev.filter((item) => item !== id));
     } else {
       setChemTestCart((prev) => prev.filter((item) => item !== id));
     }
@@ -251,6 +314,8 @@ export const App: React.FC = () => {
   const handleClearCart = useCallback(() => {
     if (activeSubject === 'physics') {
       setPhysTestCart([]);
+    } else if (activeSubject === 'mathematics') {
+      setMathTestCart([]);
     } else {
       setChemTestCart([]);
     }
@@ -259,6 +324,8 @@ export const App: React.FC = () => {
   const handleReorderCart = useCallback((newIds: string[]) => {
     if (activeSubject === 'physics') {
       setPhysTestCart(newIds);
+    } else if (activeSubject === 'mathematics') {
+      setMathTestCart(newIds);
     } else {
       setChemTestCart(newIds);
     }
@@ -312,12 +379,32 @@ export const App: React.FC = () => {
             setLoadingSubject(null);
           }
         });
+    } else if (activeSubject === 'mathematics' && !mathQuestions) {
+      setLoadingSubject('mathematics');
+      setDatasetError(null);
+      fetch('/dataset_math.json')
+        .then((res) => {
+          if (!res.ok) throw new Error(`Failed to load Mathematics dataset: ${res.statusText}`);
+          return res.json();
+        })
+        .then((data: QuestionItem[]) => {
+          if (isMounted) {
+            setMathQuestions(data);
+            setLoadingSubject(null);
+          }
+        })
+        .catch((err) => {
+          if (isMounted) {
+            setDatasetError(err.message || 'Failed to load Mathematics dataset');
+            setLoadingSubject(null);
+          }
+        });
     }
 
     return () => {
       isMounted = false;
     };
-  }, [activeSubject, currentView, chemQuestions, physQuestions]);
+  }, [activeSubject, currentView, chemQuestions, physQuestions, mathQuestions]);
 
   // Active drawer tab: 'all' | 'bookmarked'
   const [activeTab, setActiveTab] = useState<'all' | 'bookmarked'>('all');
@@ -386,8 +473,14 @@ export const App: React.FC = () => {
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
       // Unit multi-select filter: empty means all units match
-      if (filters.selectedUnits.length > 0 && !filters.selectedUnits.includes(q.unit)) {
-        return false;
+      if (filters.selectedUnits.length > 0) {
+        const matchesUnit = filters.selectedUnits.some((fu) => {
+          if (fu === q.unit || fu === q.unitCode) return true;
+          const fuPrefix = fu.split(':')[0].trim().toLowerCase();
+          const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
+          return fuPrefix && qPrefix && fuPrefix === qPrefix;
+        });
+        if (!matchesUnit) return false;
       }
 
       // Multi-select subtopic filter: match ANY selected subtopic
@@ -592,14 +685,15 @@ export const App: React.FC = () => {
   const isSubjectLoading = currentView !== 'home' && (
     loadingSubject === activeSubject ||
     (activeSubject === 'chemistry' && !chemQuestions) ||
-    (activeSubject === 'physics' && !physQuestions)
+    (activeSubject === 'physics' && !physQuestions) ||
+    (activeSubject === 'mathematics' && !mathQuestions)
   );
 
   if (isSubjectLoading) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
         <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-        <p className="text-sm font-medium">Loading {activeSubject === 'physics' ? 'Physics' : 'Chemistry'} past papers & topical taxonomy...</p>
+        <p className="text-sm font-medium">Loading {activeSubject === 'physics' ? 'Physics' : activeSubject === 'mathematics' ? 'Mathematics' : 'Chemistry'} past papers & topical taxonomy...</p>
       </div>
     );
   }
@@ -629,6 +723,7 @@ export const App: React.FC = () => {
         activeSubject={activeSubject}
         chemCount={chemQuestions?.length ?? 5712}
         physCount={physQuestions?.length ?? 4136}
+        mathCount={mathQuestions?.length ?? 1269}
         onOpenDataBooklet={() => setIsDataBookletOpen(true)}
       />
 
@@ -639,11 +734,12 @@ export const App: React.FC = () => {
             onNavigate={handleNavigate}
             questions={chemQuestions || []}
             physicsQuestions={physQuestions || []}
+            mathematicsQuestions={mathQuestions || []}
           />
         </React.Suspense>
       )}
 
-      {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker') && (
+      {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker') && (
         <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
           isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
         }`}>
@@ -662,7 +758,7 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {(currentView === 'chemistry-topical' || currentView === 'physics-topical') && (
+      {(currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical') && (
         <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
           isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
         }`}>

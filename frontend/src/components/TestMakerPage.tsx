@@ -40,138 +40,16 @@ interface TestMakerPageProps {
   onSetTestTitle: (title: string) => void;
 }
 
-export type SmartGenerateMode = 'balanced' | 'review_first' | 'unattempted_only';
+import { 
+  autoGenerateExam, 
+  detectUnitCategory, 
+  ExamStructure, 
+  SmartGenerateMode 
+} from '../utils/examGenerator';
+import { calculateExamDurationMinutes } from '../utils/examDuration';
 
-export function autoGenerateExam(
-  pool: QuestionItem[],
-  targetMarks: number,
-  mode: SmartGenerateMode,
-  questionStatuses: Record<string, string> = {}
-): { selected: QuestionItem[]; actualMarks: number } {
-  if (pool.length === 0) return { selected: [], actualMarks: 0 };
-
-  const validPool = pool.filter((q) => (q.marks || 0) > 0);
-  if (validPool.length === 0) return { selected: [], actualMarks: 0 };
-
-  let candidates: QuestionItem[] = [...validPool];
-
-  if (mode === 'unattempted_only') {
-    const unattempted = validPool.filter((q) => {
-      const st = questionStatuses[q.id];
-      return !st || st === 'unattempted';
-    });
-    if (unattempted.length > 0) {
-      candidates = unattempted;
-    }
-  }
-
-  const shuffle = <T,>(arr: T[]): T[] => {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  };
-
-  const runPass = () => {
-    let prioritized: QuestionItem[] = [];
-
-    if (mode === 'review_first') {
-      const reviewQs = shuffle(candidates.filter((q) => questionStatuses[q.id] === 'review' || questionStatuses[q.id] === 'incorrect'));
-      const unattemptedQs = shuffle(candidates.filter((q) => !questionStatuses[q.id] || questionStatuses[q.id] === 'unattempted'));
-      const masteredQs = shuffle(candidates.filter((q) => questionStatuses[q.id] === 'mastered' || questionStatuses[q.id] === 'correct'));
-      prioritized = [...reviewQs, ...unattemptedQs, ...masteredQs];
-    } else if (mode === 'balanced') {
-      const mcqs = shuffle(candidates.filter((q) => getQuestionType(q) === 'mcq'));
-      const theory = shuffle(candidates.filter((q) => getQuestionType(q) !== 'mcq'));
-
-      const targetMcqMarks = Math.round(targetMarks * 0.22);
-      let mcqMarksAcc = 0;
-      const chosenMcqs: QuestionItem[] = [];
-      for (const q of mcqs) {
-        if (mcqMarksAcc + (q.marks || 0) <= targetMcqMarks + 1) {
-          chosenMcqs.push(q);
-          mcqMarksAcc += q.marks;
-        }
-      }
-
-      const shortTheory = shuffle(theory.filter((q) => (q.marks || 0) <= 3));
-      const medTheory = shuffle(theory.filter((q) => (q.marks || 0) >= 4 && (q.marks || 0) <= 5));
-      const longTheory = shuffle(theory.filter((q) => (q.marks || 0) >= 6));
-
-      const interleavedTheory: QuestionItem[] = [];
-      const maxLen = Math.max(shortTheory.length, medTheory.length, longTheory.length);
-      for (let i = 0; i < maxLen; i++) {
-        if (i < shortTheory.length) interleavedTheory.push(shortTheory[i]);
-        if (i < medTheory.length) interleavedTheory.push(medTheory[i]);
-        if (i < longTheory.length) interleavedTheory.push(longTheory[i]);
-      }
-
-      prioritized = [...chosenMcqs, ...interleavedTheory];
-    } else {
-      prioritized = shuffle(candidates);
-    }
-
-    const selected: QuestionItem[] = [];
-    const usedIds = new Set<string>();
-    let currentMarks = 0;
-
-    for (const q of prioritized) {
-      if (usedIds.has(q.id)) continue;
-      const m = q.marks || 0;
-      if (currentMarks + m <= targetMarks + 2) {
-        selected.push(q);
-        usedIds.add(q.id);
-        currentMarks += m;
-      }
-      if (Math.abs(currentMarks - targetMarks) <= 2) {
-        break;
-      }
-    }
-
-    if (targetMarks - currentMarks >= 1) {
-      for (const q of prioritized) {
-        if (usedIds.has(q.id)) continue;
-        const m = q.marks || 0;
-        if (currentMarks + m <= targetMarks + 2) {
-          selected.push(q);
-          usedIds.add(q.id);
-          currentMarks += m;
-          if (Math.abs(currentMarks - targetMarks) <= 2) break;
-        }
-      }
-    }
-
-    return { selected, currentMarks };
-  };
-
-  let bestSelected: QuestionItem[] = [];
-  let bestDiff = Infinity;
-  let bestMarks = 0;
-
-  for (let trial = 0; trial < 40; trial++) {
-    const { selected, currentMarks } = runPass();
-    const diff = Math.abs(currentMarks - targetMarks);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      bestSelected = selected;
-      bestMarks = currentMarks;
-    }
-    if (diff === 0) break;
-  }
-
-  const sorted = [...bestSelected].sort((a, b) => {
-    const aType = getQuestionType(a);
-    const bType = getQuestionType(b);
-    if (aType === 'mcq' && bType !== 'mcq') return -1;
-    if (aType !== 'mcq' && bType === 'mcq') return 1;
-    if (a.unit !== b.unit) return a.unit.localeCompare(b.unit);
-    return a.questionNumber.localeCompare(b.questionNumber, undefined, { numeric: true });
-  });
-
-  return { selected: sorted, actualMarks: bestMarks };
-}
+export { autoGenerateExam };
+export type { SmartGenerateMode, ExamStructure };
 
 const PAGE_SIZE = 15;
 
@@ -212,16 +90,43 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     bookmarkedOnly: false,
   });
 
-  // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m'
-  const [marksFilter, setMarksFilter] = useState<'all' | '1m' | '2-3m' | '4-5m' | '6m'>('all');
+  // Detect if Mathematics is active
+  const isMath = useMemo(() => {
+    return questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'));
+  }, [questions]);
+
+  // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m' (Science) or 'all' | '1-4m' | '5-7m' | '8-10m' | '11m+' (Math)
+  const [marksFilter, setMarksFilter] = useState<string>('all');
 
   // Smart Auto-Generate Mock Exam State
   const [targetMarks, setTargetMarks] = useState<number>(80);
   const [generateMode, setGenerateMode] = useState<SmartGenerateMode>('balanced');
+  const [examStructure, setExamStructure] = useState<ExamStructure>('authentic');
   const [isSmartGenerateOpen, setIsSmartGenerateOpen] = useState<boolean>(true);
   const [lastGeneratedInfo, setLastGeneratedInfo] = useState<string | null>(null);
 
-  const { questionStatuses } = useProgress();
+  // Dynamic unit-aware preset and exam structure switching
+  useEffect(() => {
+    if (isMath) {
+      setTargetMarks(75);
+      setMarksFilter('all');
+      return;
+    }
+
+    const category = detectUnitCategory(filters.selectedUnits);
+    if (category === 'unit3_6') {
+      setTargetMarks(50);
+      setExamStructure('theory_only');
+    } else if (category === 'ia2') {
+      setTargetMarks(90);
+      setExamStructure((prev) => (prev === 'theory_only' ? 'authentic' : prev));
+    } else if (category === 'as') {
+      setTargetMarks(80);
+      setExamStructure((prev) => (prev === 'theory_only' ? 'authentic' : prev));
+    }
+  }, [filters.selectedUnits, isMath]);
+
+  const { questionStatuses, bookmarks } = useProgress();
 
   // Debounced search input
   const [searchInput, setSearchInput] = useState(filters.searchQuery);
@@ -270,8 +175,14 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   const filteredPool = useMemo(() => {
     return questions.filter((q) => {
       // Unit filter
-      if (filters.selectedUnits.length > 0 && !filters.selectedUnits.includes(q.unit)) {
-        return false;
+      if (filters.selectedUnits.length > 0) {
+        const matchesUnit = filters.selectedUnits.some((fu) => {
+          if (fu === q.unit || fu === q.unitCode) return true;
+          const fuPrefix = fu.split(':')[0].trim().toLowerCase();
+          const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
+          return fuPrefix && qPrefix && fuPrefix === qPrefix;
+        });
+        if (!matchesUnit) return false;
       }
 
       // Subtopics filter
@@ -315,10 +226,17 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       // Marks filter
       if (marksFilter !== 'all') {
         const marks = q.marks || 0;
-        if (marksFilter === '1m' && marks !== 1) return false;
-        if (marksFilter === '2-3m' && (marks < 2 || marks > 3)) return false;
-        if (marksFilter === '4-5m' && (marks < 4 || marks > 5)) return false;
-        if (marksFilter === '6m' && marks < 6) return false;
+        if (isMath) {
+          if (marksFilter === '1-4m' && (marks < 1 || marks > 4)) return false;
+          if (marksFilter === '5-7m' && (marks < 5 || marks > 7)) return false;
+          if (marksFilter === '8-10m' && (marks < 8 || marks > 10)) return false;
+          if (marksFilter === '11m+' && marks < 11) return false;
+        } else {
+          if (marksFilter === '1m' && marks !== 1) return false;
+          if (marksFilter === '2-3m' && (marks < 2 || marks > 3)) return false;
+          if (marksFilter === '4-5m' && (marks < 4 || marks > 5)) return false;
+          if (marksFilter === '6m' && marks < 6) return false;
+        }
       }
 
       // Search query
@@ -339,7 +257,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
       return true;
     });
-  }, [questions, filters, marksFilter]);
+  }, [questions, filters, marksFilter, isMath]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPool.length / PAGE_SIZE));
   const pagedQuestions = useMemo(() => {
@@ -372,10 +290,10 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     return cartQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
   }, [cartQuestions]);
 
-  // Estimated standard duration (1.2 minutes per mark)
+  // Estimated standard duration
   const targetTimeMinutes = useMemo(() => {
-    return Math.round(totalCartMarks * 1.2);
-  }, [totalCartMarks]);
+    return calculateExamDurationMinutes(totalCartMarks, isMath, filters.selectedUnits);
+  }, [totalCartMarks, isMath, filters.selectedUnits]);
 
   const handleSmartGenerate = () => {
     const pool = filteredPool.length > 0 ? filteredPool : questions;
@@ -383,7 +301,14 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       alert('No questions available in the current filter pool. Please clear some filters.');
       return;
     }
-    const { selected, actualMarks } = autoGenerateExam(pool, targetMarks, generateMode, questionStatuses);
+    const { selected, actualMarks } = autoGenerateExam(
+      pool,
+      targetMarks,
+      generateMode,
+      examStructure,
+      questionStatuses,
+      bookmarks
+    );
     if (selected.length === 0) {
       alert('Could not match questions to target marks. Please broaden your filters.');
       return;
@@ -420,9 +345,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     setIsExportingQP(true);
     setExportStatus('Generating Question Paper PDF...');
     try {
+      const defaultTitle = isMath
+        ? 'Custom Mathematics Mock Exam'
+        : questions.some((q) => q.unitCode?.startsWith('WPH'))
+        ? 'Custom Physics Mock Exam'
+        : 'Custom Chemistry Mock Exam';
+
       const { generateQuestionPaperPDF } = await import('../utils/pdfGenerator');
       await generateQuestionPaperPDF({
-        title: testTitle || 'Custom Chemistry Mock Exam',
+        title: testTitle || defaultTitle,
         questions: cartQuestions,
         includeFormalHeader,
         includeSourceTags,
@@ -443,9 +374,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     setIsExportingMS(true);
     setExportStatus('Generating Mark Scheme PDF...');
     try {
+      const defaultTitle = isMath
+        ? 'Custom Mathematics Mock Exam'
+        : questions.some((q) => q.unitCode?.startsWith('WPH'))
+        ? 'Custom Physics Mock Exam'
+        : 'Custom Chemistry Mock Exam';
+
       const { generateMarkSchemePDF } = await import('../utils/pdfGenerator');
       await generateMarkSchemePDF({
-        title: testTitle || 'Custom Chemistry Mock Exam',
+        title: testTitle || defaultTitle,
         questions: cartQuestions,
         includeFormalHeader,
         includeSourceTags,
@@ -596,25 +533,27 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-dark-800/80">
             {/* Line A: Question Type Segmented Switch & Reset */}
             <div className="flex items-center justify-between gap-2">
-              <div className="grid grid-cols-3 bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-xs font-medium flex-1">
-                {(['all', 'mcq', 'theory'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => {
-                      setFilters((prev) => ({ ...prev, questionType: t }));
-                      setCurrentPage(1);
-                    }}
-                    className={`py-1 rounded-md capitalize text-center text-xs transition-all ${
-                      filters.questionType === t
-                        ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              {!isMath && (
+                <div className="grid grid-cols-3 bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-xs font-medium flex-1">
+                  {(['all', 'mcq', 'theory'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setFilters((prev) => ({ ...prev, questionType: t }));
+                        setCurrentPage(1);
+                      }}
+                      className={`py-1 rounded-md capitalize text-center text-xs transition-all ${
+                        filters.questionType === t
+                          ? 'bg-cyan-600 text-white font-bold shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Reset Filters */}
               <button
@@ -635,7 +574,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   setCurrentPage(1);
                 }}
                 title="Reset Search Filters"
-                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors shrink-0"
+                className={`p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-dark-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors shrink-0 ${isMath ? 'ml-auto' : ''}`}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -643,7 +582,10 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
             {/* Line B: Marks Filter Pills Evenly Spaced */}
             <div className="grid grid-cols-5 gap-1 bg-slate-100 dark:bg-dark-800 p-0.5 rounded-lg text-xs">
-              {(['all', '1m', '2-3m', '4-5m', '6m'] as const).map((m) => (
+              {(isMath
+                ? (['all', '1-4m', '5-7m', '8-10m', '11m+'] as const)
+                : (['all', '1m', '2-3m', '4-5m', '6m'] as const)
+              ).map((m) => (
                 <button
                   key={m}
                   type="button"
@@ -755,7 +697,9 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     {q.subtopic || q.topic}
                   </p>
                   <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-                    {q.series || q.session} {q.year} • {qType === 'mcq' ? 'Section A' : 'Theory'}
+                    {q.series && q.year && q.series.includes(String(q.year))
+                      ? q.series
+                      : `${q.series || q.session} ${q.year}`} • {qType === 'mcq' ? 'Section A' : 'Theory'}
                   </p>
                 </div>
               );
@@ -1051,7 +995,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   <Zap className="w-3.5 h-3.5 fill-current" />
                 </span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                  ⚡ Smart Auto-Generate
+                  Smart Auto-Generate
                 </span>
                 {lastGeneratedInfo && (
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
@@ -1075,12 +1019,20 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{targetMarks} marks</span>
                   </div>
                   <div className="grid grid-cols-4 gap-1">
-                    {[
-                      { marks: 25, label: '25m', desc: 'Mini Quiz' },
-                      { marks: 50, label: '50m', desc: 'Unit 3/6' },
-                      { marks: 80, label: '80m', desc: 'AS Paper' },
-                      { marks: 90, label: '90m', desc: 'IA2 Paper' },
-                    ].map((preset) => (
+                    {(isMath
+                      ? [
+                          { marks: 25, label: '25m', desc: 'Mini Quiz' },
+                          { marks: 40, label: '40m', desc: 'Half Paper' },
+                          { marks: 75, label: '75m', desc: 'Full Paper' },
+                          { marks: 100, label: '100m', desc: 'Extended' },
+                        ]
+                      : [
+                          { marks: 25, label: '25m', desc: 'Mini Quiz' },
+                          { marks: 50, label: '50m', desc: 'Unit 3/6' },
+                          { marks: 80, label: '80m', desc: 'AS Paper' },
+                          { marks: 90, label: '90m', desc: 'IA2 Paper' },
+                        ]
+                    ).map((preset) => (
                       <button
                         key={preset.marks}
                         type="button"
@@ -1103,6 +1055,40 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Exam Structure Selector (Chemistry & Physics only) */}
+                {!isMath && (
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-1">
+                      <span>Exam Structure</span>
+                      <span className="text-[9px] text-slate-400">
+                        {examStructure === 'authentic' ? 'Section A + B/C' : examStructure === 'theory_only' ? '0 MCQs' : '100% MCQs'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {(
+                        [
+                          { id: 'authentic', label: 'Authentic Mix' },
+                          { id: 'theory_only', label: 'Theory Only' },
+                          { id: 'mcq_sprint', label: 'MCQ Sprint' },
+                        ] as const
+                      ).map((struct) => (
+                        <button
+                          key={struct.id}
+                          type="button"
+                          onClick={() => setExamStructure(struct.id)}
+                          className={`py-1 px-1 text-[10px] rounded text-center font-medium transition-all border ${
+                            examStructure === struct.id
+                              ? 'bg-amber-500 text-white font-semibold border-amber-600 shadow-sm'
+                              : 'bg-white/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-750 hover:bg-amber-50 dark:hover:bg-dark-750'
+                          }`}
+                        >
+                          {struct.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Selection Modes */}
                 <div>

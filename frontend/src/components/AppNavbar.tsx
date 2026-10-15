@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   FlaskConical, 
   Atom,
+  Sigma,
   Home, 
   Compass, 
   FileText, 
@@ -27,6 +28,7 @@ interface AppNavbarProps {
   activeSubject?: Subject;
   chemCount?: number;
   physCount?: number;
+  mathCount?: number;
   onOpenDataBooklet?: () => void;
 }
 
@@ -38,6 +40,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   activeSubject = 'chemistry',
   chemCount = 5712,
   physCount = 4136,
+  mathCount = 1269,
   onOpenDataBooklet
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -86,10 +89,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   const userDisplayName = user?.email ? user.email.split('@')[0] : 'Student';
 
   const isPhysics = activeSubject === 'physics' || currentView.startsWith('physics');
-  const topicalView: AppView = isPhysics ? 'physics-topical' : 'chemistry-topical';
-  const testMakerView: AppView = isPhysics ? 'physics-test-maker' : 'chemistry-test-maker';
-  const isTopicalActive = currentView === 'chemistry-topical' || currentView === 'physics-topical';
-  const isTestMakerActive = currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker';
+  const isMath = activeSubject === 'mathematics' || currentView.startsWith('mathematics');
+  const topicalView: AppView = isPhysics
+    ? 'physics-topical'
+    : isMath
+    ? 'mathematics-topical'
+    : 'chemistry-topical';
+  const testMakerView: AppView = isPhysics
+    ? 'physics-test-maker'
+    : isMath
+    ? 'mathematics-test-maker'
+    : 'chemistry-test-maker';
+  const isTopicalActive = currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical';
+  const isTestMakerActive = currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker';
 
   return (
     <>
@@ -101,7 +113,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           title="Go to Home Portal"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20 border border-cyan-400/30 group-hover:scale-105 transition-transform">
-            {isPhysics ? (
+            {isMath ? (
+              <Sigma className="w-4 h-4 text-white" />
+            ) : isPhysics ? (
               <Atom className="w-4 h-4 text-white" />
             ) : (
               <FlaskConical className="w-4 h-4 text-white" />
@@ -118,8 +132,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </div>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
               {currentView === 'home'
-                ? 'Chemistry & Physics Topicals & Exam Builder'
-                : isPhysics ? 'Physics Topicals & Exam Builder' : 'Chemistry Topicals & Exam Builder'}
+                ? 'Chemistry, Physics & Maths Topicals & Exam Builder'
+                : isMath
+                ? 'Mathematics Topicals & Exam Builder'
+                : isPhysics
+                ? 'Physics Topicals & Exam Builder'
+                : 'Chemistry Topicals & Exam Builder'}
             </span>
           </div>
         </div>
@@ -286,13 +304,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <span className={`w-2 h-2 rounded-full animate-pulse ${
               currentView === 'home'
                 ? 'bg-cyan-500 dark:bg-cyan-400'
+                : isMath ? 'bg-amber-500 dark:bg-amber-400'
                 : isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'
             }`}></span>
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
-              {currentView === 'home' ? 'All Subjects' : isPhysics ? 'Physics' : 'Chemistry'}
+              {currentView === 'home' ? 'All Subjects' : isMath ? 'Mathematics' : isPhysics ? 'Physics' : 'Chemistry'}
             </span>
             <span className="text-slate-500 hidden lg:inline">
-              ({(currentView === 'home' ? chemCount + physCount : totalQuestions).toLocaleString()} Qs)
+              ({(currentView === 'home' ? chemCount + physCount + mathCount : totalQuestions).toLocaleString()} Qs)
             </span>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform ${isSubjectMenuOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -302,8 +321,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               {([
                 { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500' },
                 { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500' },
+                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500' },
               ]).map(({ subject, label, count, view, Icon, dot }) => {
-                const isActive = currentView !== 'home' && (subject === 'physics') === isPhysics;
+                const isActive = currentView !== 'home' && (
+                  subject === 'physics' ? isPhysics :
+                  subject === 'mathematics' ? isMath :
+                  (!isPhysics && !isMath)
+                );
                 return (
                   <button
                     key={subject}
@@ -499,7 +523,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <div className="flex flex-col text-left">
                 <span>Topical Explorer</span>
                 <span className="text-[11px] opacity-75 font-normal">
-                  {isPhysics ? 'Physics past paper questions & official mark schemes (Units 1–2)' : 'Chemistry past paper questions & official mark schemes (Units 1–6)'}
+                  {isMath ? 'Mathematics past paper questions & mark schemes (Units P1–P4, M1, S1)' : isPhysics ? 'Physics past paper questions & official mark schemes (Units 1–6)' : 'Chemistry past paper questions & official mark schemes (Units 1–6)'}
                 </span>
               </div>
             </button>
@@ -575,9 +599,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {/* Subject Footer Details */}
             <div className="pt-3 mt-1 border-t border-slate-200 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'}`}></span>
+                <span className={`w-2 h-2 rounded-full animate-pulse ${isMath ? 'bg-amber-500 dark:bg-amber-400' : isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'}`}></span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {isPhysics ? 'Edexcel Physics (IAL)' : 'Edexcel Chemistry (IAL)'}
+                  {isMath ? 'Edexcel Mathematics (IAL)' : isPhysics ? 'Edexcel Physics (IAL)' : 'Edexcel Chemistry (IAL)'}
                 </span>
               </div>
               <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400 font-bold">
