@@ -104,23 +104,35 @@ export const App: React.FC = () => {
     : 'chemistry';
 
   const handleNavigate = useCallback((view: AppView) => {
+    const nextSubject: Subject = view.startsWith('physics')
+      ? 'physics'
+      : view.startsWith('mathematics')
+      ? 'mathematics'
+      : 'chemistry';
+    const isSameSubject = nextSubject === activeSubject;
+    const targetQ = isSameSubject ? selectedQuestionId : null;
+
     setCurrentView(view);
+    if (!isSameSubject) {
+      setSelectedQuestionId(null);
+    }
+
     if (view === 'physics-topical') {
-      window.location.hash = selectedQuestionId ? `#/physics/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/physics/topical';
+      window.location.hash = targetQ ? `#/physics/topical?q=${encodeURIComponent(targetQ)}` : '#/physics/topical';
     } else if (view === 'physics-test-maker') {
       window.location.hash = '#/physics/test-maker';
     } else if (view === 'mathematics-topical') {
-      window.location.hash = selectedQuestionId ? `#/mathematics/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/mathematics/topical';
+      window.location.hash = targetQ ? `#/mathematics/topical?q=${encodeURIComponent(targetQ)}` : '#/mathematics/topical';
     } else if (view === 'mathematics-test-maker') {
       window.location.hash = '#/mathematics/test-maker';
     } else if (view === 'chemistry-topical') {
-      window.location.hash = selectedQuestionId ? `#/topical?q=${encodeURIComponent(selectedQuestionId)}` : '#/topical';
+      window.location.hash = targetQ ? `#/topical?q=${encodeURIComponent(targetQ)}` : '#/topical';
     } else if (view === 'chemistry-test-maker') {
       window.location.hash = '#/test-maker';
     } else {
       window.location.hash = '#/';
     }
-  }, [selectedQuestionId]);
+  }, [activeSubject, selectedQuestionId]);
 
   // Listen to popstate / hashchange for browser back and forward navigation
   useEffect(() => {
@@ -441,9 +453,13 @@ export const App: React.FC = () => {
       });
       if (questions.length > 0) {
         setSelectedQuestionId(questions[0].id);
+      } else {
+        setSelectedQuestionId(null);
       }
-    } else if (!selectedQuestionId && questions.length > 0) {
-      setSelectedQuestionId(questions[0].id);
+    } else if (questions.length > 0) {
+      if (!selectedQuestionId || !questions.some((q) => q.id === selectedQuestionId)) {
+        setSelectedQuestionId(questions[0].id);
+      }
     }
   }, [activeSubject, questions, selectedQuestionId]);
 
@@ -612,18 +628,25 @@ export const App: React.FC = () => {
   // - ArrowRight / ]: Next question
   // - M or Space: Toggle mark scheme visibility
   // - B: Toggle Bookmark
+  // Keyboard navigation shortcuts (active in Topical Explorer mode):
+  // - ArrowLeft / [: Previous question
+  // - ArrowRight / ]: Next question
+  // - M or Space: Toggle mark scheme visibility
+  // - B: Toggle Bookmark
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical') return;
+      if (!currentView.endsWith('-topical')) return;
+      if (isDataBookletOpen || isAuthModalOpen) return;
 
-      // Don't trigger shortcuts if typing inside an input, textarea, select, or contenteditable
+      // Don't trigger shortcuts if typing inside an input, textarea, select, or focused button/link
       const target = e.target as HTMLElement | null;
       if (
         target &&
         (target.tagName === 'INPUT' ||
           target.tagName === 'TEXTAREA' ||
           target.tagName === 'SELECT' ||
-          target.isContentEditable)
+          target.isContentEditable ||
+          target.closest('button, a, [role="button"]'))
       ) {
         return;
       }
@@ -647,7 +670,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, handlePrevQuestion, handleNextQuestion, handleToggleMarkScheme, handleToggleActiveBookmark]);
+  }, [currentView, isDataBookletOpen, isAuthModalOpen, handlePrevQuestion, handleNextQuestion, handleToggleMarkScheme, handleToggleActiveBookmark]);
 
   const handleFilterChange = (updates: Partial<FilterState>) => {
     setFilters((prev) => {
@@ -689,29 +712,6 @@ export const App: React.FC = () => {
     (activeSubject === 'mathematics' && !mathQuestions)
   );
 
-  if (isSubjectLoading) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
-        <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-        <p className="text-sm font-medium">Loading {activeSubject === 'physics' ? 'Physics' : activeSubject === 'mathematics' ? 'Mathematics' : 'Chemistry'} past papers & topical taxonomy...</p>
-      </div>
-    );
-  }
-
-  if (datasetError && currentView !== 'home' && questions.length === 0) {
-    return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-rose-500 dark:text-rose-400 gap-3">
-        <p className="text-sm font-medium">Error: {datasetError}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-slate-200 dark:bg-dark-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-dark-750 transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
       {/* Top Application Navbar */}
@@ -727,98 +727,121 @@ export const App: React.FC = () => {
         onOpenDataBooklet={() => setIsDataBookletOpen(true)}
       />
 
-      {/* Main View Router */}
-      {currentView === 'home' && (
-        <React.Suspense fallback={<ViewLoadingFallback />}>
-          <HomePage
-            onNavigate={handleNavigate}
-            questions={chemQuestions || []}
-            physicsQuestions={physQuestions || []}
-            mathematicsQuestions={mathQuestions || []}
-          />
-        </React.Suspense>
-      )}
-
-      {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker') && (
-        <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
-          isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
-        }`}>
-          <React.Suspense fallback={<ViewLoadingFallback />}>
-            <TestMakerPage
-              questions={questions}
-              cartQuestionIds={testCart}
-              onAddToCart={handleAddToCart}
-              onRemoveFromCart={handleRemoveFromCart}
-              onClearCart={handleClearCart}
-              onReorderCart={handleReorderCart}
-              testTitle={testTitle}
-              onSetTestTitle={setTestTitle}
-            />
-          </React.Suspense>
+      {isSubjectLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
+          <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+          <p className="text-sm font-medium">
+            Loading {activeSubject === 'physics' ? 'Physics' : activeSubject === 'mathematics' ? 'Mathematics' : 'Chemistry'} past papers & topical taxonomy...
+          </p>
         </div>
-      )}
-
-      {(currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical') && (
-        <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
-          isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
-        }`}>
-          {/* Top Filter & Search Bar */}
-          <TopBar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            availableUnits={availableUnits}
-            subtopicHierarchy={subtopicHierarchy}
-            availableYears={availableYears}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            totalFiltered={filteredQuestions.length}
-            totalMarks={totalMarks}
-            onResetFilters={handleResetFilters}
-            allQuestions={questions}
-          />
-
-          {/* Main Workspace: Left Drawer + Split Canvas */}
-          <div className="flex-1 flex overflow-hidden relative">
-            <QuestionList
-              questions={filteredQuestions}
-              selectedQuestionId={activeQuestion?.id || null}
-              onSelectQuestion={(q) => setSelectedQuestionId(q.id)}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              questionStatuses={questionStatuses}
-              onCycleStatus={handleCycleStatus}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              onClearFilters={handleResetFilters}
-              isDrawerOpen={isQuestionDrawerOpen}
-              onCloseDrawer={() => setIsQuestionDrawerOpen(false)}
-            />
-
-            <CanvasErrorBoundary>
-              <SplitViewer
-                question={activeQuestion}
-                prevQuestion={hasPrev ? filteredQuestions[currentIndex - 1] : null}
-                nextQuestion={hasNext ? filteredQuestions[currentIndex + 1] : null}
-                allQuestions={questions}
-                onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
-                viewMode={viewMode}
-                onToggleMarkScheme={handleToggleMarkScheme}
-                onSetViewMode={setViewMode}
-                onPrevQuestion={handlePrevQuestion}
-                onNextQuestion={handleNextQuestion}
-                hasPrev={hasPrev}
-                hasNext={hasNext}
-                currentIndex={currentIndex}
-                totalQuestions={filteredQuestions.length}
-                questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
-                onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
-                isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
-                onToggleBookmark={handleToggleActiveBookmark}
-                onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
+      ) : datasetError && currentView !== 'home' && questions.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-rose-500 dark:text-rose-400 gap-3">
+          <p className="text-sm font-medium">Error: {datasetError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-slate-200 dark:bg-dark-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-dark-750 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Main View Router */}
+          {currentView === 'home' && (
+            <React.Suspense fallback={<ViewLoadingFallback />}>
+              <HomePage
+                onNavigate={handleNavigate}
+                questions={chemQuestions || []}
+                physicsQuestions={physQuestions || []}
+                mathematicsQuestions={mathQuestions || []}
               />
-            </CanvasErrorBoundary>
-          </div>
-        </div>
+            </React.Suspense>
+          )}
+
+          {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker') && (
+            <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
+              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+            }`}>
+              <React.Suspense fallback={<ViewLoadingFallback />}>
+                <TestMakerPage
+                  key={activeSubject}
+                  questions={questions}
+                  cartQuestionIds={testCart}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onClearCart={handleClearCart}
+                  onReorderCart={handleReorderCart}
+                  testTitle={testTitle}
+                  onSetTestTitle={setTestTitle}
+                />
+              </React.Suspense>
+            </div>
+          )}
+
+          {(currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical') && (
+            <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
+              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+            }`}>
+              {/* Top Filter & Search Bar */}
+              <TopBar
+                key={activeSubject}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                availableUnits={availableUnits}
+                subtopicHierarchy={subtopicHierarchy}
+                availableYears={availableYears}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                totalFiltered={filteredQuestions.length}
+                totalMarks={totalMarks}
+                onResetFilters={handleResetFilters}
+                allQuestions={questions}
+              />
+
+              {/* Main Workspace: Left Drawer + Split Canvas */}
+              <div className="flex-1 flex overflow-hidden relative">
+                <QuestionList
+                  questions={filteredQuestions}
+                  selectedQuestionId={activeQuestion?.id || null}
+                  onSelectQuestion={(q) => setSelectedQuestionId(q.id)}
+                  bookmarks={bookmarks}
+                  onToggleBookmark={handleToggleBookmark}
+                  questionStatuses={questionStatuses}
+                  onCycleStatus={handleCycleStatus}
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  onClearFilters={handleResetFilters}
+                  isDrawerOpen={isQuestionDrawerOpen}
+                  onCloseDrawer={() => setIsQuestionDrawerOpen(false)}
+                />
+
+                <CanvasErrorBoundary>
+                  <SplitViewer
+                    question={activeQuestion}
+                    prevQuestion={hasPrev ? filteredQuestions[currentIndex - 1] : null}
+                    nextQuestion={hasNext ? filteredQuestions[currentIndex + 1] : null}
+                    allQuestions={questions}
+                    onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
+                    viewMode={viewMode}
+                    onToggleMarkScheme={handleToggleMarkScheme}
+                    onSetViewMode={setViewMode}
+                    onPrevQuestion={handlePrevQuestion}
+                    onNextQuestion={handleNextQuestion}
+                    hasPrev={hasPrev}
+                    hasNext={hasNext}
+                    currentIndex={currentIndex}
+                    totalQuestions={filteredQuestions.length}
+                    questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
+                    onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
+                    isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
+                    onToggleBookmark={handleToggleActiveBookmark}
+                    onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
+                  />
+                </CanvasErrorBoundary>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <DataBookletDrawer

@@ -356,7 +356,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     }
   };
 
-  // Sync main canvas buffer width & height to natural image dimensions
+  const MAX_CANVAS_PIXELS = 5_000_000;
+
+  // Sync main canvas buffer width & height to natural image dimensions (capped at 5 MP to prevent memory spikes)
   const syncCanvasDimensions = useCallback(() => {
     const img = imgRef.current;
     const canvas = canvasRef.current;
@@ -365,9 +367,17 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     const w = img.naturalWidth || img.clientWidth;
     const h = img.naturalHeight || img.clientHeight;
     if (w > 0 && h > 0) {
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
+      let targetW = w;
+      let targetH = h;
+      const totalPixels = w * h;
+      if (totalPixels > MAX_CANVAS_PIXELS) {
+        const scale = Math.sqrt(MAX_CANVAS_PIXELS / totalPixels);
+        targetW = Math.round(w * scale);
+        targetH = Math.round(h * scale);
+      }
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
       }
       restoreFromCache(canvas);
     }
@@ -462,9 +472,17 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     const w = img.naturalWidth || img.clientWidth;
     const h = img.naturalHeight || img.clientHeight;
     if (w > 0 && h > 0) {
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
+      let targetW = w;
+      let targetH = h;
+      const totalPixels = w * h;
+      if (totalPixels > MAX_CANVAS_PIXELS) {
+        const scale = Math.sqrt(MAX_CANVAS_PIXELS / totalPixels);
+        targetW = Math.round(w * scale);
+        targetH = Math.round(h * scale);
+      }
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
       }
       restoreFromCache(canvas);
     }
@@ -1083,48 +1101,53 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               </div>
             )}
 
-            <div 
-              className={`relative max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white ${
-                !isAnnotating ? 'cursor-pointer' : ''
-              }`}
-              style={{ transform: `scale(${zoom})` }}
-              onClick={() => {
-                if (!isAnnotating && zoom === 1) {
-                  openLightbox();
-                }
-              }}
-              title={!isAnnotating ? "Click or tap to inspect in full-screen lightbox" : undefined}
+            <div
+              className="flex justify-center w-full"
+              style={zoom > 1 ? { minWidth: `${Math.round(zoom * 100)}%` } : undefined}
             >
-              <img
-                ref={imgRef}
-                src={resolvedSrc}
-                alt={title}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                className="w-full max-w-full h-auto object-contain block select-none pointer-events-none"
-              />
-              {enableAnnotation && (
-                <canvas
-                  ref={canvasRef}
-                  onMouseDown={(e) => handleMouseDown(e, false)}
-                  onMouseMove={(e) => handleMouseMove(e, false)}
-                  onMouseUp={() => handleMouseUp(false)}
-                  onMouseLeave={() => handleMouseUp(false)}
-                  onTouchStart={(e) => handleTouchStart(e, false)}
-                  onTouchMove={(e) => handleTouchMove(e, false)}
-                  onTouchEnd={() => handleTouchEnd(false)}
-                  onTouchCancel={() => handleTouchEnd(false)}
-                  className={`absolute inset-0 w-full h-full ${
-                    isAnnotating ? 'pointer-events-auto touch-none' : 'pointer-events-none'
-                  }`}
-                  style={{
-                    cursor: getCanvasCursor(),
-                  }}
+              <div 
+                className={`relative max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white ${
+                  !isAnnotating ? 'cursor-pointer' : ''
+                }`}
+                style={{ transform: `scale(${zoom})` }}
+                onClick={() => {
+                  if (!isAnnotating && zoom === 1) {
+                    openLightbox();
+                  }
+                }}
+                title={!isAnnotating ? "Click or tap to inspect in full-screen lightbox" : undefined}
+              >
+                <img
+                  ref={imgRef}
+                  src={resolvedSrc}
+                  alt={title}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  className="w-full max-w-full h-auto object-contain block select-none pointer-events-none"
                 />
-              )}
+                {enableAnnotation && (
+                  <canvas
+                    ref={canvasRef}
+                    onMouseDown={(e) => handleMouseDown(e, false)}
+                    onMouseMove={(e) => handleMouseMove(e, false)}
+                    onMouseUp={() => handleMouseUp(false)}
+                    onMouseLeave={() => handleMouseUp(false)}
+                    onTouchStart={(e) => handleTouchStart(e, false)}
+                    onTouchMove={(e) => handleTouchMove(e, false)}
+                    onTouchEnd={() => handleTouchEnd(false)}
+                    onTouchCancel={() => handleTouchEnd(false)}
+                    className={`absolute inset-0 w-full h-full ${
+                      isAnnotating ? 'pointer-events-auto touch-none' : 'pointer-events-none'
+                    }`}
+                    style={{
+                      cursor: getCanvasCursor(),
+                    }}
+                  />
+                )}
 
-              {/* Re-Editable Text Annotations Overlay */}
-              {renderTextAnnotations(false)}
+                {/* Re-Editable Text Annotations Overlay */}
+                {renderTextAnnotations(false)}
+              </div>
             </div>
             {children}
           </div>

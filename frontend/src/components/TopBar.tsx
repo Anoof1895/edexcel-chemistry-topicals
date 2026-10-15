@@ -217,7 +217,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
             <span className="hidden sm:inline">Topical</span> Explorer
             <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
-              U1–6
+              {isMath ? 'P1–S1' : 'U1–6'}
             </span>
           </span>
         </div>

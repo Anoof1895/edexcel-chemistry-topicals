@@ -494,6 +494,45 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               </button>
             )}
 
+            {/* Subject Switcher Row for Mobile */}
+            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-750 bg-slate-50 dark:bg-dark-850">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2 px-1">
+                Select Subject
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, activeColor: 'bg-emerald-600 text-white' },
+                  { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, activeColor: 'bg-indigo-600 text-white' },
+                  { subject: 'mathematics' as Subject, label: 'Maths', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, activeColor: 'bg-amber-600 text-white' },
+                ].map(({ subject, label, count, view, Icon, activeColor }) => {
+                  const isActive = currentView !== 'home' && (
+                    subject === 'physics' ? isPhysics :
+                    subject === 'mathematics' ? isMath :
+                    (!isPhysics && !isMath)
+                  );
+                  return (
+                    <button
+                      key={subject}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        onNavigate(view);
+                      }}
+                      className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-all border ${
+                        isActive
+                          ? `${activeColor} border-transparent shadow-sm`
+                          : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-750 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-[11px]">{label}</span>
+                      <span className="text-[9px] font-mono opacity-75">{count.toLocaleString()}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => handleNavClick('home')}

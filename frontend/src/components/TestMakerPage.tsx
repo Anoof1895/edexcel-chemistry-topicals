@@ -21,7 +21,7 @@ import {
   Zap,
   ChevronDown
 } from 'lucide-react';
-import { QuestionItem, FilterState } from '../types';
+import { QuestionItem, FilterState, Subject } from '../types';
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
@@ -166,10 +166,21 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     return seriesList.map((s) => ({ value: s, label: s }));
   }, []);
 
+  // Detect active subject
+  const activeSubject: Subject = useMemo(() => {
+    if (questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'))) {
+      return 'mathematics';
+    }
+    if (questions.some((q) => q.unitCode?.startsWith('WPH'))) {
+      return 'physics';
+    }
+    return 'chemistry';
+  }, [questions]);
+
   // Canonical Subtopic Hierarchy
   const subtopicHierarchy: SubtopicGroup[] = useMemo(() => {
-    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions);
-  }, [questions, filters.selectedUnits]);
+    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions, activeSubject);
+  }, [questions, filters.selectedUnits, activeSubject]);
 
   // Filter the question pool
   const filteredPool = useMemo(() => {

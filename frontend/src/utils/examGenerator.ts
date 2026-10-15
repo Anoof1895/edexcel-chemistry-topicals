@@ -161,9 +161,10 @@ export function sortExamQuestionsAuthentic(questions: QuestionItem[], isMath: bo
   // Group theory questions by parent question
   const clusters = new Map<string, QuestionItem[]>();
   theory.forEach((q) => {
-    const parent =
-      q.parent_question_id ||
-      (q.paperId ? `${q.paperId}_${q.parentQuestion || q.questionNumber.split(/[(a-z]/)[0]}` : q.id);
+    const paperPrefix = q.paperId || q.paperCode || q.unitCode || 'paper';
+    const parent = q.parent_question_id
+      ? `${paperPrefix}_${q.parent_question_id}`
+      : `${paperPrefix}_${q.parentQuestion || q.questionNumber.split(/[(a-z]/)[0] || q.id}`;
     if (!clusters.has(parent)) {
       clusters.set(parent, []);
     }

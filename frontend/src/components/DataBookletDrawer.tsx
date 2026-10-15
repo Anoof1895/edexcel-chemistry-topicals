@@ -271,6 +271,22 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     return isNaN(val) ? null : val;
   }, [zLookup]);
 
+  // Helper to strip LaTeX markup commands from string for clean textual comparison
+  const stripLatex = (str: string) => str.replace(/\\[a-zA-Z]+/g, ' ').replace(/[{}\^_$]/g, ' ').toLowerCase();
+
+  const matchFormulaItem = (item: MathFormulaItem) => {
+    if (!query) return true;
+    const cleanLatex = stripLatex(item.latex);
+    return (
+      item.title.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query) ||
+      item.unit.toLowerCase().includes(query) ||
+      cleanLatex.includes(query) ||
+      item.latex.toLowerCase().includes(query) ||
+      (item.description && (item.description.toLowerCase().includes(query) || stripLatex(item.description).includes(query)))
+    );
+  };
+
   // Filtered Mathematics Data
   const filteredPureMath = useMemo(() => {
     let items = PURE_MATH_FORMULAE;
@@ -279,15 +295,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     } else if (mathFilter === 'must_memorise') {
       items = items.filter((item) => !item.inBooklet);
     }
-    if (!query) return items;
-    return items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.unit.toLowerCase().includes(query) ||
-        item.latex.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-    );
+    return items.filter(matchFormulaItem);
   }, [query, mathFilter]);
 
   const filteredMechanics = useMemo(() => {
@@ -297,15 +305,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     } else if (mathFilter === 'must_memorise') {
       items = items.filter((item) => !item.inBooklet);
     }
-    if (!query) return items;
-    return items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.unit.toLowerCase().includes(query) ||
-        item.latex.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-    );
+    return items.filter(matchFormulaItem);
   }, [query, mathFilter]);
 
   const filteredStatistics = useMemo(() => {
@@ -315,16 +315,18 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     } else if (mathFilter === 'must_memorise') {
       items = items.filter((item) => !item.inBooklet);
     }
-    if (!query) return items;
-    return items.filter(
-      (item) =>
-        item.title.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query) ||
-        item.unit.toLowerCase().includes(query) ||
-        item.latex.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-    );
+    return items.filter(matchFormulaItem);
   }, [query, mathFilter]);
+
+  // Auto-switch to statistics tab if searching for statistical terms and pure math has 0 matches
+  useEffect(() => {
+    if (subject === 'mathematics' && query) {
+      const isStatQuery = /(normal|phi|table|percentage|z-score|distribution|critical)/i.test(query);
+      if (isStatQuery && filteredPureMath.length === 0 && mathTab === 'pure') {
+        setMathTab('statistics');
+      }
+    }
+  }, [query, subject, filteredPureMath.length, mathTab]);
 
   const isGridActive = subject === 'chemistry' && chemistryTab === 'periodic_table' && !query && periodicView === 'grid';
 
@@ -500,14 +502,14 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[60] flex justify-end bg-transparent select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-[60] flex justify-end bg-transparent md:pointer-events-none select-none animate-in fade-in duration-150"
       onClick={onClose}
     >
       {/* Drawer Container */}
       <div 
         className={`w-full ${
           isGridActive ? 'md:w-[92vw] lg:w-[960px] max-w-5xl' : 'sm:w-[500px] md:w-[560px]'
-        } h-full bg-white dark:bg-dark-900 border-l border-slate-200 dark:border-dark-750 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 z-10 select-text transition-[width]`}
+        } h-full bg-white dark:bg-dark-900 border-l border-slate-200 dark:border-dark-750 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 z-10 select-text transition-[width] pointer-events-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}

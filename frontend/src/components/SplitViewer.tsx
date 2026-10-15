@@ -103,9 +103,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     };
   }, [prevQuestion?.id, nextQuestion?.id]);
 
-  // Sync mobile view and MCQ selection when switching questions
+  // Reset mobile view tab to 'question' ONLY when navigating to a new question
   useEffect(() => {
     setMobileTab('question');
+  }, [question?.id]);
+
+  // Sync MCQ selection when question or userAnswers update
+  useEffect(() => {
     setSelectedMcqOption(question?.id ? userAnswers[question.id] || null : null);
   }, [question?.id, userAnswers]);
 

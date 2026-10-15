@@ -18,7 +18,20 @@ export type PdfExportOptions = PDFExportOptions;
  * Loads an image from URL and converts it to a canvas data URL with dimensions.
  * Cleanly fetches remote HTTPS CDN image URLs via fetch() to prevent canvas CORS tainting.
  */
-async function loadImageData(rawUrl: string): Promise<{ dataUrl: string; width: number; height: number }> {
+interface ImageSlice {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Loads an image via fetch/blob or Image element, and if its aspect ratio exceeds maxSliceAspectRatio,
+ * slices it vertically across multiple pages so each slice fits at full 100% printable width.
+ */
+async function loadImageSlices(
+  rawUrl: string,
+  maxSliceAspectRatio: number = 1.35
+): Promise<ImageSlice[]> {
   const fullUrl = getFullImageUrl(rawUrl);
   let imageSourceUrl = fullUrl;
   let objectUrlToRevoke: string | null = null;
@@ -31,7 +44,6 @@ async function loadImageData(rawUrl: string): Promise<{ dataUrl: string; width: 
       imageSourceUrl = objectUrlToRevoke;
     }
   } catch (fetchErr) {
-    // If fetch fails (e.g. offline or strictly relative without server), fall back to direct loading
     console.warn(`Direct fetch failed for ${fullUrl}, falling back to Image.src:`, fetchErr);
     imageSourceUrl = fullUrl;
   }
@@ -40,29 +52,64 @@ async function loadImageData(rawUrl: string): Promise<{ dataUrl: string; width: 
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const canvas = document.createElement('canvas');
       const w = img.naturalWidth || img.width || 800;
       const h = img.naturalHeight || img.height || 600;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-        reject(new Error('Could not create 2D canvas context'));
+      const aspectRatio = h / w;
+
+      // If the image fits vertically on a page, return single slice
+      if (aspectRatio <= maxSliceAspectRatio) {
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          reject(new Error('Could not create 2D canvas context'));
+          return;
+        }
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0);
+        try {
+          const dataUrl = canvas.toDataURL('image/png');
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          resolve([{ dataUrl, width: w, height: h }]);
+        } catch (err) {
+          if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+          reject(err);
+        }
         return;
       }
-      // Fill pure white background for transparent PNGs
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0);
-      try {
-        const dataUrl = canvas.toDataURL('image/png');
-        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-        resolve({ dataUrl, width: w, height: h });
-      } catch (err) {
-        if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
-        reject(err);
+
+      // Tall stitched image: slice vertically across pages
+      const sliceH = Math.floor(w * maxSliceAspectRatio);
+      const numSlices = Math.ceil(h / sliceH);
+      const slices: ImageSlice[] = [];
+
+      for (let s = 0; s < numSlices; s++) {
+        const sy = s * sliceH;
+        const sh = Math.min(sliceH, h - sy);
+        if (sh <= 15) continue; // skip tiny slivers
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = sh;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, w, sh);
+        ctx.drawImage(img, 0, sy, w, sh, 0, 0, w, sh);
+
+        slices.push({
+          dataUrl: canvas.toDataURL('image/png'),
+          width: w,
+          height: sh,
+        });
       }
+
+      if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
+      resolve(slices);
     };
     img.onerror = () => {
       if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
@@ -96,7 +143,6 @@ export async function generateQuestionPaperPDF({
   const marginTop = 15;
   const marginBottom = includeHeaderFooter ? 16 : 15;
   const printableWidth = pageWidth - marginX * 2; // 180mm
-  const printableHeight = pageHeight - marginTop - marginBottom; // 266mm / 267mm
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
   const isMath = questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'));
@@ -179,8 +225,13 @@ export async function generateQuestionPaperPDF({
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.text('• Answer ALL questions.   • Show all steps in calculations with formulas and units.   • Write your answers clearly.', marginX + 21, cursorY + 4.5);
-      doc.text('• Scientific calculators may be used.', marginX + 21, cursorY + 8.5);
+      if (isMath) {
+        doc.text('• Answer ALL questions.   • Full marks will not necessarily be awarded for a correct answer with no working.', marginX + 21, cursorY + 4.5);
+        doc.text('• Mathematical Formulae and Statistical Tables (Yellow Booklet) are provided. Scientific calculators may be used.', marginX + 21, cursorY + 8.5);
+      } else {
+        doc.text('• Answer ALL questions.   • Show all steps in calculations with formulas and units.   • Write your answers clearly.', marginX + 21, cursorY + 4.5);
+        doc.text('• Scientific calculators may be used. Data booklet provided where applicable.', marginX + 21, cursorY + 8.5);
+      }
 
       cursorY += 14;
 
@@ -220,7 +271,8 @@ export async function generateQuestionPaperPDF({
     const seriesYearStr = q.series && q.year && q.series.includes(String(q.year))
       ? q.series
       : `${q.series || ''} ${q.year || ''}`.trim();
-    const qOriginMeta = `${q.unit || ''} • ${seriesYearStr} (${q.questionNumber})`.trim();
+    const paperCodeDisplay = q.paperCode || q.paper_code || q.unit || '';
+    const qOriginMeta = `${paperCodeDisplay} • ${seriesYearStr} (${q.questionNumber})`.trim();
     const marksLabel = `(${q.marks} ${q.marks === 1 ? 'mark' : 'marks'})`;
 
     if (onProgress) {
@@ -228,56 +280,58 @@ export async function generateQuestionPaperPDF({
     }
 
     try {
-      const imgData = await loadImageData(q.questionImagePath);
-      const aspectRatio = imgData.height / imgData.width;
-      let imgW = printableWidth;
-      let imgH = imgW * aspectRatio;
+      const slices = await loadImageSlices(q.questionImagePath, 1.35);
 
-      if (imgH > printableHeight - 20) {
-        imgH = printableHeight - 20;
-        imgW = imgH / aspectRatio;
+      for (let sIdx = 0; sIdx < slices.length; sIdx++) {
+        const slice = slices[sIdx];
+        const sliceAspect = slice.height / slice.width;
+        const imgW = printableWidth;
+        const imgH = imgW * sliceAspect;
+        const isContinuation = sIdx > 0;
+        const currentLabel = isContinuation ? `${qNumberLabel} (continued)` : qNumberLabel;
+        const totalItemHeight = 9 + imgH + 8; // header + image + spacing
+
+        // Page break check: ensure question slice is not sliced across bottom margin
+        if (isContinuation || cursorY + totalItemHeight > pageHeight - marginBottom) {
+          doc.addPage();
+          cursorY = marginTop;
+        }
+
+        // Draw Question Header (Pure black, crisp)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(currentLabel, marginX, cursorY + 4);
+
+        if (includeSourceTags && !isContinuation) {
+          const numW = doc.getTextWidth(currentLabel);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(90, 90, 90);
+          doc.text(qOriginMeta, marginX + numW + 4, cursorY + 4);
+        }
+
+        // Marks on right (only on first slice)
+        if (!isContinuation) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.text(marksLabel, marginX + printableWidth - doc.getTextWidth(marksLabel), cursorY + 4);
+        }
+
+        // Subtle separator rule
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.25);
+        doc.line(marginX, cursorY + 6, marginX + printableWidth, cursorY + 6);
+
+        cursorY += 8;
+
+        // Draw Question Image centered
+        const imgX = marginX + (printableWidth - imgW) / 2;
+        doc.addImage(slice.dataUrl, 'PNG', imgX, cursorY, imgW, imgH, undefined, 'FAST');
+
+        cursorY += imgH + 9;
       }
-
-      const totalItemHeight = 9 + imgH + 8; // header + image + spacing
-
-      // Page break check: ensure question is not sliced across bottom margin
-      if (cursorY + totalItemHeight > pageHeight - marginBottom) {
-        doc.addPage();
-        cursorY = marginTop;
-      }
-
-      // Draw Question Header (Pure black, crisp)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.setTextColor(0, 0, 0);
-      doc.text(qNumberLabel, marginX, cursorY + 4);
-
-      if (includeSourceTags) {
-        const numW = doc.getTextWidth(qNumberLabel);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(90, 90, 90);
-        doc.text(qOriginMeta, marginX + numW + 4, cursorY + 4);
-      }
-
-      // Marks on right
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text(marksLabel, marginX + printableWidth - doc.getTextWidth(marksLabel), cursorY + 4);
-
-      // Subtle separator rule
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.25);
-      doc.line(marginX, cursorY + 6, marginX + printableWidth, cursorY + 6);
-
-      cursorY += 8;
-
-      // Draw Question Image centered
-      const imgX = marginX + (printableWidth - imgW) / 2;
-      doc.addImage(imgData.dataUrl, 'PNG', imgX, cursorY, imgW, imgH);
-
-      cursorY += imgH + 9;
     } catch (err) {
       console.error(`Error embedding question ${q.id}:`, err);
       if (cursorY + 20 > pageHeight - marginBottom) {
@@ -338,7 +392,6 @@ export async function generateMarkSchemePDF({
   const marginTop = 15;
   const marginBottom = includeHeaderFooter ? 16 : 15;
   const printableWidth = pageWidth - marginX * 2;
-  const printableHeight = pageHeight - marginTop - marginBottom;
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
 
@@ -419,7 +472,8 @@ export async function generateMarkSchemePDF({
     const seriesYearStr = q.series && q.year && q.series.includes(String(q.year))
       ? q.series
       : `${q.series || ''} ${q.year || ''}`.trim();
-    const qOriginMeta = `${q.unit || ''} • ${seriesYearStr} (${q.questionNumber})`.trim();
+    const paperCodeDisplay = q.paperCode || q.paper_code || q.unit || '';
+    const qOriginMeta = `${paperCodeDisplay} • ${seriesYearStr} (${q.questionNumber})`.trim();
     const marksLabel = `[${q.marks} ${q.marks === 1 ? 'mark' : 'marks'}]`;
 
     if (onProgress) {
@@ -440,54 +494,56 @@ export async function generateMarkSchemePDF({
     }
 
     try {
-      const imgData = await loadImageData(q.markSchemeImagePath);
-      const aspectRatio = imgData.height / imgData.width;
-      let imgW = printableWidth;
-      let imgH = imgW * aspectRatio;
+      const slices = await loadImageSlices(q.markSchemeImagePath, 1.35);
 
-      if (imgH > printableHeight - 20) {
-        imgH = printableHeight - 20;
-        imgW = imgH / aspectRatio;
+      for (let sIdx = 0; sIdx < slices.length; sIdx++) {
+        const slice = slices[sIdx];
+        const sliceAspect = slice.height / slice.width;
+        const imgW = printableWidth;
+        const imgH = imgW * sliceAspect;
+        const isContinuation = sIdx > 0;
+        const currentLabel = isContinuation ? `${qNumberLabel} (continued)` : qNumberLabel;
+        const totalItemHeight = 9 + imgH + 8;
+
+        if (isContinuation || cursorY + totalItemHeight > pageHeight - marginBottom) {
+          doc.addPage();
+          cursorY = marginTop;
+        }
+
+        // Draw MS Header (Pure black, crisp)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(currentLabel, marginX, cursorY + 4);
+
+        if (includeSourceTags && !isContinuation) {
+          const msNumW = doc.getTextWidth(currentLabel);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(90, 90, 90);
+          doc.text(qOriginMeta, marginX + msNumW + 4, cursorY + 4);
+        }
+
+        // Marks on right (only on first slice)
+        if (!isContinuation) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.setTextColor(0, 0, 0);
+          doc.text(marksLabel, marginX + printableWidth - doc.getTextWidth(marksLabel), cursorY + 4);
+        }
+
+        // Separator rule
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.25);
+        doc.line(marginX, cursorY + 6, marginX + printableWidth, cursorY + 6);
+
+        cursorY += 8;
+
+        const imgX = marginX + (printableWidth - imgW) / 2;
+        doc.addImage(slice.dataUrl, 'PNG', imgX, cursorY, imgW, imgH, undefined, 'FAST');
+
+        cursorY += imgH + 9;
       }
-
-      const totalItemHeight = 9 + imgH + 8;
-
-      if (cursorY + totalItemHeight > pageHeight - marginBottom) {
-        doc.addPage();
-        cursorY = marginTop;
-      }
-
-      // Draw MS Header (Pure black, crisp)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
-      doc.setTextColor(0, 0, 0);
-      doc.text(qNumberLabel, marginX, cursorY + 4);
-
-      if (includeSourceTags) {
-        const msNumW = doc.getTextWidth(qNumberLabel);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(90, 90, 90);
-        doc.text(qOriginMeta, marginX + msNumW + 4, cursorY + 4);
-      }
-
-      // Marks on right
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(0, 0, 0);
-      doc.text(marksLabel, marginX + printableWidth - doc.getTextWidth(marksLabel), cursorY + 4);
-
-      // Separator rule
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.25);
-      doc.line(marginX, cursorY + 6, marginX + printableWidth, cursorY + 6);
-
-      cursorY += 8;
-
-      const imgX = marginX + (printableWidth - imgW) / 2;
-      doc.addImage(imgData.dataUrl, 'PNG', imgX, cursorY, imgW, imgH);
-
-      cursorY += imgH + 9;
     } catch (err) {
       console.error(`Error embedding MS for ${q.id}:`, err);
       if (cursorY + 18 > pageHeight - marginBottom) {

@@ -133,6 +133,28 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [user]
   );
 
+  const clearProgress = useCallback(() => {
+    setBookmarks(new Set());
+    setQuestionStatuses({});
+    setUserAnswers({});
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.BOOKMARKS);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.STATUSES);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.ANSWERS);
+    } catch (e) {
+      console.warn('Failed to clear localStorage', e);
+    }
+  }, []);
+
+  // Clear progress on user sign out to prevent cross-account progress leakage
+  const prevUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      clearProgress();
+    }
+    prevUserRef.current = user ? user.id : null;
+  }, [user, clearProgress]);
+
   // 2. Cloud Sync & Account Migration on User Login
   useEffect(() => {
     if (!user || !isSupabaseConfigured) {
@@ -318,15 +340,6 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     },
     [upsertCloudRecord]
   );
-
-  const clearProgress = useCallback(() => {
-    setBookmarks(new Set());
-    setQuestionStatuses({});
-    setUserAnswers({});
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.BOOKMARKS);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.STATUSES);
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.ANSWERS);
-  }, []);
 
   return (
     <ProgressContext.Provider
