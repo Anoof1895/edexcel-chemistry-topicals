@@ -114,6 +114,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 }) => {
   const [zoom, setZoom] = useState(1);
   const [hasError, setHasError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxZoom, setLightboxZoom] = useState(1.2);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -150,6 +151,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [canUndo, setCanUndo] = useState<boolean>(false);
 
   const handleImageError = () => {
+    setIsImageLoading(false);
     if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
       setUseLocalFallback(true);
     } else {
@@ -460,6 +462,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   useEffect(() => {
     setHasError(false);
+    setIsImageLoading(true);
     setUseLocalFallback(false);
     setZoom(1);
     strokeHistoryRef.current = [];
@@ -468,6 +471,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   }, [src, syncCanvasDimensions]);
 
   const handleImageLoad = () => {
+    setIsImageLoading(false);
     syncCanvasDimensions();
   };
 
@@ -757,7 +761,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   // Shared Floating Annotation Toolbar Renderer
   const renderAnnotationToolbar = () => (
-    <div className="flex items-center gap-1 sm:gap-1.5 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 shadow-2xl select-none transition-all flex-wrap justify-center sm:flex-nowrap">
+    <div className="flex items-center gap-1 sm:gap-1.5 surface-glass px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 shadow-2xl select-none transition-all flex-wrap justify-center sm:flex-nowrap">
       {/* Toggle Annotate: On/Off */}
       <button
         type="button"
@@ -1088,7 +1092,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Canvas Viewport */}
       <div 
         ref={containerRef}
-        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-5 flex items-start justify-center bg-slate-100/50 dark:bg-[#080b11] relative"
+        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-5 flex items-start justify-center bg-slate-100/50 dark:bg-[#07090D] bg-drafting-grid relative"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       >
         {!src || hasError ? (
@@ -1124,6 +1128,11 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                 }}
                 title={!isAnnotating ? "Click or tap to inspect in full-screen lightbox" : undefined}
               >
+                {isImageLoading && (
+                  <div className="absolute inset-0 z-10 bg-slate-100 dark:bg-slate-900 animate-pulse flex items-center justify-center min-h-[300px]">
+                    <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
+                  </div>
+                )}
                 <img
                   ref={imgRef}
                   src={resolvedSrc}
@@ -1228,7 +1237,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
           {/* Lightbox Body / Viewport */}
           <div 
-            className="flex-1 overflow-auto p-3 sm:p-6 flex flex-col items-center justify-start cursor-zoom-out"
+            className="flex-1 overflow-auto p-3 sm:p-6 flex flex-col items-center justify-start cursor-zoom-out bg-drafting-grid"
             onClick={closeLightbox}
             style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
           >

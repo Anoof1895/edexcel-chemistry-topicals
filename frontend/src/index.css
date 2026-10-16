@@ -40,6 +40,33 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* Linear / Raycast tier micro-surface & design tokens */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.surface-glass {
+  @apply backdrop-blur-xl bg-white/90 border border-slate-200/80 shadow-[0_1px_3px_0_rgba(0,0,0,0.05)] dark:bg-[#0B0E14]/85 dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)];
+}
+
+.surface-card {
+  @apply bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:bg-[#11151E]/90 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_8px_30px_rgb(0,0,0,0.4)];
+}
+
+.kbd-keycap {
+  @apply inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-mono font-medium leading-none text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#1A1F2C] border border-slate-200 dark:border-white/10 rounded shadow-[0_2px_0_0_rgba(0,0,0,0.08)] dark:shadow-[0_2px_0_0_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.1)] select-none;
+}
+
+.bg-drafting-grid {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.dark .bg-drafting-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
 /* Pulsing effect for active badges */
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; }

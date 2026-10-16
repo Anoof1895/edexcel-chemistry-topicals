@@ -14,7 +14,8 @@ import {
   Moon,
   LogIn,
   LogOut,
-  BookOpen
+  BookOpen,
+  Search
 } from 'lucide-react';
 import { AppView, Subject } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -30,6 +31,7 @@ interface AppNavbarProps {
   physCount?: number;
   mathCount?: number;
   onOpenDataBooklet?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -41,7 +43,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   chemCount = 5712,
   physCount = 4136,
   mathCount = 1269,
-  onOpenDataBooklet
+  onOpenDataBooklet,
+  onOpenCommandPalette
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -127,13 +130,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40 hover:bg-indigo-100 dark:hover:bg-indigo-500/25'
     : 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40 hover:bg-cyan-100 dark:hover:bg-cyan-500/25';
 
+  const topGlintGradient = isMath
+    ? 'from-amber-500/0 via-amber-400/80 to-amber-500/0'
+    : isPhysics
+    ? 'from-sky-500/0 via-indigo-400/80 to-sky-500/0'
+    : 'from-cyan-500/0 via-cyan-400/80 to-cyan-500/0';
+
   return (
     <>
-      <header className="h-14 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] bg-white/95 dark:bg-slate-950/80 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
+      <header className="surface-glass h-14 border-b border-slate-200 dark:border-white/[0.07] px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
+        {/* Subtle subject-colored top-edge gradient glint */}
+        <div className={`absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r ${topGlintGradient} pointer-events-none opacity-80`} />
+
         {/* Brand Logo & Name */}
         <div 
           onClick={() => handleNavClick('home')}
-          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group transition-all shrink-0"
+          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group transition-all shrink-0 active:scale-[0.99]"
           title="Go to Home Portal"
         >
           <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${brandIconGradient} flex items-center justify-center shadow-md border group-hover:scale-105 transition-transform`}>
@@ -168,11 +180,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         {/* Desktop / Tablet Nav & Theme Switch (> 768px) */}
         <div className="hidden md:flex items-center gap-2">
-          <nav className="flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.04] dark:border-white/[0.08] dark:text-slate-300 p-1 rounded-xl">
+          <nav className="flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-[#07090D] dark:border-white/[0.06] dark:shadow-inner dark:text-slate-300 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                 currentView === 'home'
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
@@ -185,7 +197,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={() => onNavigate(topicalView)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                 isTopicalActive
                   ? activeNavBtnClass
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
@@ -198,7 +210,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={() => onNavigate(testMakerView)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] relative ${
                 isTestMakerActive
                   ? activeNavBtnClass
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
@@ -214,20 +226,32 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </button>
           </nav>
 
+          {/* Global Command Palette Trigger (Ctrl+K / Cmd+K) */}
+          {onOpenCommandPalette && (
+            <button
+              type="button"
+              onClick={onOpenCommandPalette}
+              title="Open Command Palette (Ctrl+K / Cmd+K)"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-xs font-medium transition-all duration-150 active:scale-[0.98] shadow-xs"
+            >
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+              <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Jump...</span>
+              <kbd className="kbd-keycap">Ctrl K</kbd>
+            </button>
+          )}
+
           {/* Official Data Booklet & Formula Sheet Trigger */}
           {onOpenDataBooklet && (
             <button
               type="button"
               onClick={onOpenDataBooklet}
               title="Official Pearson IAL Formula Sheet & Data Booklet (Press 'D')"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 shadow-xs ${dataBtnClass}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-[0.98] shadow-xs ${dataBtnClass}`}
             >
               <BookOpen className={`w-3.5 h-3.5 ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`} />
               <span className="hidden xl:inline">Data &amp; Formulae</span>
               <span className="xl:hidden">Data</span>
-              <kbd className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-white/60 dark:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 font-bold">
-                D
-              </kbd>
+              <span className="kbd-keycap">D</span>
             </button>
           )}
 
@@ -237,7 +261,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 transition-all active:scale-95 shadow-sm"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 transition-all duration-150 active:scale-95 shadow-sm"
           >
             {theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
@@ -320,16 +344,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           <button
             type="button"
             onClick={() => setIsSubjectMenuOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] text-xs font-medium transition-all duration-150 active:scale-[0.98]"
             title="Switch subject"
             aria-haspopup="menu"
             aria-expanded={isSubjectMenuOpen}
           >
-            <span className={`w-2 h-2 rounded-full animate-pulse ${
+            <span className={`w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px_currentColor] ${
               currentView === 'home'
-                ? 'bg-cyan-500 dark:bg-cyan-400'
-                : isMath ? 'bg-amber-500 dark:bg-amber-400'
-                : isPhysics ? 'bg-indigo-500 dark:bg-indigo-400' : 'bg-emerald-500 dark:bg-emerald-400'
+                ? 'text-cyan-400 bg-cyan-500'
+                : isMath ? 'text-amber-400 bg-amber-500'
+                : isPhysics ? 'text-indigo-400 bg-indigo-500' : 'text-emerald-400 bg-emerald-500'
             }`}></span>
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
               {currentView === 'home' ? 'All Subjects' : isMath ? 'Mathematics' : isPhysics ? 'Physics' : 'Chemistry'}
@@ -341,11 +365,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </button>
 
           {isSubjectMenuOpen && (
-            <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl p-1.5 z-50">
+            <div role="menu" className="absolute right-0 top-full mt-2 w-64 rounded-2xl surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
               {([
-                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300' },
-                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
-                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500', activeCls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500 text-emerald-400', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-cyan-500/30' },
+                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500 text-indigo-400', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-indigo-500/30' },
+                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500 text-amber-400', activeCls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-amber-500/30' },
               ]).map(({ subject, label, count, view, Icon, dot, activeCls }) => {
                 const isActive = currentView !== 'home' && (
                   subject === 'physics' ? isPhysics :
@@ -361,14 +385,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                       setIsSubjectMenuOpen(false);
                       onNavigate(view);
                     }}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                       isActive
                         ? activeCls
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${dot}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${dot} shadow-[0_0_6px_currentColor]`}></span>
                       <Icon className="w-3.5 h-3.5" />
                       {label}
                     </span>
@@ -386,7 +410,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                   setIsSubjectMenuOpen(false);
                   onNavigate('home');
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all duration-150 active:scale-[0.98]"
               >
                 <Home className="w-3.5 h-3.5" />
                 Subject Portal
@@ -417,6 +441,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign In</span>
+            </button>
+          )}
+
+          {/* Mobile Command Palette Search Button */}
+          {onOpenCommandPalette && (
+            <button
+              type="button"
+              onClick={onOpenCommandPalette}
+              aria-label="Open Command Palette"
+              title="Open Command Palette (Ctrl+K)"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all shadow-sm"
+            >
+              <Search className="w-4 h-4" />
             </button>
           )}
 

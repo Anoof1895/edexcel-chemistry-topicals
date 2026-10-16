@@ -91,10 +91,10 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
         onClick={() => setIsOpen((prev) => !prev)}
         className={`${
           fullWidth ? 'w-full' : ''
-        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none ${
+        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] ${
           selectedValues.length > 0
-            ? 'bg-cyan-50 dark:bg-blue-950/60 border-cyan-400 dark:border-blue-500/50 text-cyan-800 dark:text-blue-200 hover:border-cyan-500 dark:hover:border-blue-400'
-            : 'bg-slate-100 dark:bg-dark-800/80 border-slate-200 dark:border-dark-700/80 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-600'
+            ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm shadow-cyan-500/10'
+            : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -120,14 +120,14 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
                 if (e.key === 'Enter') handleClearAll(e as any);
               }}
               title={`Clear ${labelPlural.toLowerCase()}`}
-              className="w-4 h-4 rounded-full bg-cyan-700 dark:bg-blue-800/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] transition-colors cursor-pointer shrink-0"
+              className="w-4 h-4 rounded-full bg-cyan-700 dark:bg-cyan-500/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] transition-colors cursor-pointer shrink-0"
             >
               <X className="w-2.5 h-2.5" />
             </span>
           )}
 
           <ChevronDown
-            className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+            className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${
               isOpen ? 'rotate-180' : ''
             }`}
           />
@@ -139,7 +139,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
         <div
           className={`absolute ${
             align === 'right' ? 'right-0' : 'left-0'
-          } top-full mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] max-h-[380px] bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 rounded-xl shadow-2xl shadow-slate-900/10 dark:shadow-black/80 z-50 flex flex-col overflow-hidden backdrop-blur-xl`}
+          } top-full mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] max-h-[380px] surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl z-30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
         >
           {/* Header Search & Actions */}
           <div className="p-2.5 border-b border-slate-100 dark:border-dark-800 bg-slate-50/80 dark:bg-dark-900/90 shrink-0 space-y-2">

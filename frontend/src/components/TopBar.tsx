@@ -230,7 +230,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] bg-white/95 dark:bg-slate-950/80 backdrop-blur-xl px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
+      <header className="surface-glass relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-white/[0.07] px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -415,7 +415,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
             {/* Secondary Filters Popover Dropdown */}
             {isSecondaryPopoverOpen && (
-              <div className="absolute top-full mt-2 left-0 w-80 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-3">
+              <div className="absolute top-full mt-2 left-0 w-80 surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl p-3 z-30 animate-in fade-in zoom-in-95 duration-150 space-y-3">
                 {/* Popover Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.07]">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">

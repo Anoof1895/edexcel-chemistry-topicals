@@ -963,44 +963,44 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
           {/* Test Metrics Bar */}
           <div className="grid grid-cols-3 gap-2 pt-1">
-            <div className="p-2 rounded-lg bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-dark-750 text-center shadow-sm">
-              <div className="text-xs text-slate-500 dark:text-slate-400">Questions</div>
-              <div className="text-sm font-extrabold text-cyan-600 dark:text-cyan-300 font-mono mt-0.5">
+            <div className="surface-card p-2 rounded-xl text-center">
+              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Questions</div>
+              <div className="text-sm font-extrabold text-cyan-600 dark:text-cyan-400 font-mono tabular-nums mt-0.5 tracking-tight">
                 {cartQuestions.length}
               </div>
             </div>
 
-            <div className="p-2 rounded-lg bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-dark-750 text-center shadow-sm">
-              <div className="text-xs text-slate-500 dark:text-slate-400">Total Marks</div>
-              <div className="text-sm font-extrabold text-amber-600 dark:text-amber-300 font-mono mt-0.5">
+            <div className="surface-card p-2 rounded-xl text-center">
+              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Marks</div>
+              <div className="text-sm font-extrabold text-amber-600 dark:text-amber-400 font-mono tabular-nums mt-0.5 tracking-tight">
                 {totalCartMarks}
               </div>
             </div>
 
-            <div className="p-2 rounded-lg bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-dark-750 text-center shadow-sm">
-              <div className="text-xs text-slate-500 dark:text-slate-400">Est. Time</div>
-              <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-300 font-mono mt-0.5">
+            <div className="surface-card p-2 rounded-xl text-center">
+              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Est. Time</div>
+              <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums mt-0.5 tracking-tight">
                 {targetTimeMinutes}m
               </div>
             </div>
           </div>
 
           {/* Smart Auto-Generate Mock Exam Panel */}
-          <div className="rounded-xl border border-amber-500/30 dark:border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/20 p-2.5 transition-all">
+          <div className="rounded-2xl surface-card p-3 transition-all border-amber-500/30 dark:border-amber-500/25">
             <button
               type="button"
               onClick={() => setIsSmartGenerateOpen(!isSmartGenerateOpen)}
               className="w-full flex items-center justify-between text-left focus:outline-none"
             >
               <div className="flex items-center gap-1.5">
-                <span className="p-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <span className="p-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm">
                   <Zap className="w-3.5 h-3.5 fill-current" />
                 </span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                   Smart Auto-Generate
                 </span>
                 {lastGeneratedInfo && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                  <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
                     {lastGeneratedInfo}
                   </span>
                 )}
@@ -1013,14 +1013,14 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             </button>
 
             {isSmartGenerateOpen && (
-              <div className="mt-2.5 space-y-2 pt-2 border-t border-amber-200/50 dark:border-amber-900/30">
+              <div className="mt-2.5 space-y-2 pt-2 border-t border-slate-200/60 dark:border-white/[0.06]">
                 {/* Target Marks Presets */}
                 <div>
                   <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-1">
                     <span>Target Paper Marks</span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{targetMarks} marks</span>
+                    <span className="font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400">{targetMarks} marks</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {(isMath
                       ? [
                           { marks: 25, label: '25m', desc: 'Mini Quiz' },
@@ -1039,15 +1039,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                         key={preset.marks}
                         type="button"
                         onClick={() => setTargetMarks(preset.marks)}
-                        className={`py-1 px-1 rounded text-center transition-all border ${
+                        className={`py-1.5 px-1 rounded-xl text-center transition-all border duration-150 active:scale-[0.98] ${
                           targetMarks === preset.marks
-                            ? 'bg-amber-500 text-white font-bold border-amber-600 shadow-sm'
-                            : 'bg-white/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-750 hover:bg-amber-50 dark:hover:bg-dark-750'
+                            ? 'bg-amber-600 text-white font-bold border-amber-500 shadow-md shadow-amber-600/30 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]'
+                            : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200/70 dark:hover:bg-white/[0.08] hover:border-slate-300 dark:hover:border-white/15'
                         }`}
                       >
-                        <div className="text-[11px] font-mono leading-tight">{preset.label}</div>
+                        <div className="text-[11px] font-mono tabular-nums font-bold leading-tight">{preset.label}</div>
                         <div
-                          className={`text-[8.5px] leading-tight truncate ${
+                          className={`text-[8.5px] leading-tight truncate mt-0.5 ${
                             targetMarks === preset.marks ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'
                           }`}
                         >

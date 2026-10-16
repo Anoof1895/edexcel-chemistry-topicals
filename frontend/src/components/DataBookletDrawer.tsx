@@ -401,11 +401,11 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
       return (
         <div
           key={item.id}
-          className="p-3 flex flex-col gap-2 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+          className="p-3 flex flex-col gap-2 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shrink-0">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 shrink-0">
                 {item.unit}
               </span>
               <span
@@ -424,14 +424,14 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
             <button
               type="button"
               onClick={() => copyToClipboard(item.latex, item.id)}
-              className="p-1.5 rounded-lg bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
+              className="p-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
               title="Copy LaTeX formula"
             >
               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
 
-          <div className="w-full overflow-x-auto px-3 py-2 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center min-h-[38px]">
+          <div className="w-full overflow-x-auto px-3 py-2 rounded-lg bg-slate-50 dark:bg-[#07090D] border border-slate-200/80 dark:border-white/[0.06] text-slate-900 dark:text-white flex items-center min-h-[38px]">
             <MathFormula latex={item.latex} className="text-xs sm:text-[13px] whitespace-nowrap" />
           </div>
 
@@ -451,11 +451,11 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     return (
       <div
         key={item.id}
-        className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+        className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
       >
         <div className="sm:max-w-[44%] min-w-[140px] space-y-1 shrink-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shrink-0">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 shrink-0">
               {item.unit}
             </span>
             <span
@@ -482,13 +482,13 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
           )}
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2 flex-1 min-w-0 max-w-full">
-          <div className="overflow-x-auto max-w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center min-h-[36px]">
+          <div className="overflow-x-auto max-w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#07090D] border border-slate-200/80 dark:border-white/[0.06] text-slate-900 dark:text-white flex items-center min-h-[36px]">
             <MathFormula latex={item.latex} className="text-xs sm:text-sm whitespace-nowrap" />
           </div>
           <button
             type="button"
             onClick={() => copyToClipboard(item.latex, item.id)}
-            className="p-1.5 rounded-lg bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
+            className="p-1.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300 opacity-40 group-hover:opacity-100 transition-all shrink-0"
             title="Copy LaTeX formula"
           >
             {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -509,11 +509,11 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
       <div 
         className={`w-full ${
           isGridActive ? 'md:w-[92vw] lg:w-[960px] max-w-5xl' : 'sm:w-[500px] md:w-[560px]'
-        } h-full bg-white dark:bg-dark-900 border-l border-slate-200 dark:border-dark-750 flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 z-10 select-text transition-[width] pointer-events-auto`}
+        } h-full bg-white dark:bg-[#0B0F17] border-l border-slate-200 dark:border-white/[0.08] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 z-10 select-text transition-[width] pointer-events-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="px-4 py-3.5 border-b border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-850 shrink-0 space-y-3">
+        <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/[0.07] surface-glass shrink-0 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
@@ -535,13 +535,13 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-dark-700">
+              <span className="hidden sm:inline-flex items-center kbd-keycap">
                 Press D
               </span>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-dark-800 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/[0.08] transition-colors"
                 title="Close Drawer (Esc)"
               >
                 <X className="w-4 h-4" />
@@ -551,13 +551,13 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
 
           {/* Subject Switcher Segmented Control */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center bg-slate-200/70 dark:bg-dark-800 p-0.5 rounded-lg text-xs w-full gap-0.5">
+            <div className="flex items-center bg-slate-200/70 dark:bg-[#07090D] p-0.5 rounded-lg text-xs w-full gap-0.5 border border-slate-300/40 dark:border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setSubject('physics')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md font-bold transition-all truncate ${
                   subject === 'physics'
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -587,7 +587,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                 }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-md font-bold transition-all truncate ${
                   subject === 'mathematics'
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? 'bg-amber-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -611,7 +611,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white dark:bg-dark-800 border border-slate-200 dark:border-dark-750 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+              className="w-full bg-white dark:bg-[#07090D] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-9 pr-8 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all shadow-inner"
             />
             {searchQuery && (
               <button
@@ -633,8 +633,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   onClick={() => setPhysicsTab('constants')}
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     physicsTab === 'constants'
-                      ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-400/40 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   Data Sheet (14)
@@ -644,8 +644,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   onClick={() => setPhysicsTab('ias')}
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     physicsTab === 'ias'
-                      ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-400/40 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   IAS Equations
@@ -655,8 +655,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   onClick={() => setPhysicsTab('ia2')}
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     physicsTab === 'ia2'
-                      ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-400/40 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   IA2 Equations
@@ -670,8 +670,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     onClick={() => setMathTab('pure')}
                     className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                       mathTab === 'pure'
-                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                        ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                     }`}
                   >
                     Pure (P1–P4)
@@ -681,8 +681,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     onClick={() => setMathTab('mechanics')}
                     className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                       mathTab === 'mechanics'
-                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                        ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                     }`}
                   >
                     Mechanics (M1)
@@ -692,8 +692,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     onClick={() => setMathTab('statistics')}
                     className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                       mathTab === 'statistics'
-                        ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                        ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                     }`}
                   >
                     Statistics (S1)
@@ -701,13 +701,13 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                 </div>
 
                 {/* 3-Way Formula Filter Segmented Control */}
-                <div className="flex items-center bg-slate-200/70 dark:bg-dark-800 p-0.5 rounded-lg text-xs gap-0.5">
+                <div className="flex items-center bg-slate-200/70 dark:bg-[#07090D] p-0.5 rounded-lg text-xs gap-0.5 border border-slate-300/40 dark:border-white/[0.06]">
                   <button
                     type="button"
                     onClick={() => setMathFilter('all')}
                     className={`flex-1 py-1 px-1.5 rounded-md font-bold text-center transition-all truncate text-[11px] ${
                       mathFilter === 'all'
-                        ? 'bg-white dark:bg-dark-700 text-slate-900 dark:text-white shadow-xs'
+                        ? 'bg-white dark:bg-white/[0.08] text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-white/10'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -747,7 +747,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     chemistryTab === 'periodic_table'
                       ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   Periodic Table
@@ -758,7 +758,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     chemistryTab === 'constants_indicators'
                       ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   Constants
@@ -769,7 +769,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     chemistryTab === 'spectroscopy'
                       ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   IR &amp; NMR
@@ -780,7 +780,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   className={`py-1.5 px-1 rounded-lg font-semibold text-center truncate transition-all ${
                     chemistryTab === 'redox'
                       ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-400/40 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   Redox (E°)
@@ -1818,7 +1818,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   </div>
 
                   {/* Interactive z Search / Lookup Box */}
-                  <div className="p-3 bg-slate-50 dark:bg-dark-800/60 border-b border-slate-100 dark:border-dark-750 space-y-2">
+                  <div className="p-3 bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06] space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
                         <Calculator className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
@@ -1840,14 +1840,14 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                           placeholder="Enter z value (e.g. 1.96, 0.5, 2.33, -1.5)"
                           value={zLookup}
                           onChange={(e) => setZLookup(e.target.value)}
-                          className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-700 rounded-lg text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+                          className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-[#07090D] border border-slate-200 dark:border-white/[0.08] rounded-lg text-xs font-mono tabular-nums text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
                         />
                       </div>
                       {zLookup && (
                         <button
                           type="button"
                           onClick={() => setZLookup('')}
-                          className="px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700 transition-colors"
+                          className="px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.06] transition-colors"
                         >
                           Clear
                         </button>
@@ -1855,22 +1855,22 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     </div>
 
                     {parsedZ !== null && !isNaN(parsedZ) && (
-                      <div className="p-2.5 rounded-lg bg-white dark:bg-dark-900 border border-cyan-200 dark:border-cyan-800/60 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                      <div className="p-2.5 rounded-lg bg-white dark:bg-[#07090D] border border-cyan-200 dark:border-cyan-800/60 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                         <div>
                           <span className="text-[10px] text-slate-400 block font-medium">Φ(z) = P(Z ≤ {parsedZ})</span>
-                          <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 text-sm">
+                          <span className="font-mono tabular-nums font-bold text-cyan-600 dark:text-cyan-400 text-sm">
                             {calculatePhi(parsedZ).toFixed(4)}
                           </span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 block font-medium">P(Z &gt; {parsedZ}) = 1 − Φ(z)</span>
-                          <span className="font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">
+                          <span className="font-mono tabular-nums font-bold text-slate-700 dark:text-slate-300 text-sm">
                             {(1 - calculatePhi(parsedZ)).toFixed(4)}
                           </span>
                         </div>
                         <div>
                           <span className="text-[10px] text-slate-400 block font-medium">Central: P(−|z| ≤ Z ≤ |z|)</span>
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                          <span className="font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400 text-sm">
                             {(2 * calculatePhi(Math.abs(parsedZ)) - 1).toFixed(4)}
                           </span>
                         </div>
@@ -1881,8 +1881,8 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   {/* 5-Column-Pair Table (Page 16 Yellow Booklet) */}
                   {showPhiTable && (
                     <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
-                      <table className="w-full text-center text-xs border-collapse">
-                        <thead className="bg-slate-100 dark:bg-dark-800 text-[10.5px] text-slate-600 dark:text-slate-300 font-bold sticky top-0 z-10 shadow-xs">
+                      <table className="w-full text-center text-xs border-collapse tabular-nums font-mono">
+                        <thead className="bg-slate-100 dark:bg-[#07090D] text-[10.5px] text-slate-600 dark:text-slate-300 font-bold sticky top-0 z-10 shadow-xs">
                           <tr className="border-b border-slate-200 dark:border-dark-750">
                             <th colSpan={2} className="py-1 px-1 border-r border-slate-200/80 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
                               0.00 – 0.49

@@ -9,6 +9,7 @@ import { SplitViewer } from './components/SplitViewer';
 import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
 import { DataBookletDrawer } from './components/DataBookletDrawer';
 import { AuthModal } from './components/AuthModal';
+import { CommandPalette } from './components/CommandPalette';
 import { useAuth } from './context/AuthContext';
 import { useProgress } from './context/ProgressContext';
 import { Loader2 } from 'lucide-react';
@@ -67,11 +68,12 @@ export const App: React.FC = () => {
   const [datasetError, setDatasetError] = useState<string | null>(null);
   const [isDataBookletOpen, setIsDataBookletOpen] = useState<boolean>(false);
   const [isDataBookletExpanded, setIsDataBookletExpanded] = useState<boolean>(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
 
   // Global keyboard shortcut: 'D' to toggle Official Data Booklet Drawer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
+      if (e.repeat || isCommandPaletteOpen) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -91,7 +93,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isCommandPaletteOpen]);
 
   const initialRoute = useRef(parseHashRoute());
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.current.view);
@@ -636,7 +638,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentView.endsWith('-topical')) return;
-      if (isDataBookletOpen || isAuthModalOpen) return;
+      if (isDataBookletOpen || isAuthModalOpen || isCommandPaletteOpen) return;
 
       // Don't trigger shortcuts if typing inside an input, textarea, select, or focused button/link
       const target = e.target as HTMLElement | null;
@@ -670,7 +672,7 @@ export const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, isDataBookletOpen, isAuthModalOpen, handlePrevQuestion, handleNextQuestion, handleToggleMarkScheme, handleToggleActiveBookmark]);
+  }, [currentView, isDataBookletOpen, isAuthModalOpen, isCommandPaletteOpen, handlePrevQuestion, handleNextQuestion, handleToggleMarkScheme, handleToggleActiveBookmark]);
 
   const handleFilterChange = (updates: Partial<FilterState>) => {
     setFilters((prev) => {
@@ -701,6 +703,61 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleSelectUnitFromPalette = useCallback((subject: Subject, unitLabel: string) => {
+    prevSubjectRef.current = subject;
+    setActiveTab('all');
+    setFilters({
+      selectedUnits: [unitLabel],
+      selectedSubtopics: [],
+      selectedYears: [],
+      selectedSeries: [],
+      searchQuery: '',
+      statusFilter: 'all',
+      questionType: 'all',
+      bookmarkedOnly: false,
+    });
+    setSelectedQuestionId(null);
+    const targetView: AppView = subject === 'physics'
+      ? 'physics-topical'
+      : subject === 'mathematics'
+      ? 'mathematics-topical'
+      : 'chemistry-topical';
+    setCurrentView(targetView);
+    window.location.hash = subject === 'physics'
+      ? '#/physics/topical'
+      : subject === 'mathematics'
+      ? '#/mathematics/topical'
+      : '#/topical';
+  }, []);
+
+  const handleSelectQuestionFromPalette = useCallback((subject: Subject, questionId: string) => {
+    prevSubjectRef.current = subject;
+    setActiveTab('all');
+    setFilters({
+      selectedUnits: [],
+      selectedSubtopics: [],
+      selectedYears: [],
+      selectedSeries: [],
+      searchQuery: '',
+      statusFilter: 'all',
+      questionType: 'all',
+      bookmarkedOnly: false,
+    });
+    setSelectedQuestionId(questionId);
+    const targetView: AppView = subject === 'physics'
+      ? 'physics-topical'
+      : subject === 'mathematics'
+      ? 'mathematics-topical'
+      : 'chemistry-topical';
+    setCurrentView(targetView);
+    const basePath = subject === 'physics'
+      ? '#/physics/topical'
+      : subject === 'mathematics'
+      ? '#/mathematics/topical'
+      : '#/topical';
+    window.location.hash = `${basePath}?q=${encodeURIComponent(questionId)}`;
+  }, []);
+
   const totalMarks = useMemo(() => {
     return filteredQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
   }, [filteredQuestions]);
@@ -725,6 +782,7 @@ export const App: React.FC = () => {
         physCount={physQuestions?.length ?? 4136}
         mathCount={mathQuestions?.length ?? 1269}
         onOpenDataBooklet={() => setIsDataBookletOpen(true)}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {isSubjectLoading ? (
@@ -849,6 +907,23 @@ export const App: React.FC = () => {
         onClose={() => setIsDataBookletOpen(false)}
         activeSubject={activeSubject}
         onExpandedChange={setIsDataBookletExpanded}
+      />
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onOpen={() => setIsCommandPaletteOpen(true)}
+        currentView={currentView}
+        activeSubject={activeSubject}
+        onNavigate={handleNavigate}
+        onToggleDataBooklet={() => setIsDataBookletOpen((prev) => !prev)}
+        onResetFilters={handleResetFilters}
+        onToggleMarkScheme={handleToggleMarkScheme}
+        onToggleBookmarkedOnly={() => handleTabChange(activeTab === 'bookmarked' ? 'all' : 'bookmarked')}
+        onSelectUnitFilter={handleSelectUnitFromPalette}
+        onSelectQuestion={handleSelectQuestionFromPalette}
+        chemQuestions={chemQuestions}
+        physQuestions={physQuestions}
+        mathQuestions={mathQuestions}
       />
       <AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
       <Analytics />

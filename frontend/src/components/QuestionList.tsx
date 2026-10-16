@@ -51,7 +51,7 @@ export const getStatusConfig = (status: MasteryStatus = 'unattempted') => {
         label: status === 'correct' ? 'Correct' : 'Mastered',
         shortLabel: status === 'correct' ? 'Correct' : 'Mastered',
         bg: 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-        dot: 'bg-emerald-500 dark:bg-emerald-400',
+        dot: 'bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]',
       };
     case 'review':
     case 'incorrect':
@@ -59,7 +59,7 @@ export const getStatusConfig = (status: MasteryStatus = 'unattempted') => {
         label: status === 'incorrect' ? 'Incorrect' : 'Review Needed',
         shortLabel: status === 'incorrect' ? 'Incorrect' : 'Review',
         bg: 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border-amber-500/30',
-        dot: 'bg-amber-500 dark:bg-amber-400',
+        dot: 'bg-amber-500 dark:bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.6)]',
       };
     case 'unattempted':
     default:
@@ -176,14 +176,14 @@ export const QuestionList: React.FC<QuestionListProps> = ({
       {/* Question List Sidebar / Slide-Over Drawer */}
       <aside 
         className={`
-          border-r border-slate-200 dark:border-white/[0.07] bg-white/95 lg:bg-slate-50/70 dark:bg-slate-950/95 lg:dark:bg-slate-950/60 flex flex-col shrink-0 select-none overflow-hidden transition-transform duration-200
+          border-r border-slate-200 dark:border-white/[0.07] bg-white/95 lg:bg-slate-50/70 dark:bg-[#07090D]/95 lg:dark:bg-[#07090D]/75 backdrop-blur-xl flex flex-col shrink-0 select-none overflow-hidden transition-transform duration-200
           fixed inset-y-0 left-0 z-40 w-80 sm:w-84 max-w-[85vw] shadow-2xl lg:shadow-none
           lg:static lg:w-80 lg:z-auto lg:translate-x-0
           ${isDrawerOpen ? 'translate-x-0 flex' : '-translate-x-full lg:translate-x-0 hidden lg:flex'}
         `}
       >
         {/* Mobile/Tablet Drawer Header (< 1024px) */}
-        <div className="h-12 px-3 border-b border-slate-200 dark:border-white/[0.07] bg-white dark:bg-slate-950 flex items-center justify-between lg:hidden shrink-0">
+        <div className="h-12 px-3 border-b border-slate-200 dark:border-white/[0.07] bg-white dark:bg-[#07090D] flex items-center justify-between lg:hidden shrink-0">
           <div className="flex items-center gap-2">
             <List className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
             <span className="font-bold text-xs text-slate-800 dark:text-white">Question Navigator</span>
@@ -202,13 +202,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         </div>
 
         {/* Header Tabs: All Questions vs Bookmarked */}
-        <div className="p-2 border-b border-slate-200 dark:border-white/[0.07] bg-white/80 dark:bg-slate-950/80 flex items-center gap-1.5 shrink-0">
+        <div className="p-2 border-b border-slate-200 dark:border-white/[0.07] bg-white/80 dark:bg-[#07090D]/80 backdrop-blur-md flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => onTabChange('all')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'all'
-                ? 'bg-slate-100 dark:bg-white/[0.07] text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10'
+                ? 'bg-slate-100 dark:bg-white/[0.07] text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.04]'
             }`}
           >
@@ -223,7 +223,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
             onClick={() => onTabChange('bookmarked')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'bookmarked'
-                ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-300 dark:border-amber-500/30'
+                ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-300 dark:border-amber-500/30 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
                 : 'text-slate-600 hover:text-amber-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-amber-300 dark:hover:bg-white/[0.04]'
             }`}
           >
@@ -276,10 +276,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               const cleanedSubtopic = cleanSubtopic(rawSubtopic);
 
               const selectedCardAccent = isMath
-                ? 'bg-amber-50/70 dark:bg-white/[0.07] border-y-amber-300/80 dark:border-y-white/15 border-r-amber-300/80 dark:border-r-white/15 border-l-amber-500 dark:border-l-amber-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-amber-500/20 dark:ring-amber-400/20'
+                ? 'bg-amber-50/70 dark:bg-[#16130D] border-y-amber-300/80 dark:border-y-white/10 border-r-amber-300/80 dark:border-r-white/10 border-l-amber-500 dark:border-l-amber-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] ring-1 ring-amber-500/20 dark:ring-amber-400/20'
                 : isPhysics
-                ? 'bg-indigo-50/70 dark:bg-white/[0.07] border-y-indigo-300/80 dark:border-y-white/15 border-r-indigo-300/80 dark:border-r-white/15 border-l-indigo-500 dark:border-l-indigo-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-indigo-500/20 dark:ring-indigo-400/20'
-                : 'bg-cyan-50/70 dark:bg-white/[0.07] border-y-cyan-300/80 dark:border-y-white/15 border-r-cyan-300/80 dark:border-r-white/15 border-l-cyan-500 dark:border-l-cyan-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-cyan-500/20 dark:ring-cyan-400/20';
+                ? 'bg-indigo-50/70 dark:bg-[#0D111A] border-y-indigo-300/80 dark:border-y-white/10 border-r-indigo-300/80 dark:border-r-white/10 border-l-indigo-500 dark:border-l-indigo-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] ring-1 ring-indigo-500/20 dark:ring-indigo-400/20'
+                : 'bg-cyan-50/70 dark:bg-[#0A141A] border-y-cyan-300/80 dark:border-y-white/10 border-r-cyan-300/80 dark:border-r-white/10 border-l-cyan-500 dark:border-l-cyan-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] ring-1 ring-cyan-500/20 dark:ring-cyan-400/20';
 
               const selectedSubtopicText = isMath
                 ? 'text-xs text-amber-800 dark:text-amber-300 font-medium line-clamp-2'
@@ -299,7 +299,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                   className={`group relative rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
                     isSelected
                       ? `${selectedCardAccent} text-slate-900 dark:text-white`
-                      : 'bg-white dark:bg-white/[0.02] border-slate-200/80 dark:border-white/[0.06] border-l-transparent hover:bg-slate-50 dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 hover:border-l-slate-400 dark:hover:border-l-slate-600 text-slate-700 dark:text-slate-300'
+                      : 'bg-white dark:bg-[#07090D]/50 border-slate-200/80 dark:border-white/[0.05] border-l-transparent hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/10 hover:border-l-slate-400 dark:hover:border-l-slate-600 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   {/* Top Row: Q Number, Mark Badge, Type Pill, Stem Pill, Bookmark Action */}
@@ -399,7 +399,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
         {/* Pagination Bar */}
         {questions.length > 0 && (
-          <div className="p-2 border-t border-slate-200 dark:border-white/[0.07] bg-white/90 dark:bg-slate-950/90 flex flex-col items-center gap-1.5 shrink-0">
+          <div className="p-2 border-t border-slate-200 dark:border-white/[0.07] bg-white/90 dark:bg-[#07090D]/90 backdrop-blur-md flex flex-col items-center gap-1.5 shrink-0">
             <div className="flex items-center justify-between w-full px-1 text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
               <span>
                 Showing <span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{startIndex + 1}</span>–<span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{Math.min(startIndex + PAGE_SIZE, questions.length)}</span> of <span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{questions.length}</span>

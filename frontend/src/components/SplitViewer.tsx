@@ -263,8 +263,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
       {/* ===================================================================== */}
       {/* ACTIVE QUESTION TOP HEADER (Clean sub-bar: metadata, bookmarks & counter)*/}
-      {/* ===================================================================== */}
-      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
+      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] surface-glass flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
         {/* Left: Question Navigator Trigger (on mobile/tablet) & Metadata */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Question List Drawer Button on mobile/tablet (< 1024px) */}
@@ -430,7 +429,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           >
             {/* Interactive MCQ A/B/C/D Floating Dock (Visible on both Desktop & Mobile whenever isMcq && !isMath) */}
             {isMcq && !isMath && (
-              <div className="w-full max-w-xl mt-4 px-3.5 py-3 rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in duration-150 select-none">
+              <div className="w-full max-w-xl mt-4 px-4 py-3 rounded-2xl surface-card shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in duration-150 select-none">
                 <div className="flex items-center justify-between w-full px-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
@@ -438,11 +437,11 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                     </span>
                     <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
                       Press
-                      <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+                      <kbd className="kbd-keycap">
                         A
                       </kbd>
                       –
-                      <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+                      <kbd className="kbd-keycap">
                         D
                       </kbd>
                     </span>
@@ -462,7 +461,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
                 {/* 4 Interactive Option Buttons */}
                 <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
-                  {['A', 'B', 'C', 'D'].map((opt) => {
+                  {['A', 'B', 'C', 'D'].map((opt, optIdx) => {
                     const isSelected = selectedMcqOption === opt;
                     const isCorrect = Boolean(normalizedKey && opt === normalizedKey);
                     let btnStyle =
@@ -497,6 +496,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                         className={`h-11 sm:h-12 rounded-xl font-bold font-mono text-sm sm:text-base border flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-sm ${btnStyle}`}
                       >
                         <span>{opt}</span>
+                        <span className="hidden sm:inline-block text-[10px] font-mono opacity-30 font-normal">
+                          {optIdx + 1}
+                        </span>
                       </button>
                     );
                   })}
@@ -556,7 +558,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             className="hidden md:flex w-px bg-slate-200 dark:bg-white/[0.07] relative items-center justify-center group hover:bg-cyan-500/40 dark:hover:bg-cyan-400/40 transition-colors shrink-0 select-none"
             aria-hidden="true"
           >
-            <div className="w-1 h-8 rounded-full bg-slate-300 dark:bg-white/15 group-hover:bg-cyan-500 dark:group-hover:bg-cyan-400 transition-colors" />
+            <div className={`w-1 h-8 rounded-full bg-slate-300 dark:bg-white/15 transition-all ${
+              isMath
+                ? 'group-hover:bg-amber-400 group-hover:shadow-[0_0_8px_rgba(245,158,11,0.6)]'
+                : isPhysics
+                ? 'group-hover:bg-indigo-400 group-hover:shadow-[0_0_8px_rgba(99,102,241,0.6)]'
+                : 'group-hover:bg-cyan-400 group-hover:shadow-[0_0_8px_rgba(6,182,212,0.6)]'
+            }`} />
           </div>
         )}
 
@@ -595,7 +603,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* ===================================================================== */}
       {/* ANCHORED BOTTOM ACTION BAR (Desktop & Tablet >= 768px)               */}
       {/* ===================================================================== */}
-      <div className="hidden md:flex sticky bottom-0 w-full py-2 px-6 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border-t border-slate-200 dark:border-white/[0.08] shadow-2xl items-center justify-center gap-3 z-10 shrink-0 select-none">
+      <div className="hidden md:flex sticky bottom-0 w-full py-2.5 px-6 surface-glass border-t border-slate-200 dark:border-white/[0.08] shadow-2xl items-center justify-center gap-3 z-10 shrink-0 select-none">
         {/* Left: Previous Question */}
         <button
           type="button"
@@ -606,7 +614,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         >
           <ChevronLeft className="w-3.5 h-3.5" />
           <span>Prev</span>
-          <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+          <kbd className="hidden lg:inline-block kbd-keycap">
             ←
           </kbd>
         </button>
@@ -634,10 +642,8 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             </>
           )}
           <kbd
-            className={`px-1.5 py-0.5 text-[10px] font-mono rounded border ${
-              isMarkSchemeVisible
-                ? 'bg-slate-100 dark:bg-white/[0.06] border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
-                : 'bg-cyan-700/70 border-cyan-400/30 text-cyan-50'
+            className={`kbd-keycap ${
+              !isMarkSchemeVisible ? 'bg-cyan-700/70 border-cyan-400/40 text-cyan-100' : ''
             }`}
           >
             Space
@@ -653,7 +659,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           title="Next Question [→ or ]]"
         >
           <span>Next</span>
-          <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+          <kbd className="hidden lg:inline-block kbd-keycap">
             →
           </kbd>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -663,7 +669,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* ===================================================================== */}
       {/* MOBILE FIXED BOTTOM NAVIGATION BAR (< 768px)                          */}
       {/* ===================================================================== */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-14 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border-t border-slate-200 dark:border-white/10 z-30 px-3 flex items-center justify-between gap-2 shadow-2xl">
+      <div className="md:hidden fixed bottom-0 inset-x-0 h-14 surface-glass border-t border-slate-200 dark:border-white/10 z-30 px-3 flex items-center justify-between gap-2 shadow-2xl">
         {/* Prev Button - 44px min tap target */}
         <button
           type="button"

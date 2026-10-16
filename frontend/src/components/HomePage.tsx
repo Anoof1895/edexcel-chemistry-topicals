@@ -85,29 +85,29 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physi
 
         {/* Live Quick Stats Strip */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-3xl">
-          <div className="p-3.5 rounded-xl bg-white/85 dark:bg-slate-900/75 border border-slate-200 dark:border-white/[0.08] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-500/30 dark:hover:border-cyan-400/30">
-            <div className="text-xl md:text-2xl font-extrabold text-cyan-600 dark:text-cyan-400 font-mono tabular-nums">
+          <div className="surface-card p-3.5 rounded-xl text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-500/40 dark:hover:border-cyan-400/40 group">
+            <div className="text-xl md:text-2xl font-extrabold text-cyan-600 dark:text-cyan-400 font-mono tabular-nums tracking-tight">
               {totalQuestionsCombined.toLocaleString()}
             </div>
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Total Questions</div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/85 dark:bg-slate-900/75 border border-slate-200 dark:border-white/[0.08] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-500/30 dark:hover:border-indigo-400/30">
-            <div className="text-xl md:text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 font-mono tabular-nums">
+          <div className="surface-card p-3.5 rounded-xl text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-500/40 dark:hover:border-indigo-400/40 group">
+            <div className="text-xl md:text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 font-mono tabular-nums tracking-tight">
               {totalPapersCombined}
             </div>
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Past Papers (2019–2026)</div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/85 dark:bg-slate-900/75 border border-slate-200 dark:border-white/[0.08] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/30 dark:hover:border-emerald-400/30">
-            <div className="text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+          <div className="surface-card p-3.5 rounded-xl text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/40 dark:hover:border-emerald-400/40 group">
+            <div className="text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums tracking-tight">
               18 Active Units
             </div>
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">6 Chem + 6 Phys + 6 Math</div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white/85 dark:bg-slate-900/75 border border-slate-200 dark:border-white/[0.08] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/30 dark:hover:border-amber-400/30">
-            <div className="text-xl md:text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-mono tabular-nums">
+          <div className="surface-card p-3.5 rounded-xl text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-500/40 dark:hover:border-amber-400/40 group">
+            <div className="text-xl md:text-2xl font-extrabold text-amber-600 dark:text-amber-400 font-mono tabular-nums tracking-tight">
               {totalMarksCombined.toLocaleString()}
             </div>
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Available Marks</div>
@@ -128,7 +128,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physi
         {/* Subject Cards Grid: 3 Subjects Side-by-Side */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl mx-auto">
           {/* Card 1: Chemistry (Cyan / Emerald Signature) */}
-          <div className="group relative rounded-2xl bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-900/90 dark:to-dark-950 border border-cyan-400/40 dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] p-6 flex flex-col justify-between shadow-xl shadow-cyan-900/5 dark:shadow-black/50 hover:border-cyan-500 dark:hover:border-cyan-400/50 transition-all duration-200 hover:-translate-y-1">
+          <div className="group relative rounded-2xl surface-card p-6 flex flex-col justify-between hover:border-cyan-500 dark:hover:border-cyan-400/50 transition-all duration-200 hover:-translate-y-1">
             {/* Glowing Accent Top Bar */}
             <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-90" />
 
@@ -200,7 +200,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physi
           </div>
 
           {/* Card 2: Physics (Indigo / Sky Signature) */}
-          <div className="group relative rounded-2xl bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-900/90 dark:to-dark-950 border border-indigo-400/40 dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] p-6 flex flex-col justify-between shadow-xl shadow-indigo-900/5 dark:shadow-black/50 hover:border-indigo-500 dark:hover:border-indigo-400/50 transition-all duration-200 hover:-translate-y-1">
+          <div className="group relative rounded-2xl surface-card p-6 flex flex-col justify-between hover:border-indigo-500 dark:hover:border-indigo-400/50 transition-all duration-200 hover:-translate-y-1">
             {/* Glowing Accent Top Bar */}
             <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-90" />
 
@@ -275,7 +275,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, questions, physi
           </div>
 
           {/* Card 3: Mathematics (Amber / Orange Signature) */}
-          <div className="group relative rounded-2xl bg-gradient-to-b from-white to-slate-50/80 dark:from-slate-900/90 dark:to-dark-950 border border-amber-400/40 dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] p-6 flex flex-col justify-between shadow-xl shadow-amber-900/5 dark:shadow-black/50 hover:border-amber-500 dark:hover:border-amber-400/50 transition-all duration-200 hover:-translate-y-1">
+          <div className="group relative rounded-2xl surface-card p-6 flex flex-col justify-between hover:border-amber-500 dark:hover:border-amber-400/50 transition-all duration-200 hover:-translate-y-1">
             {/* Glowing Accent Top Bar */}
             <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-90" />
 
