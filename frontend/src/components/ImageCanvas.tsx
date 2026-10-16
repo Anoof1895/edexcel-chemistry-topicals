@@ -16,12 +16,16 @@ import {
 } from 'lucide-react';
 import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
 
-// Module-scoped in-memory cache for annotations across view mode toggles / remounts
-// Kept purely in RAM; zero localStorage, sessionStorage, or backend persistence
-const MAX_CACHE_ENTRIES = 30;
+// Module-scoped in-memory LRU cache for annotations across question navigation & view mode toggles
+// Kept purely in RAM (max 25 questions per session); zero localStorage, sessionStorage, or backend persistence
+const MAX_CACHE_ENTRIES = 25;
 const inMemoryDrawingCache = new Map<string, HTMLCanvasElement>();
 
-function enforceCacheLimit<K, V>(map: Map<K, V>, limit: number = MAX_CACHE_ENTRIES) {
+function touchAndEnforceLRU<K, V>(map: Map<K, V>, key: K, value: V, limit: number = MAX_CACHE_ENTRIES) {
+  if (map.has(key)) {
+    map.delete(key);
+  }
+  map.set(key, value);
   while (map.size > limit) {
     const firstKey = map.keys().next().value;
     if (firstKey !== undefined) {
@@ -153,25 +157,32 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     }
   };
 
-  // Restore drawing from in-memory cache
+  // Restore drawing from in-memory LRU cache (or clear canvas if unannotated)
   const restoreFromCache = useCallback((targetCanvas: HTMLCanvasElement | null) => {
     if (!targetCanvas) return;
+    const ctx = targetCanvas.getContext('2d');
+    if (!ctx) return;
+
     const cacheKey = questionId || src;
-    if (!cacheKey) return;
-    const offscreen = inMemoryDrawingCache.get(cacheKey);
-    if (!offscreen || offscreen.width === 0 || offscreen.height === 0) return;
+    const offscreen = cacheKey ? inMemoryDrawingCache.get(cacheKey) : undefined;
+    if (!offscreen || offscreen.width === 0 || offscreen.height === 0) {
+      ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      return;
+    }
+
+    if (cacheKey) {
+      touchAndEnforceLRU(inMemoryDrawingCache, cacheKey, offscreen);
+    }
 
     if (targetCanvas.width !== offscreen.width || targetCanvas.height !== offscreen.height) {
       targetCanvas.width = offscreen.width;
       targetCanvas.height = offscreen.height;
     }
-    const ctx = targetCanvas.getContext('2d');
-    if (!ctx) return;
     ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
     ctx.drawImage(offscreen, 0, 0);
   }, [questionId, src]);
 
-  // Synchronize drawn bitmap to in-memory offscreen cache and other canvas (main or lightbox)
+  // Synchronize drawn bitmap to in-memory offscreen LRU cache and other canvas (main or lightbox)
   const syncDrawingCanvases = useCallback((sourceCanvas: HTMLCanvasElement) => {
     const cacheKey = questionId || src;
     if (!cacheKey || sourceCanvas.width === 0 || sourceCanvas.height === 0) return;
@@ -179,8 +190,6 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     let offscreen = inMemoryDrawingCache.get(cacheKey);
     if (!offscreen) {
       offscreen = document.createElement('canvas');
-      inMemoryDrawingCache.set(cacheKey, offscreen);
-      enforceCacheLimit(inMemoryDrawingCache);
     }
     if (offscreen.width !== sourceCanvas.width || offscreen.height !== sourceCanvas.height) {
       offscreen.width = sourceCanvas.width;
@@ -191,6 +200,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
       offCtx.drawImage(sourceCanvas, 0, 0);
     }
+    touchAndEnforceLRU(inMemoryDrawingCache, cacheKey, offscreen);
 
     const otherCanvas = sourceCanvas === canvasRef.current ? lightboxCanvasRef.current : canvasRef.current;
     if (otherCanvas) {
@@ -236,8 +246,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       setTextAnnotations((prev) => {
         const next = prev.filter((item) => item.id !== current.id);
         if (cacheKey) {
-          inMemoryTextCache.set(cacheKey, next);
-          enforceCacheLimit(inMemoryTextCache);
+          touchAndEnforceLRU(inMemoryTextCache, cacheKey, next);
         }
         return next;
       });
@@ -251,8 +260,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           next = [...prev, { ...current, text: current.text }];
         }
         if (cacheKey) {
-          inMemoryTextCache.set(cacheKey, next);
-          enforceCacheLimit(inMemoryTextCache);
+          touchAndEnforceLRU(inMemoryTextCache, cacheKey, next);
         }
         return next;
       });
@@ -271,8 +279,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       const next = prev.filter((item) => item.id !== id);
       const cacheKey = questionId || src;
       if (cacheKey) {
-        inMemoryTextCache.set(cacheKey, next);
-        enforceCacheLimit(inMemoryTextCache);
+        touchAndEnforceLRU(inMemoryTextCache, cacheKey, next);
       }
       return next;
     });
@@ -408,11 +415,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     }
   };
 
-  // Only clear annotations when navigating to a different question (questionId change)
+  // Preserve annotations in the 25-question LRU cache across Prev/Next question navigation;
+  // only reset the live canvas view and restore any cached annotations for the incoming question.
   useEffect(() => {
     if (prevQuestionIdRef.current && prevQuestionIdRef.current !== questionId) {
-      inMemoryDrawingCache.delete(prevQuestionIdRef.current);
-      inMemoryTextCache.delete(prevQuestionIdRef.current);
       strokeHistoryRef.current = [];
       setCanUndo(false);
       if (canvasRef.current) {
@@ -427,7 +433,6 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           ctx.clearRect(0, 0, lightboxCanvasRef.current.width, lightboxCanvasRef.current.height);
         }
       }
-      setTextAnnotations([]);
       setEditingItem(null);
       editingItemRef.current = null;
     }
@@ -436,7 +441,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
     const cacheKey = questionId || src;
     if (cacheKey && inMemoryTextCache.has(cacheKey)) {
-      setTextAnnotations(inMemoryTextCache.get(cacheKey) || []);
+      const savedNotes = inMemoryTextCache.get(cacheKey) || [];
+      touchAndEnforceLRU(inMemoryTextCache, cacheKey, savedNotes);
+      setTextAnnotations(savedNotes);
     } else {
       setTextAnnotations([]);
     }
@@ -750,16 +757,16 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   // Shared Floating Annotation Toolbar Renderer
   const renderAnnotationToolbar = () => (
-    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200/90 dark:border-dark-700 shadow-md shadow-slate-900/5 select-none transition-all flex-wrap justify-center sm:flex-nowrap">
+    <div className="flex items-center gap-1 sm:gap-1.5 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 shadow-2xl select-none transition-all flex-wrap justify-center sm:flex-nowrap">
       {/* Toggle Annotate: On/Off */}
       <button
         type="button"
         onClick={toggleAnnotating}
         title={isAnnotating ? 'Turn off annotation' : 'Turn on annotation overlay'}
-        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all active:scale-[0.98] ${
           isAnnotating
-            ? 'bg-cyan-500 text-white shadow-sm'
-            : 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-750'
+            ? 'bg-cyan-500 text-white shadow-sm shadow-cyan-500/30'
+            : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-transparent dark:border-white/[0.06]'
         }`}
       >
         <PenLine className="w-3.5 h-3.5" />
@@ -768,17 +775,17 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
       {isAnnotating && (
         <>
-          <div className="w-px h-4 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
           {/* Pen */}
           <button
             type="button"
             onClick={() => switchTool('pen')}
             title={`Pen (${SIZE_CONFIG[brushSize].penWidth}px Cyan)`}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               currentTool === 'pen'
                 ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] shadow-sm inline-block" />
@@ -790,10 +797,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             type="button"
             onClick={() => switchTool('highlighter')}
             title={`Highlighter (${SIZE_CONFIG[brushSize].highlighterWidth}px Yellow)`}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               currentTool === 'highlighter'
                 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
             }`}
           >
             <Highlighter className="w-3.5 h-3.5 text-amber-500" />
@@ -805,10 +812,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             type="button"
             onClick={() => switchTool('text')}
             title={`Text (${SIZE_CONFIG[brushSize].fontSize}px Font)`}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               currentTool === 'text'
                 ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
             }`}
           >
             <Type className="w-3.5 h-3.5 text-cyan-500" />
@@ -820,20 +827,20 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             type="button"
             onClick={() => switchTool('eraser')}
             title={`Eraser (${SIZE_CONFIG[brushSize].eraserWidth}px)`}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               currentTool === 'eraser'
                 ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
             }`}
           >
             <Eraser className="w-3.5 h-3.5 text-rose-500" />
             <span>Eraser</span>
           </button>
 
-          <div className="w-px h-4 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
           {/* 3-Tier Size Picker */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-dark-800/80 p-0.5 rounded-full border border-slate-200/80 dark:border-dark-750">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.05] p-0.5 rounded-full border border-slate-200/80 dark:border-white/10">
             {(['fine', 'medium', 'bold'] as const).map((tier) => {
               const isSelected = brushSize === tier;
               const config = SIZE_CONFIG[tier];
@@ -845,8 +852,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                   title={`${config.label} (${config.penWidth}px Pen / ${config.fontSize}px Font)`}
                   className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
                     isSelected
-                      ? 'bg-white dark:bg-dark-700 shadow-sm border border-slate-300 dark:border-dark-600 scale-105'
-                      : 'hover:bg-slate-200/60 dark:hover:bg-dark-700/60 opacity-60 hover:opacity-100'
+                      ? 'bg-white dark:bg-slate-800 shadow-sm border border-slate-300 dark:border-white/15 scale-105'
+                      : 'hover:bg-slate-200/60 dark:hover:bg-white/10 opacity-60 hover:opacity-100'
                   }`}
                 >
                   <span
@@ -865,7 +872,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             })}
           </div>
 
-          <div className="w-px h-4 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
           {/* Undo Button */}
           <button
@@ -874,9 +881,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             onClick={handleUndo}
             disabled={!canUndo}
             title="Undo drawing stroke (Ctrl+Z)"
-            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               canUndo
-                ? 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
+                ? 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06]'
                 : 'text-slate-400 dark:text-slate-600 opacity-40 cursor-not-allowed'
             }`}
           >
@@ -890,7 +897,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             onMouseDown={(e) => e.preventDefault()}
             onClick={handleClearCanvas}
             title="Clear all annotations on this question"
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all active:scale-[0.98]"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear</span>
@@ -1004,13 +1011,13 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-slate-100/60 dark:bg-dark-950/60 overflow-hidden border-r border-slate-200 dark:border-dark-800 last:border-r-0 transition-colors">
+    <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-slate-100/60 dark:bg-dark-950/80 overflow-hidden transition-colors">
       {/* Canvas Header */}
-      <div className="h-11 px-3 sm:px-4 border-b border-slate-200 dark:border-dark-800 bg-white/80 dark:bg-dark-900/60 backdrop-blur-sm flex items-center justify-between shrink-0 select-none">
+      <div className="h-10 px-3 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] bg-white/85 dark:bg-slate-950/75 backdrop-blur-md flex items-center justify-between shrink-0 select-none">
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-wrap sm:flex-nowrap">
           <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{title}</span>
           {badgeText && (
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${getBadgeClass()}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 font-mono tabular-nums ${getBadgeClass()}`}>
               {badgeText}
             </span>
           )}
@@ -1019,58 +1026,58 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
         {/* Zoom & Lightbox Controls */}
         {src && !hasError && (
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-dark-800/80 rounded-lg p-0.5 border border-slate-200 dark:border-dark-750 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-white/[0.04] rounded-lg p-0.5 border border-slate-200 dark:border-white/[0.08] shrink-0">
             {enableAnnotation && (
               <>
                 <button
                   type="button"
                   onClick={toggleAnnotating}
                   title={isAnnotating ? 'Turn off annotation overlay' : 'Draw / annotate on question'}
-                  className={`p-1 sm:p-1.5 rounded transition-colors ${
+                  className={`p-1 sm:p-1.5 rounded transition-all active:scale-95 ${
                     isAnnotating
                       ? 'bg-cyan-500 text-white shadow-sm'
-                      : 'hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      : 'hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
-                <div className="w-px h-3.5 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+                <div className="w-px h-3.5 bg-slate-200 dark:bg-white/10 mx-0.5" />
               </>
             )}
             <button
               type="button"
               onClick={handleZoomOut}
               title="Zoom out"
-              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 px-1 select-none min-w-[2.5rem] sm:min-w-[3rem] text-center">
+            <span className="text-[10px] font-mono tabular-nums text-slate-600 dark:text-slate-400 px-1 select-none min-w-[2.5rem] sm:min-w-[3rem] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <button
               type="button"
               onClick={handleZoomIn}
               title="Zoom in"
-              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-3.5 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+            <div className="w-px h-3.5 bg-slate-200 dark:bg-white/10 mx-0.5" />
             <button
               type="button"
               onClick={handleResetZoom}
               title="Reset Zoom"
-              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
-            <div className="w-px h-3.5 bg-slate-200 dark:bg-dark-700 mx-0.5" />
+            <div className="w-px h-3.5 bg-slate-200 dark:bg-white/10 mx-0.5" />
             <button
               type="button"
               onClick={openLightbox}
               title="Full-screen Lightbox (inspect intricate mechanisms & graphs)"
-              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+              className="p-1 sm:p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>
@@ -1081,22 +1088,22 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Canvas Viewport */}
       <div 
         ref={containerRef}
-        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-2 sm:p-4 flex items-start justify-center bg-slate-100/40 dark:bg-dark-950/40 relative"
+        className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-5 flex items-start justify-center bg-slate-100/50 dark:bg-[#080b11] relative"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       >
         {!src || hasError ? (
           <div className="m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-sm">
-            <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-dark-850 border border-slate-300 dark:border-dark-750 flex items-center justify-center text-slate-500 mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-dark-850 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 mb-3">
               <FileQuestion className="w-6 h-6" />
             </div>
             <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{placeholderTitle}</h4>
             <p className="text-xs text-slate-500">{placeholderMessage}</p>
           </div>
         ) : (
-          <div className="flex flex-col justify-start items-center pt-2 pb-12 w-full max-w-full">
+          <div className="flex flex-col justify-start items-center pt-1 pb-12 w-full max-w-full">
             {/* Minimal Floating Annotation Controls */}
             {enableAnnotation && (
-              <div className="sticky top-2 z-10 mb-3 flex items-center justify-center pointer-events-auto">
+              <div className="sticky top-2 z-10 mb-3.5 flex items-center justify-center pointer-events-auto">
                 {renderAnnotationToolbar()}
               </div>
             )}
@@ -1106,7 +1113,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               style={zoom > 1 ? { minWidth: `${Math.round(zoom * 100)}%` } : undefined}
             >
               <div 
-                className={`relative max-w-full transition-transform duration-100 ease-out origin-top shadow-sm dark:shadow-xl rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700/50 bg-white ${
+                className={`relative max-w-full transition-transform duration-100 ease-out origin-top rounded-xl overflow-hidden shadow-[0_12px_40px_-10px_rgba(0,0,0,0.65)] ring-1 ring-slate-200 dark:ring-white/10 bg-white ${
                   !isAnnotating ? 'cursor-pointer' : ''
                 }`}
                 style={{ transform: `scale(${zoom})` }}

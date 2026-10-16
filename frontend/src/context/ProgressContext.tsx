@@ -92,10 +92,12 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [userAnswers]);
 
+  const userId = user?.id ?? null;
+
   // Helper to upsert a single item to Supabase in the background
   const upsertCloudRecord = useCallback(
     async (questionId: string, updates: { is_bookmarked?: boolean; status?: string; user_answer?: string | null }) => {
-      if (!user || !isSupabaseConfigured) return;
+      if (!userId || !isSupabaseConfigured) return;
 
       const currentIsBookmarked = updates.is_bookmarked !== undefined 
         ? updates.is_bookmarked 
@@ -110,7 +112,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         : (answersRef.current[questionId] || null);
 
       const record = {
-        user_id: user.id,
+        user_id: userId,
         question_id: questionId,
         status: currentStatus,
         is_bookmarked: currentIsBookmarked,
@@ -130,7 +132,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.warn('[CloudSync] Network error on upsert:', err);
       }
     },
-    [user]
+    [userId]
   );
 
   const clearProgress = useCallback(() => {
@@ -149,15 +151,15 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Clear progress on user sign out to prevent cross-account progress leakage
   const prevUserRef = useRef<string | null>(null);
   useEffect(() => {
-    if (prevUserRef.current && !user) {
+    if (prevUserRef.current && !userId) {
       clearProgress();
     }
-    prevUserRef.current = user ? user.id : null;
-  }, [user, clearProgress]);
+    prevUserRef.current = userId;
+  }, [userId, clearProgress]);
 
   // 2. Cloud Sync & Account Migration on User Login
   useEffect(() => {
-    if (!user || !isSupabaseConfigured) {
+    if (!userId || !isSupabaseConfigured) {
       return;
     }
 
@@ -170,7 +172,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const { data: remoteRows, error: fetchErr } = await supabase
           .from('user_progress')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
 
         if (fetchErr) {
           console.warn('[CloudSync] Could not fetch remote progress:', fetchErr.message);
@@ -225,7 +227,7 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
           if (isRemoteDifferent) {
             recordsToMigrate.push({
-              user_id: user.id,
+              user_id: userId,
               question_id: qId,
               status,
               is_bookmarked: isBookmarked,
@@ -267,32 +269,35 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [userId]);
 
-  // Actions
+  // Actions (all side-effect network calls strictly outside React state updaters)
   const toggleBookmark = useCallback(
     (id: string) => {
-      setBookmarks((prev) => {
-        const next = new Set(prev);
-        const nextState = !next.has(id);
-        if (nextState) {
-          next.add(id);
-        } else {
-          next.delete(id);
-        }
-        upsertCloudRecord(id, { is_bookmarked: nextState });
-        return next;
-      });
+      const next = new Set(bookmarksRef.current);
+      const nextState = !next.has(id);
+      if (nextState) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      bookmarksRef.current = next;
+      setBookmarks(next);
+      upsertCloudRecord(id, { is_bookmarked: nextState });
     },
     [upsertCloudRecord]
   );
 
   const setQuestionStatus = useCallback(
     (id: string, status: MasteryStatus) => {
-      setQuestionStatuses((prev) => ({
-        ...prev,
-        [id]: status,
-      }));
+      const next = { ...statusesRef.current };
+      if (status === 'unattempted') {
+        delete next[id];
+      } else {
+        next[id] = status;
+      }
+      statusesRef.current = next;
+      setQuestionStatuses(next);
       upsertCloudRecord(id, { status });
     },
     [upsertCloudRecord]
@@ -300,41 +305,61 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const cycleQuestionStatus = useCallback(
     (id: string) => {
-      setQuestionStatuses((prev) => {
-        const current = prev[id] || 'unattempted';
-        let next: MasteryStatus = 'unattempted';
-        if (current === 'unattempted') next = 'review';
-        else if (current === 'review' || current === 'incorrect') next = 'mastered';
-        else next = 'unattempted';
+      const current = statusesRef.current[id] || 'unattempted';
+      let nextStatus: MasteryStatus = 'unattempted';
+      if (current === 'unattempted') nextStatus = 'review';
+      else if (current === 'review' || current === 'incorrect') nextStatus = 'mastered';
+      else nextStatus = 'unattempted';
 
-        upsertCloudRecord(id, { status: next });
-        return {
-          ...prev,
-          [id]: next,
-        };
-      });
+      const next = { ...statusesRef.current };
+      if (nextStatus === 'unattempted') {
+        delete next[id];
+      } else {
+        next[id] = nextStatus;
+      }
+      statusesRef.current = next;
+      setQuestionStatuses(next);
+      upsertCloudRecord(id, { status: nextStatus });
     },
     [upsertCloudRecord]
   );
 
   const setMcqAnswer = useCallback(
     (id: string, selectedOption: string, isCorrect?: boolean) => {
-      setUserAnswers((prev) => ({
-        ...prev,
-        [id]: selectedOption,
-      }));
+      const trimmed = selectedOption.trim();
+      if (!trimmed) {
+        // Reset MCQ choice and status back to 'unattempted' both locally and in Supabase
+        const nextAnswers = { ...answersRef.current };
+        delete nextAnswers[id];
+        answersRef.current = nextAnswers;
+        setUserAnswers(nextAnswers);
+
+        const nextStatuses = { ...statusesRef.current };
+        delete nextStatuses[id];
+        statusesRef.current = nextStatuses;
+        setQuestionStatuses(nextStatuses);
+
+        upsertCloudRecord(id, {
+          user_answer: null,
+          status: 'unattempted',
+        });
+        return;
+      }
+
+      const nextAnswers = { ...answersRef.current, [id]: trimmed };
+      answersRef.current = nextAnswers;
+      setUserAnswers(nextAnswers);
 
       let newStatus: MasteryStatus | undefined = undefined;
       if (isCorrect !== undefined) {
         newStatus = isCorrect ? 'correct' : 'incorrect';
-        setQuestionStatuses((prev) => ({
-          ...prev,
-          [id]: newStatus!,
-        }));
+        const nextStatuses = { ...statusesRef.current, [id]: newStatus };
+        statusesRef.current = nextStatuses;
+        setQuestionStatuses(nextStatuses);
       }
 
       upsertCloudRecord(id, {
-        user_answer: selectedOption,
+        user_answer: trimmed,
         status: newStatus,
       });
     },

@@ -25,7 +25,7 @@ import { QuestionItem, FilterState, Subject } from '../types';
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
-import { getQuestionType } from '../utils/questionClassification';
+import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
 import { ImageCanvas } from './ImageCanvas';
 import { useProgress } from '../context/ProgressContext';
 
@@ -90,10 +90,12 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     bookmarkedOnly: false,
   });
 
-  // Detect if Mathematics is active
-  const isMath = useMemo(() => {
-    return questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'));
+  // Detect active subject using single source of truth
+  const activeSubject: Subject = useMemo(() => {
+    return getQuestionSubject(questions[0]);
   }, [questions]);
+
+  const isMath = activeSubject === 'mathematics';
 
   // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m' (Science) or 'all' | '1-4m' | '5-7m' | '8-10m' | '11m+' (Math)
   const [marksFilter, setMarksFilter] = useState<string>('all');
@@ -165,17 +167,6 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   const seriesOptions: FilterOption[] = useMemo(() => {
     return seriesList.map((s) => ({ value: s, label: s }));
   }, []);
-
-  // Detect active subject
-  const activeSubject: Subject = useMemo(() => {
-    if (questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'))) {
-      return 'mathematics';
-    }
-    if (questions.some((q) => q.unitCode?.startsWith('WPH'))) {
-      return 'physics';
-    }
-    return 'chemistry';
-  }, [questions]);
 
   // Canonical Subtopic Hierarchy
   const subtopicHierarchy: SubtopicGroup[] = useMemo(() => {

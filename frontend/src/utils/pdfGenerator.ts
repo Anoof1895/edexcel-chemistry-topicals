@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { QuestionItem } from '../types';
 import { getFullImageUrl } from './imageUrl';
 import { calculateExamDurationMinutes } from './examDuration';
+import { getQuestionSubject } from './questionClassification';
 
 export interface PDFExportOptions {
   title: string;
@@ -145,7 +146,7 @@ export async function generateQuestionPaperPDF({
   const printableWidth = pageWidth - marginX * 2; // 180mm
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
-  const isMath = questions.some((q) => q.unitCode?.startsWith('WMA') || q.unitCode?.startsWith('WME') || q.unitCode?.startsWith('WST'));
+  const isMath = questions.some((q) => getQuestionSubject(q) === 'mathematics');
   const selectedUnits = Array.from(new Set(questions.map((q) => q.unit || q.unitCode || '')));
   const timeAllowedMins = calculateExamDurationMinutes(totalMarks, isMath, selectedUnits);
 

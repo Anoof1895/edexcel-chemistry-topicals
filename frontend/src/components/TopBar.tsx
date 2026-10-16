@@ -98,6 +98,25 @@ export const TopBar: React.FC<TopBarProps> = ({
     );
   }, [allQuestions, availableUnits]);
 
+  const isPhysics = useMemo(() => {
+    return (
+      allQuestions?.some((q) => q.unitCode?.startsWith('WPH')) ||
+      availableUnits.some((u) => u.startsWith('WPH'))
+    );
+  }, [allQuestions, availableUnits]);
+
+  const subjectBadgeClass = isMath
+    ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+    : isPhysics
+    ? 'bg-indigo-500/15 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30'
+    : 'bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30';
+
+  const activePillBtnClass = isMath
+    ? 'bg-amber-600 text-white shadow-sm'
+    : isPhysics
+    ? 'bg-indigo-600 text-white shadow-sm'
+    : 'bg-cyan-600 text-white shadow-sm';
+
   // Precompute options with question counts
   const unitOptions: FilterOption[] = useMemo(() => {
     const counts = new Map<string, number>();
@@ -211,12 +230,12 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <>
-      <header className="relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/90 backdrop-blur-md px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
+      <header className="relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] bg-white/95 dark:bg-slate-950/80 backdrop-blur-xl px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
         {/* Context Badge */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
             <span className="hidden sm:inline">Topical</span> Explorer
-            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+            <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${subjectBadgeClass}`}>
               {isMath ? 'P1–S1' : 'U1–6'}
             </span>
           </span>
@@ -234,7 +253,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               placeholder="Search Q# or topic..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
 
@@ -245,13 +264,13 @@ export const TopBar: React.FC<TopBarProps> = ({
             className={`min-h-[34px] px-2.5 sm:px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
               hasActiveFilters
                 ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-sm'
-                : 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:bg-slate-200 dark:hover:bg-dark-750'
+                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08]'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
             <span>Filters</span>
             {hasActiveFilters && (
-              <span className="w-4 h-4 rounded-full bg-cyan-600 text-white font-bold font-mono text-[10px] flex items-center justify-center">
+              <span className="w-4 h-4 rounded-full bg-cyan-600 text-white font-bold font-mono tabular-nums text-[10px] flex items-center justify-center">
                 {activeFilterCount}
               </span>
             )}
@@ -263,19 +282,19 @@ export const TopBar: React.FC<TopBarProps> = ({
               type="button"
               onClick={onResetFilters}
               title="Reset All Filters"
-              className="p-2 rounded-lg bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-700 hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+              className="p-2 rounded-lg bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
 
           {/* Desktop/Tablet View Mode Switcher (visible on tablet >= 768px) */}
-          <div className="hidden sm:flex md:flex items-center bg-slate-100 dark:bg-dark-800/90 p-0.5 rounded-lg border border-slate-200 dark:border-dark-750">
+          <div className="hidden sm:flex md:flex items-center bg-slate-100 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-200 dark:border-white/[0.08]">
             <button
               onClick={() => onViewModeChange('question-only')}
               title="Question Only"
               className={`p-1.5 rounded-md text-xs transition-all ${
-                viewMode === 'question-only' ? 'bg-cyan-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                viewMode === 'question-only' ? activePillBtnClass : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -284,7 +303,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={() => onViewModeChange('split')}
               title="Side-by-Side Split"
               className={`p-1.5 rounded-md text-xs transition-all ${
-                viewMode === 'split' ? 'bg-cyan-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                viewMode === 'split' ? activePillBtnClass : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -293,7 +312,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={() => onViewModeChange('ms-only')}
               title="Mark Scheme"
               className={`p-1.5 rounded-md text-xs transition-all ${
-                viewMode === 'ms-only' ? 'bg-cyan-600 text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                viewMode === 'ms-only' ? activePillBtnClass : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -313,7 +332,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               placeholder="Search topic or Q#..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+              className="w-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] rounded-lg pl-8 pr-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all"
             />
           </div>
 
@@ -321,7 +340,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <FilterMultiSelect
             labelSingular="Unit"
             labelPlural="Units"
-            icon={<Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />}
+            icon={<Layers className={`w-3.5 h-3.5 shrink-0 ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`} />}
             options={unitOptions}
             selectedValues={filters.selectedUnits}
             onChange={(units) => onFilterChange({ selectedUnits: units })}
@@ -336,13 +355,13 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
           {!isMath && (
-            <div className="flex items-center bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-700/80 p-0.5 rounded-lg text-xs shrink-0">
+            <div className="flex items-center bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] p-0.5 rounded-lg text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => onFilterChange({ questionType: 'all' })}
                 className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'all'
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -353,7 +372,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onClick={() => onFilterChange({ questionType: 'mcq' })}
                 className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'mcq'
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -364,7 +383,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 onClick={() => onFilterChange({ questionType: 'theory' })}
                 className={`px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'theory'
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
@@ -381,14 +400,14 @@ export const TopBar: React.FC<TopBarProps> = ({
               className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
                 activeSecondaryCount > 0
                   ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-sm'
-                  : 'bg-slate-100 dark:bg-dark-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700/80 hover:bg-slate-200 dark:hover:bg-dark-750 hover:text-slate-900 dark:hover:text-white'
+                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
               }`}
               title="Consolidated filters: Year, Series, Status"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
               <span>Filters</span>
               {activeSecondaryCount > 0 && (
-                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-600 text-white">
+                <span className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-600 text-white">
                   • {activeSecondaryCount}
                 </span>
               )}
@@ -396,14 +415,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
             {/* Secondary Filters Popover Dropdown */}
             {isSecondaryPopoverOpen && (
-              <div className="absolute top-full mt-2 left-0 w-80 bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-3">
+              <div className="absolute top-full mt-2 left-0 w-80 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-3">
                 {/* Popover Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-dark-800">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.07]">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                     <span>More Filters</span>
                     {activeSecondaryCount > 0 && (
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+                      <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
                         {activeSecondaryCount} active
                       </span>
                     )}
@@ -445,10 +464,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                           key={yr}
                           type="button"
                           onClick={() => toggleYear(yStr)}
-                          className={`px-2 py-0.5 rounded-md text-xs font-mono transition-all ${
+                          className={`px-2 py-0.5 rounded-md text-xs font-mono tabular-nums transition-all ${
                             isSelected
                               ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                              : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-750'
+                              : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08]'
                           }`}
                         >
                           {yr}
@@ -486,7 +505,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                           className={`px-2.5 py-0.5 rounded-md text-xs font-medium transition-all ${
                             isSelected
                               ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                              : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-750'
+                              : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08]'
                           }`}
                         >
                           {s}
@@ -520,7 +539,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                           className={`px-2 py-1 rounded-md text-xs font-medium text-left truncate transition-all ${
                             isSelected
                               ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                              : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-750'
+                              : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08]'
                           }`}
                         >
                           {st.label}
@@ -534,8 +553,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           </div>
 
           {/* Stats Pill */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-750 text-[11px] text-slate-600 dark:text-slate-300 shrink-0">
-            <span className="font-semibold text-cyan-600 dark:text-cyan-400">{totalFiltered}</span> Qs
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-[11px] font-mono tabular-nums text-slate-600 dark:text-slate-300 shrink-0">
+            <span className={`font-semibold ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`}>{totalFiltered}</span> Qs
             <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600"></span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">{totalMarks}</span> marks
           </div>
@@ -545,7 +564,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={onResetFilters}
               title="Reset All Filters"
-              className="p-1 rounded-lg bg-slate-100 dark:bg-dark-800/80 border border-slate-200 dark:border-dark-750 hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors shrink-0"
+              className="p-1 rounded-lg bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
             </button>
@@ -554,13 +573,13 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Desktop View Mode Switcher (>= 1024px) */}
         <div className="hidden lg:flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-slate-100 dark:bg-dark-800/90 p-1 rounded-lg border border-slate-200 dark:border-dark-750">
+          <div className="flex items-center bg-slate-100 dark:bg-white/[0.04] p-1 rounded-lg border border-slate-200 dark:border-white/[0.08]">
             <button
               onClick={() => onViewModeChange('question-only')}
               title="Question Only (Focus Mode - Hides Answers)"
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'question-only'
-                  ? 'bg-cyan-600 text-white shadow-sm'
+                  ? activePillBtnClass
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -573,7 +592,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               title="Side-by-Side Split View"
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'split'
-                  ? 'bg-cyan-600 text-white shadow-sm'
+                  ? activePillBtnClass
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -586,7 +605,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               title="Mark Scheme Only"
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'ms-only'
-                  ? 'bg-cyan-600 text-white shadow-sm'
+                  ? activePillBtnClass
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >

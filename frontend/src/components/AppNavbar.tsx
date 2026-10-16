@@ -103,16 +103,40 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
   const isTopicalActive = currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical';
   const isTestMakerActive = currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker';
 
+  const brandIconGradient = isMath
+    ? 'from-amber-500 to-orange-600 shadow-amber-500/20 border-amber-400/30'
+    : isPhysics
+    ? 'from-indigo-600 to-sky-600 shadow-indigo-500/20 border-indigo-400/30'
+    : 'from-cyan-600 to-emerald-600 shadow-cyan-500/20 border-cyan-400/30';
+
+  const activeNavBtnClass = isMath
+    ? 'bg-amber-600 text-white shadow-sm shadow-amber-500/30'
+    : isPhysics
+    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/30'
+    : 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30';
+
+  const hubPillClass = isMath
+    ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
+    : isPhysics
+    ? 'bg-indigo-500/15 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30'
+    : 'bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/30';
+
+  const dataBtnClass = isMath
+    ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/40 hover:bg-amber-100 dark:hover:bg-amber-500/25'
+    : isPhysics
+    ? 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40 hover:bg-indigo-100 dark:hover:bg-indigo-500/25'
+    : 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40 hover:bg-cyan-100 dark:hover:bg-cyan-500/25';
+
   return (
     <>
-      <header className="h-14 border-b border-slate-200 dark:border-dark-800 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
+      <header className="h-14 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] bg-white/95 dark:bg-slate-950/80 backdrop-blur-xl px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
         {/* Brand Logo & Name */}
         <div 
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group transition-all shrink-0"
           title="Go to Home Portal"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-500/20 border border-cyan-400/30 group-hover:scale-105 transition-transform">
+          <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${brandIconGradient} flex items-center justify-center shadow-md border group-hover:scale-105 transition-transform`}>
             {isMath ? (
               <Sigma className="w-4 h-4 text-white" />
             ) : isPhysics ? (
@@ -126,7 +150,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                 Edexcel IAL Topicals
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${hubPillClass}`}>
                 Hub
               </span>
             </div>
@@ -144,14 +168,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         {/* Desktop / Tablet Nav & Theme Switch (> 768px) */}
         <div className="hidden md:flex items-center gap-2">
-          <nav className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-slate-900/90 dark:border-slate-800 dark:text-slate-300 p-1 rounded-xl">
+          <nav className="flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-white/[0.04] dark:border-white/[0.08] dark:text-slate-300 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => onNavigate('home')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 currentView === 'home'
                   ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-dark-800'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
               <Home className="w-3.5 h-3.5" />
@@ -163,8 +187,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               onClick={() => onNavigate(topicalView)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 isTopicalActive
-                  ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-dark-800'
+                  ? activeNavBtnClass
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
               <Compass className="w-3.5 h-3.5" />
@@ -176,14 +200,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               onClick={() => onNavigate(testMakerView)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
                 isTestMakerActive
-                  ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-dark-800'
+                  ? activeNavBtnClass
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Test Maker</span>
               {cartCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-400 text-dark-950 animate-pulse-subtle">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums font-bold bg-amber-400 text-dark-950 animate-pulse-subtle">
                   {cartCount}
                 </span>
               )}
@@ -196,14 +220,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               type="button"
               onClick={onOpenDataBooklet}
               title="Official Pearson IAL Formula Sheet & Data Booklet (Press 'D')"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 hover:bg-cyan-100 dark:hover:bg-cyan-500/25 transition-all active:scale-95 shadow-xs"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 shadow-xs ${dataBtnClass}`}
             >
-              <BookOpen className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <BookOpen className={`w-3.5 h-3.5 ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`} />
               <span className="hidden xl:inline">Data &amp; Formulae</span>
               <span className="xl:hidden">Data</span>
-              <span className="font-mono text-[10px] px-1 py-0.2 rounded bg-cyan-200/60 dark:bg-cyan-400/20 text-cyan-800 dark:text-cyan-200 font-bold border border-cyan-400/30">
+              <kbd className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-white/60 dark:bg-white/[0.08] border border-slate-200/60 dark:border-white/10 font-bold">
                 D
-              </span>
+              </kbd>
             </button>
           )}
 
@@ -213,7 +237,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-dark-800/80 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700/80 text-slate-700 dark:text-slate-200 transition-all active:scale-95 shadow-sm"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 transition-all active:scale-95 shadow-sm"
           >
             {theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
@@ -229,7 +253,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800/90 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-xs transition-all active:scale-95 shadow-sm"
+                  className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs transition-all active:scale-95 shadow-sm"
                   title={`Logged in as ${user.email}`}
                 >
                   <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
@@ -243,8 +267,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* User Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800 mb-1.5">
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] mb-1.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
                           {userInitial}
@@ -296,7 +320,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           <button
             type="button"
             onClick={() => setIsSubjectMenuOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-dark-800/80 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700/80 text-xs font-medium transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs font-medium transition-all"
             title="Switch subject"
             aria-haspopup="menu"
             aria-expanded={isSubjectMenuOpen}
@@ -310,19 +334,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
               {currentView === 'home' ? 'All Subjects' : isMath ? 'Mathematics' : isPhysics ? 'Physics' : 'Chemistry'}
             </span>
-            <span className="text-slate-500 hidden lg:inline">
+            <span className="font-mono tabular-nums text-slate-500 hidden lg:inline">
               ({(currentView === 'home' ? chemCount + physCount + mathCount : totalQuestions).toLocaleString()} Qs)
             </span>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform ${isSubjectMenuOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isSubjectMenuOpen && (
-            <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-750 shadow-2xl p-1.5 z-50">
+            <div role="menu" className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl p-1.5 z-50">
               {([
-                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500' },
-                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500' },
-                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500' },
-              ]).map(({ subject, label, count, view, Icon, dot }) => {
+                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300' },
+                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
+                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500', activeCls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+              ]).map(({ subject, label, count, view, Icon, dot, activeCls }) => {
                 const isActive = currentView !== 'home' && (
                   subject === 'physics' ? isPhysics :
                   subject === 'mathematics' ? isMath :
@@ -339,8 +363,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     }}
                     className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
                       isActive
-                        ? 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
-                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'
+                        ? activeCls
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -348,13 +372,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                       <Icon className="w-3.5 h-3.5" />
                       {label}
                     </span>
-                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-mono tabular-nums text-[11px] text-slate-500 dark:text-slate-400">
                       {count.toLocaleString()} Qs
                     </span>
                   </button>
                 );
               })}
-              <div className="my-1 border-t border-slate-100 dark:border-dark-800" />
+              <div className="my-1 border-t border-slate-100 dark:border-white/[0.07]" />
               <button
                 type="button"
                 role="menuitem"
@@ -362,7 +386,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                   setIsSubjectMenuOpen(false);
                   onNavigate('home');
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
               >
                 <Home className="w-3.5 h-3.5" />
                 Subject Portal

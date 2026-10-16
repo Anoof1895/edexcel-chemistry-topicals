@@ -1,4 +1,42 @@
-import { QuestionItem } from '../types';
+import { QuestionItem, Subject } from '../types';
+
+/**
+ * Single source of truth for detecting a question's subject ('chemistry' | 'physics' | 'mathematics')
+ * from its unitCode, paperId, id, or questionImagePath.
+ */
+export function getQuestionSubject(q?: QuestionItem | null): Subject {
+  if (!q) return 'chemistry';
+  const unitCode = (q.unitCode || '').toUpperCase();
+  const paperId = (q.paperId || (q as any).paper_id || '').toLowerCase();
+  const imgPath = (q.questionImagePath || (q as any).image || '').toLowerCase();
+  const qId = (q.id || '').toLowerCase();
+
+  if (
+    unitCode.startsWith('WMA') ||
+    unitCode.startsWith('WME') ||
+    unitCode.startsWith('WST') ||
+    paperId.startsWith('wma') ||
+    paperId.startsWith('wme') ||
+    paperId.startsWith('wst') ||
+    qId.startsWith('wma') ||
+    qId.startsWith('wme') ||
+    qId.startsWith('wst') ||
+    imgPath.includes('crops_math')
+  ) {
+    return 'mathematics';
+  }
+
+  if (
+    unitCode.startsWith('WPH') ||
+    paperId.startsWith('wph') ||
+    qId.startsWith('wph') ||
+    imgPath.includes('crops_physics')
+  ) {
+    return 'physics';
+  }
+
+  return 'chemistry';
+}
 
 /**
  * Determines whether a question is strictly a Multiple Choice Question (MCQ)
@@ -17,26 +55,11 @@ import { QuestionItem } from '../types';
  */
 export function isMCQ(q: QuestionItem): boolean {
   // Rule 0: Mathematics papers strictly have 0 MCQs (all structured whole questions)
-  const unitCode = (q.unitCode || '').toUpperCase();
-  const paperId = (q.paperId || (q as any).paper_id || '').toLowerCase();
-  const imgPath = (q.questionImagePath || (q as any).image || '').toLowerCase();
-  const qId = (q.id || '').toLowerCase();
-  if (
-    unitCode.startsWith('WMA') ||
-    unitCode.startsWith('WME') ||
-    unitCode.startsWith('WST') ||
-    paperId.startsWith('wma') ||
-    paperId.startsWith('wme') ||
-    paperId.startsWith('wst') ||
-    qId.startsWith('wma') ||
-    qId.startsWith('wme') ||
-    qId.startsWith('wst') ||
-    imgPath.includes('/crops_math/') ||
-    imgPath.includes('crops_math')
-  ) {
+  if (getQuestionSubject(q) === 'mathematics') {
     return false;
   }
 
+  const unitCode = (q.unitCode || '').toUpperCase();
   // Rule 1: Practical papers have 0 MCQs
   const unit = (q.unit || '').toLowerCase();
   if (

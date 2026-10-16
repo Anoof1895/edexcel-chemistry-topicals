@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -11,12 +11,13 @@ import {
   ExternalLink, 
   Calendar, 
   List, 
-  CheckCircle2 
+  CheckCircle2,
+  RotateCcw
 } from 'lucide-react';
 import { QuestionItem, ViewMode, MasteryStatus } from '../types';
 import { ImageCanvas } from './ImageCanvas';
 import { getStatusConfig } from './QuestionList';
-import { getQuestionType } from '../utils/questionClassification';
+import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
 import { getFullImageUrl } from '../utils/imageUrl';
 import { useProgress } from '../context/ProgressContext';
 
@@ -138,6 +139,85 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       );
   }, [question, allQuestions]);
 
+  const activeSubject = getQuestionSubject(question);
+  const isMath = activeSubject === 'mathematics';
+  const isPhysics = activeSubject === 'physics';
+  const qType = question ? getQuestionType(question) : 'theory';
+
+  const mcqAnswer = question
+    ? (question as any).answer ||
+      (question as any).correct_answer ||
+      (question as any).correctAnswer ||
+      (question as any).key
+    : null;
+
+  const isMcq = Boolean(question && !isMath && (qType === 'mcq' || !!mcqAnswer));
+  const normalizedKey = mcqAnswer ? String(mcqAnswer).trim().toUpperCase() : '';
+
+  const handleMcqSelect = useCallback(
+    (opt: string) => {
+      if (!question) return;
+      setSelectedMcqOption(opt);
+      const isCorrect = normalizedKey ? opt.toUpperCase() === normalizedKey.toUpperCase() : undefined;
+      setMcqAnswer(question.id, opt, isCorrect);
+    },
+    [question, normalizedKey, setMcqAnswer]
+  );
+
+  const handleResetMcq = useCallback(() => {
+    setSelectedMcqOption(null);
+    if (question) {
+      setMcqAnswer(question.id, '', undefined);
+    }
+  }, [question, setMcqAnswer]);
+
+  // Desktop keyboard shortcuts A-D (and 1-4) for Chemistry & Physics MCQs
+  useEffect(() => {
+    if (!question || !isMcq || isMath || isFullQuestionOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Do not fire when an overlay/modal/drawer is open
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (activeEl) {
+        const tag = activeEl.tagName;
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          tag === 'BUTTON' ||
+          tag === 'A' ||
+          activeEl.isContentEditable ||
+          activeEl.closest('[role="button"]')
+        ) {
+          return;
+        }
+      }
+
+      const key = e.key.toUpperCase();
+      const keyMap: Record<string, string> = {
+        A: 'A',
+        B: 'B',
+        C: 'C',
+        D: 'D',
+        '1': 'A',
+        '2': 'B',
+        '3': 'C',
+        '4': 'D',
+      };
+      const chosen = keyMap[key];
+      if (chosen) {
+        e.preventDefault();
+        handleMcqSelect(chosen);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [question, isMcq, isMath, isFullQuestionOpen, handleMcqSelect]);
+
   if (!question) {
     return (
       <main className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-400 dark:text-slate-500">
@@ -150,7 +230,6 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
   const isMarkSchemeVisible = viewMode === 'split' || viewMode === 'ms-only';
   const statusCfg = getStatusConfig(questionStatus);
-  const qType = getQuestionType(question);
 
   const questionImagePath = question.questionImagePath 
     || (question as any).crop_path 
@@ -163,74 +242,54 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     || (question as any).mark_scheme_image_path 
     || null;
 
-  const mcqAnswer = (question as any).answer 
-    || (question as any).correct_answer 
-    || (question as any).correctAnswer 
-    || (question as any).key;
+  const isMcqAnsweredCorrectly = Boolean(
+    selectedMcqOption !== null && normalizedKey && selectedMcqOption === normalizedKey
+  );
+  const isMcqAnswerRevealed = isMarkSchemeVisible || mobileTab === 'ms' || isMcqAnsweredCorrectly;
 
-  const isMath = 
-    question.unitCode?.startsWith('WMA') || 
-    question.unitCode?.startsWith('WME') || 
-    question.unitCode?.startsWith('WST') || 
-    question.questionImagePath?.includes('/crops_math/') ||
-    (question as any).paperId?.toLowerCase().startsWith('wma') ||
-    (question as any).paperId?.toLowerCase().startsWith('wme') ||
-    (question as any).paperId?.toLowerCase().startsWith('wst');
+  const subjectQBadgeClass = isMath
+    ? 'text-amber-700 dark:text-amber-300 bg-amber-500/15 border-amber-500/30'
+    : isPhysics
+    ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+    : 'text-cyan-700 dark:text-cyan-300 bg-cyan-500/15 border-cyan-500/30';
 
-  const isMcq = !isMath && (qType === 'mcq' || !!mcqAnswer);
-  const normalizedKey = mcqAnswer ? String(mcqAnswer).trim().toUpperCase() : '';
-  const isMcqAnswerRevealed = isMarkSchemeVisible || mobileTab === 'ms' || selectedMcqOption !== null;
-
-  const handleMcqSelect = (opt: string) => {
-    setSelectedMcqOption(opt);
-    const isCorrect = normalizedKey ? opt.toUpperCase() === normalizedKey.toUpperCase() : undefined;
-    if (question) {
-      setMcqAnswer(question.id, opt, isCorrect);
-    }
-    // Automatically reveal mark scheme / explanation on desktop if in question-only mode
-    if (viewMode === 'question-only') {
-      onSetViewMode('split');
-    }
-  };
-
-  const handleResetMcq = () => {
-    setSelectedMcqOption(null);
-    if (question) {
-      setMcqAnswer(question.id, '', undefined);
-    }
-  };
+  const subjectUnitTextClass = isMath
+    ? 'text-amber-600 dark:text-amber-400'
+    : isPhysics
+    ? 'text-indigo-600 dark:text-indigo-400'
+    : 'text-cyan-600 dark:text-cyan-400';
 
   return (
     <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
       {/* ===================================================================== */}
       {/* ACTIVE QUESTION TOP HEADER (Clean sub-bar: metadata, bookmarks & counter)*/}
       {/* ===================================================================== */}
-      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-dark-800 bg-white/90 dark:bg-dark-900/90 backdrop-blur-md flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
+      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
         {/* Left: Question Navigator Trigger (on mobile/tablet) & Metadata */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Question List Drawer Button on mobile/tablet (< 1024px) */}
           <button
             type="button"
             onClick={onOpenQuestionList}
-            className="lg:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-cyan-700 dark:text-cyan-300 text-xs font-semibold shrink-0 active:scale-95 transition-all"
+            className="lg:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.09] border border-slate-200 dark:border-white/10 text-cyan-700 dark:text-cyan-300 text-xs font-semibold shrink-0 active:scale-95 transition-all"
             title="Open Question List"
           >
             <List className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span className="font-mono font-bold">
+            <span className="font-mono tabular-nums font-bold">
               Q{question.questionNumber || (question as any).question_number || question.id?.split('_').pop()?.replace(/^q/i, '') || ''}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+            <span className="text-[10px] font-mono tabular-nums text-slate-500 dark:text-slate-400 hidden sm:inline">
               ({currentIndex + 1}/{totalQuestions})
             </span>
           </button>
 
           {/* Question ID Badge (shown on desktop >= 1024px) */}
-          <span className="hidden lg:inline-flex font-mono font-bold text-xs tracking-tight text-cyan-700 dark:text-cyan-300 px-2 py-0.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 shrink-0">
+          <span className={`hidden lg:inline-flex font-mono tabular-nums font-bold text-xs tracking-tight px-2 py-0.5 rounded-lg border shrink-0 ${subjectQBadgeClass}`}>
             Q{question.questionNumber || (question as any).question_number || question.id?.split('_').pop()?.replace(/^q/i, '') || ''}
           </span>
 
           {/* Marks Badge */}
-          <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold shrink-0">
+          <span className="font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-bold shrink-0">
             {question.marks}m
           </span>
 
@@ -258,7 +317,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           )}
 
           {/* Paper Series & Year */}
-          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
+          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium tabular-nums">
             <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500" />
             {question.series && question.year && question.series.includes(String(question.year))
               ? question.series
@@ -267,7 +326,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
           {/* Cleanly Truncated Topic & Subtopic */}
           <span className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate hidden sm:inline max-w-xs xl:max-w-sm">
-            <span className="text-cyan-600 dark:text-cyan-400 font-semibold">{question.unit}:</span>{' '}
+            <span className={`${subjectUnitTextClass} font-semibold`}>{question.unit}:</span>{' '}
             {question.subtopic || question.topic}
           </span>
 
@@ -300,7 +359,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             type="button"
             onClick={onCycleStatus}
             title={`Status: ${statusCfg.label}. Click to cycle status`}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border transition-all ${statusCfg.bg}`}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border transition-all active:scale-95 ${statusCfg.bg}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
             <span className="hidden sm:inline">{statusCfg.label}</span>
@@ -311,29 +370,29 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             type="button"
             onClick={onToggleBookmark}
             title={isBookmarked ? 'Remove bookmark [B]' : 'Bookmark question [B]'}
-            className={`p-1.5 rounded-md border transition-all ${
+            className={`p-1.5 rounded-md border transition-all active:scale-95 ${
               isBookmarked
                 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/40'
-                : 'bg-slate-100 dark:bg-dark-850 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-dark-750 hover:bg-slate-200 dark:hover:bg-dark-800 hover:text-slate-800 dark:hover:text-slate-200'
+                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-amber-500 text-amber-500' : ''}`} />
           </button>
 
-          <div className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-dark-800 mx-0.5" />
+          <div className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
           {/* Desktop/Tablet Question Navigation Arrows */}
-          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-slate-100 dark:bg-dark-850 p-0.5 rounded-md border border-slate-200 dark:border-dark-750">
+          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-slate-100 dark:bg-white/[0.04] p-0.5 rounded-md border border-slate-200 dark:border-white/[0.08]">
             <button
               onClick={onPrevQuestion}
               disabled={!hasPrev}
               title="Previous Question [← or []"
-              className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-14 sm:w-16 text-center font-mono text-[11px] text-slate-700 dark:text-slate-300 select-none shrink-0 font-medium">
+            <span className="w-14 sm:w-16 text-center font-mono tabular-nums text-[11px] text-slate-700 dark:text-slate-300 select-none shrink-0 font-medium">
               {currentIndex + 1} / {totalQuestions}
             </span>
 
@@ -341,7 +400,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
               onClick={onNextQuestion}
               disabled={!hasNext}
               title="Next Question [→ or ]]"
-              className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
+              className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-25 disabled:pointer-events-none transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -353,9 +412,6 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* MAIN CANVAS AREA (Responsive: Split on Desktop/Tablet, Single on Phone)*/}
       {/* ===================================================================== */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative pb-16 md:pb-0">
-        {/* Desktop & Tablet: Side-by-Side Split or Single mode */}
-        {/* Mobile: Controlled by mobileTab */}
-
         {/* Question Canvas */}
         <div
           className={`flex-1 flex-col h-full w-full overflow-hidden ${
@@ -366,49 +422,71 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             src={questionImagePath}
             title={`Question ${question.questionNumber}`}
             badgeText={`${question.marks} ${question.marks === 1 ? 'Mark' : 'Marks'}`}
-            badgeColor="cyan"
+            badgeColor={isMath ? 'amber' : isPhysics ? 'indigo' : 'cyan'}
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
             enableAnnotation={true}
             questionId={question.id}
           >
-            {/* Interactive MCQ A/B/C/D Tap Zones (Mobile only: md:hidden) */}
-            {isMcq && (
-              <div className="md:hidden w-full max-w-xl mt-4 px-3 py-3.5 rounded-2xl bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-750 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-150 select-none">
-                <div className="flex items-center justify-between w-full px-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                    Select Your Answer
-                  </span>
+            {/* Interactive MCQ A/B/C/D Floating Dock (Visible on both Desktop & Mobile whenever isMcq && !isMath) */}
+            {isMcq && !isMath && (
+              <div className="w-full max-w-xl mt-4 px-3.5 py-3 rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in duration-150 select-none">
+                <div className="flex items-center justify-between w-full px-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Select Option
+                    </span>
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500">
+                      Press
+                      <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+                        A
+                      </kbd>
+                      –
+                      <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+                        D
+                      </kbd>
+                    </span>
+                  </div>
                   {selectedMcqOption && (
                     <button
                       type="button"
                       onClick={handleResetMcq}
-                      className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-colors"
+                      title="Clear selected answer and reset status to Unattempted"
                     >
-                      Reset Choice
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
                     </button>
                   )}
                 </div>
 
-                {/* 4 Interactive Tap Buttons */}
-                <div className="grid grid-cols-4 gap-2.5 sm:gap-3 w-full">
+                {/* 4 Interactive Option Buttons */}
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
                   {['A', 'B', 'C', 'D'].map((opt) => {
                     const isSelected = selectedMcqOption === opt;
-                    const isCorrect = normalizedKey && opt === normalizedKey;
-                    let btnStyle = 'bg-slate-100 dark:bg-dark-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-dark-750 hover:bg-slate-200 dark:hover:bg-dark-750 hover:border-cyan-500 dark:hover:border-cyan-400';
+                    const isCorrect = Boolean(normalizedKey && opt === normalizedKey);
+                    let btnStyle =
+                      'bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-200/80 dark:hover:bg-white/[0.1] hover:border-cyan-500/60 dark:hover:border-cyan-400/50';
 
                     if (selectedMcqOption !== null) {
                       if (isSelected) {
                         if (isCorrect) {
-                          btnStyle = 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400';
+                          btnStyle =
+                            'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/60';
                         } else {
-                          btnStyle = 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/30 ring-2 ring-rose-400';
+                          btnStyle =
+                            'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-600/30 ring-2 ring-rose-400/60';
                         }
-                      } else if (isCorrect) {
-                        btnStyle = 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50 animate-pulse-subtle';
-                      } else {
-                        btnStyle = 'bg-slate-100/50 dark:bg-dark-850/50 text-slate-400 dark:text-slate-600 border-transparent opacity-40';
+                      } else if (isCorrect && isMcqAnswerRevealed) {
+                        btnStyle =
+                          'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50 animate-pulse-subtle';
+                      } else if (isMcqAnswerRevealed) {
+                        btnStyle =
+                          'bg-slate-100/50 dark:bg-white/[0.02] text-slate-400 dark:text-slate-600 border-transparent opacity-40';
                       }
+                    } else if (isCorrect && isMcqAnswerRevealed) {
+                      btnStyle =
+                        'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50';
                     }
 
                     return (
@@ -416,9 +494,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                         key={opt}
                         type="button"
                         onClick={() => handleMcqSelect(opt)}
-                        className={`h-12 sm:h-14 rounded-xl font-bold font-mono text-base sm:text-lg border-2 flex items-center justify-center transition-all active:scale-95 shadow-sm ${btnStyle}`}
+                        className={`h-11 sm:h-12 rounded-xl font-bold font-mono text-sm sm:text-base border flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-sm ${btnStyle}`}
                       >
-                        {opt}
+                        <span>{opt}</span>
                       </button>
                     );
                   })}
@@ -426,21 +504,28 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
                 {/* Instant visual feedback message banner */}
                 {selectedMcqOption !== null && normalizedKey && (
-                  <div className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
-                    selectedMcqOption === normalizedKey
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
-                      : 'bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200'
-                  }`}>
+                  <div
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
+                      selectedMcqOption === normalizedKey
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
+                        : 'bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200'
+                    }`}
+                  >
                     <div className="flex items-center gap-2">
                       {selectedMcqOption === normalizedKey ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>Correct! Option [{normalizedKey}] is the right answer.</span>
                         </>
-                      ) : (
+                      ) : isMcqAnswerRevealed ? (
                         <>
                           <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                           <span>Incorrect. Option [{normalizedKey}] is the correct answer.</span>
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                          <span>Incorrect — try again or view mark scheme</span>
                         </>
                       )}
                     </div>
@@ -449,14 +534,14 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                       type="button"
                       onClick={() => {
                         if (window.innerWidth < 768) {
-                          setMobileTab('ms');
+                          setMobileTab((prev) => (prev === 'ms' ? 'question' : 'ms'));
                         } else {
-                          onSetViewMode('split');
+                          onSetViewMode(isMarkSchemeVisible ? 'question-only' : 'split');
                         }
                       }}
                       className="text-[11px] font-bold underline shrink-0 hover:opacity-80"
                     >
-                      View Mark Scheme
+                      {isMarkSchemeVisible || mobileTab === 'ms' ? 'Hide Mark Scheme' : 'View Mark Scheme'}
                     </button>
                   </div>
                 )}
@@ -464,6 +549,16 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             )}
           </ImageCanvas>
         </div>
+
+        {/* Smooth Vertical Split Divider (visible in side-by-side split mode) */}
+        {viewMode === 'split' && (
+          <div
+            className="hidden md:flex w-px bg-slate-200 dark:bg-white/[0.07] relative items-center justify-center group hover:bg-cyan-500/40 dark:hover:bg-cyan-400/40 transition-colors shrink-0 select-none"
+            aria-hidden="true"
+          >
+            <div className="w-1 h-8 rounded-full bg-slate-300 dark:bg-white/15 group-hover:bg-cyan-500 dark:group-hover:bg-cyan-400 transition-colors" />
+          </div>
+        )}
 
         {/* Mark Scheme Canvas */}
         <div
@@ -491,6 +586,8 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             }
             placeholderTitle="Mark Scheme Pending"
             placeholderMessage="This question's mark scheme row is either still processing or was not included in the sample pages."
+            enableAnnotation={true}
+            questionId={`${question.id}-ms`}
           />
         </div>
       </div>
@@ -498,17 +595,20 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* ===================================================================== */}
       {/* ANCHORED BOTTOM ACTION BAR (Desktop & Tablet >= 768px)               */}
       {/* ===================================================================== */}
-      <div className="hidden md:flex sticky bottom-0 w-full py-2.5 px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-slate-200 dark:border-slate-800 items-center justify-center gap-3 z-10 shrink-0 select-none">
+      <div className="hidden md:flex sticky bottom-0 w-full py-2 px-6 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border-t border-slate-200 dark:border-white/[0.08] shadow-2xl items-center justify-center gap-3 z-10 shrink-0 select-none">
         {/* Left: Previous Question */}
         <button
           type="button"
           onClick={onPrevQuestion}
           disabled={!hasPrev}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border text-sm font-medium disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm"
           title="Previous Question [← or []"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3.5 h-3.5" />
           <span>Prev</span>
+          <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+            ←
+          </kbd>
         </button>
 
         {/* Center: Prominent primary toggle button */}
@@ -516,30 +616,32 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           type="button"
           onClick={onToggleMarkScheme}
           title={isMarkSchemeVisible ? 'Hide Mark Scheme [Space or M]' : 'Show Mark Scheme [Space or M]'}
-          className={`flex items-center gap-2 px-5 py-2 rounded-lg font-semibold text-sm shadow-sm active:scale-95 transition-all ${
+          className={`flex items-center gap-2 px-5 py-1.5 rounded-xl font-semibold text-xs shadow-sm active:scale-[0.98] transition-all ${
             isMarkSchemeVisible
-              ? 'bg-slate-200 hover:bg-slate-300 text-slate-800 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border'
-              : 'bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-500 shadow-cyan-500/20'
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-white/[0.07] dark:hover:bg-white/[0.12] dark:text-slate-200 dark:border-white/10 border'
+              : 'bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-500 shadow-lg shadow-cyan-500/20'
           }`}
         >
           {isMarkSchemeVisible ? (
             <>
-              <EyeOff className="w-4 h-4" />
+              <EyeOff className="w-3.5 h-3.5" />
               <span>Hide Mark Scheme</span>
             </>
           ) : (
             <>
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" />
               <span>Show Mark Scheme</span>
             </>
           )}
-          <span className={`text-[11px] font-mono px-1.5 py-0.2 rounded ${
-            isMarkSchemeVisible
-              ? 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-              : 'bg-cyan-700/60 text-white'
-          }`}>
+          <kbd
+            className={`px-1.5 py-0.5 text-[10px] font-mono rounded border ${
+              isMarkSchemeVisible
+                ? 'bg-slate-100 dark:bg-white/[0.06] border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400'
+                : 'bg-cyan-700/70 border-cyan-400/30 text-cyan-50'
+            }`}
+          >
             Space
-          </span>
+          </kbd>
         </button>
 
         {/* Right: Next Question */}
@@ -547,24 +649,27 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           type="button"
           onClick={onNextQuestion}
           disabled={!hasNext}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 border text-sm font-medium disabled:opacity-30 disabled:pointer-events-none active:scale-95 transition-all shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm"
           title="Next Question [→ or ]]"
         >
           <span>Next</span>
-          <ChevronRight className="w-4 h-4" />
+          <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded text-slate-500 dark:text-slate-400">
+            →
+          </kbd>
+          <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* ===================================================================== */}
       {/* MOBILE FIXED BOTTOM NAVIGATION BAR (< 768px)                          */}
       {/* ===================================================================== */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 h-14 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-t border-slate-200 dark:border-dark-800 z-30 px-3 flex items-center justify-between gap-2 shadow-lg dark:shadow-2xl">
+      <div className="md:hidden fixed bottom-0 inset-x-0 h-14 backdrop-blur-md bg-white/95 dark:bg-slate-900/90 border-t border-slate-200 dark:border-white/10 z-30 px-3 flex items-center justify-between gap-2 shadow-2xl">
         {/* Prev Button - 44px min tap target */}
         <button
           type="button"
           onClick={onPrevQuestion}
           disabled={!hasPrev}
-          className="min-w-[52px] min-h-[44px] px-3 flex items-center justify-center gap-1 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 font-semibold text-xs disabled:opacity-25 disabled:pointer-events-none active:scale-95 transition-all"
+          className="min-w-[52px] min-h-[44px] px-3 flex items-center justify-center gap-1 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 font-semibold text-xs disabled:opacity-25 disabled:pointer-events-none active:scale-[0.98] transition-all"
           title="Previous Question"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -575,11 +680,11 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         <button
           type="button"
           onClick={onOpenQuestionList}
-          className="flex-1 min-h-[44px] px-2 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-xs font-semibold text-cyan-700 dark:text-cyan-300 active:scale-95 transition-all"
+          className="flex-1 min-h-[44px] px-2 flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/10 text-xs font-semibold text-cyan-700 dark:text-cyan-300 active:scale-[0.98] transition-all"
           title="Open Question List"
         >
           <List className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-          <span className="font-mono font-bold">
+          <span className="font-mono tabular-nums font-bold">
             Q{question.questionNumber} ({currentIndex + 1}/{totalQuestions})
           </span>
         </button>
@@ -590,9 +695,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           onClick={() => {
             setMobileTab((prev) => (prev === 'question' ? 'ms' : 'question'));
           }}
-          className={`min-h-[44px] px-3 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all ${
+          className={`min-h-[44px] px-3 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold active:scale-[0.98] transition-all ${
             mobileTab === 'ms'
-              ? 'bg-slate-100 dark:bg-dark-800 text-cyan-700 dark:text-cyan-300 border border-cyan-400 dark:border-cyan-500/40'
+              ? 'bg-slate-100 dark:bg-white/[0.08] text-cyan-700 dark:text-cyan-300 border border-cyan-400 dark:border-cyan-500/40'
               : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/30'
           }`}
           title={mobileTab === 'ms' ? 'Show Question' : 'Show Answer'}
@@ -615,7 +720,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           type="button"
           onClick={onNextQuestion}
           disabled={!hasNext}
-          className="min-w-[52px] min-h-[44px] px-3 flex items-center justify-center gap-1 rounded-xl bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 font-semibold text-xs disabled:opacity-25 disabled:pointer-events-none active:scale-95 transition-all"
+          className="min-w-[52px] min-h-[44px] px-3 flex items-center justify-center gap-1 rounded-xl bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.1] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 font-semibold text-xs disabled:opacity-25 disabled:pointer-events-none active:scale-[0.98] transition-all"
           title="Next Question"
         >
           <span>Next</span>
