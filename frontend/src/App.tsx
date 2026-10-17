@@ -4,7 +4,7 @@ import { AppNavbar } from './components/AppNavbar';
 import { TopBar } from './components/TopBar';
 import { buildStaticSubtopicHierarchy } from './constants/taxonomy';
 import { getQuestionType } from './utils/questionClassification';
-import { QuestionList } from './components/QuestionList';
+import { QuestionList, sortQuestionsLatestFirst } from './components/QuestionList';
 import { SplitViewer } from './components/SplitViewer';
 import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
 import { DataBookletDrawer } from './components/DataBookletDrawer';
@@ -363,7 +363,7 @@ export const App: React.FC = () => {
         })
         .then((data: QuestionItem[]) => {
           if (isMounted) {
-            setChemQuestions(data);
+            setChemQuestions([...data].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -383,7 +383,7 @@ export const App: React.FC = () => {
         })
         .then((data: QuestionItem[]) => {
           if (isMounted) {
-            setPhysQuestions(data);
+            setPhysQuestions([...data].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -403,7 +403,7 @@ export const App: React.FC = () => {
         })
         .then((data: QuestionItem[]) => {
           if (isMounted) {
-            setMathQuestions(data);
+            setMathQuestions([...data].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -571,7 +571,7 @@ export const App: React.FC = () => {
       }
 
       return true;
-    });
+    }).sort(sortQuestionsLatestFirst);
   }, [questions, filters, bookmarks, questionStatuses]);
 
   // Active question item

@@ -72,6 +72,72 @@ export const getStatusConfig = (status: MasteryStatus = 'unattempted') => {
   }
 };
 
+export const SERIES_WEIGHT: Record<string, number> = {
+  october: 3,
+  oct: 3,
+  'oct/nov': 3,
+  november: 3,
+  nov: 3,
+  june: 2,
+  jun: 2,
+  'may/june': 2,
+  may: 2,
+  january: 1,
+  jan: 1,
+};
+
+function getSeriesWeight(q: QuestionItem): number {
+  const sessionKey = (q.session || '').toLowerCase().trim();
+  if (SERIES_WEIGHT[sessionKey]) return SERIES_WEIGHT[sessionKey];
+
+  const seriesKey = (q.series || '')
+    .toLowerCase()
+    .replace(/\b\d{4}\b/g, '')
+    .trim();
+  if (SERIES_WEIGHT[seriesKey]) return SERIES_WEIGHT[seriesKey];
+
+  const combined = `${sessionKey} ${seriesKey} ${(q.paperId || (q as any).paper_id || '').toLowerCase()}`;
+  if (combined.includes('oct') || combined.includes('nov')) return 3;
+  if (combined.includes('jun') || combined.includes('may')) return 2;
+  if (combined.includes('jan')) return 1;
+  return 0;
+}
+
+export function sortQuestionsLatestFirst(a: QuestionItem, b: QuestionItem): number {
+  // 1. Sort by Unit (e.g. Unit 1 -> Unit 2 or WCH11 -> WCH12 in natural numeric order)
+  const unitA = (a.unit || a.unitCode || '').toString();
+  const unitB = (b.unit || b.unitCode || '').toString();
+  const unitCompare = unitA.localeCompare(unitB, undefined, { numeric: true, sensitivity: 'base' });
+  if (unitCompare !== 0) return unitCompare;
+
+  // 2. Sort by Year Descending (2026 -> 2025 -> 2024...)
+  const yearA = Number(a.year) || 0;
+  const yearB = Number(b.year) || 0;
+  if (yearB !== yearA) return yearB - yearA;
+
+  // 3. Sort by Series Chronological Descending (October -> June -> January)
+  const weightA = getSeriesWeight(a);
+  const weightB = getSeriesWeight(b);
+  if (weightB !== weightA) return weightB - weightA;
+
+  // 3b. Group by Paper Variant within same Unit/Year/Series (Standard paper before R / A paper)
+  const paperA = (a.paperId || (a as any).paper_id || '').toString().toLowerCase();
+  const paperB = (b.paperId || (b as any).paper_id || '').toString().toLowerCase();
+  if (paperA !== paperB) {
+    return paperA.localeCompare(paperB, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  // 4. Sort by Question Number Ascending (Q1 -> Q2 -> Q3... and subparts 19(a)(i) -> 19(a)(ii) -> 19(b))
+  const rawQNumA = String(a.questionNumber ?? (a as any).question_number ?? '').replace(/^q/i, '').trim();
+  const rawQNumB = String(b.questionNumber ?? (b as any).question_number ?? '').replace(/^q/i, '').trim();
+  const qNumA = parseInt(rawQNumA, 10);
+  const qNumB = parseInt(rawQNumB, 10);
+  if (!Number.isNaN(qNumA) && !Number.isNaN(qNumB) && qNumA !== qNumB) {
+    return qNumA - qNumB;
+  }
+  return rawQNumA.localeCompare(rawQNumB, undefined, { numeric: true, sensitivity: 'base' });
+}
+
 const PAGE_SIZE = 20;
 
 function getPaginationItems(current: number, total: number): (number | '...')[] {
@@ -101,34 +167,38 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   isDrawerOpen = false,
   onCloseDrawer
 }) => {
+  const sortedQuestions = useMemo(() => {
+    return [...questions].sort(sortQuestionsLatestFirst);
+  }, [questions]);
+
   const [currentPage, setCurrentPage] = useState<number>(1);
   const listRef = useRef<HTMLDivElement>(null);
   const prevSelectedIdRef = useRef<string | null>(selectedQuestionId);
-  const firstQuestionId = questions[0]?.id;
+  const firstQuestionId = sortedQuestions[0]?.id;
   const prevFirstIdRef = useRef<string | undefined>(firstQuestionId);
 
-  const totalPages = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sortedQuestions.length / PAGE_SIZE));
 
   // Sync currentPage when active question changes (e.g. via Next/Prev navigation or direct selection)
   useEffect(() => {
     if (selectedQuestionId !== prevSelectedIdRef.current) {
       prevSelectedIdRef.current = selectedQuestionId;
       if (selectedQuestionId) {
-        const idx = questions.findIndex((q) => q.id === selectedQuestionId);
+        const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
         if (idx !== -1) {
           const targetPage = Math.floor(idx / PAGE_SIZE) + 1;
           setCurrentPage(targetPage);
         }
       }
     }
-  }, [selectedQuestionId, questions]);
+  }, [selectedQuestionId, sortedQuestions]);
 
   // Handle filter changes (e.g. topic filter or search change changes the question list)
   useEffect(() => {
     if (firstQuestionId !== prevFirstIdRef.current) {
       prevFirstIdRef.current = firstQuestionId;
       if (selectedQuestionId) {
-        const idx = questions.findIndex((q) => q.id === selectedQuestionId);
+        const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
         if (idx !== -1) {
           setCurrentPage(Math.floor(idx / PAGE_SIZE) + 1);
           return;
@@ -136,7 +206,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
       }
       setCurrentPage(1);
     }
-  }, [firstQuestionId, selectedQuestionId, questions]);
+  }, [firstQuestionId, selectedQuestionId, sortedQuestions]);
 
   // Reset to page 1 if current page is out of bounds
   useEffect(() => {
@@ -158,10 +228,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedQuestions = useMemo(() => {
-    return questions.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [questions, startIndex]);
+    return sortedQuestions.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [sortedQuestions, startIndex]);
 
-  const listSubject = useMemo(() => getQuestionSubject(questions[0]), [questions]);
+  const listSubject = useMemo(() => getQuestionSubject(sortedQuestions[0]), [sortedQuestions]);
 
   return (
     <>

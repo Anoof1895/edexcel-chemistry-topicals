@@ -26,6 +26,7 @@ import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
 import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
+import { sortQuestionsLatestFirst } from './QuestionList';
 import { ImageCanvas } from './ImageCanvas';
 import { useProgress } from '../context/ProgressContext';
 
@@ -258,7 +259,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       }
 
       return true;
-    });
+    }).sort(sortQuestionsLatestFirst);
   }, [questions, filters, marksFilter, isMath]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPool.length / PAGE_SIZE));
