@@ -369,6 +369,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   // Sync main canvas buffer width & height to natural image dimensions (capped at 5 MP to prevent memory spikes)
   const syncCanvasDimensions = useCallback(() => {
+    if (isDrawingRef.current) return;
     const img = imgRef.current;
     const canvas = canvasRef.current;
     if (!img || !canvas) return;
@@ -391,6 +392,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       restoreFromCache(canvas);
     }
   }, [restoreFromCache]);
+
+  const syncCanvasDimensionsRef = useRef(syncCanvasDimensions);
+  syncCanvasDimensionsRef.current = syncCanvasDimensions;
 
   const handleClearCanvas = () => {
     setEditingItem(null);
@@ -439,7 +443,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       editingItemRef.current = null;
     }
     prevQuestionIdRef.current = questionId;
-    syncCanvasDimensions();
+    syncCanvasDimensionsRef.current();
 
     const cacheKey = questionId || src;
     if (cacheKey && inMemoryTextCache.has(cacheKey)) {
@@ -449,7 +453,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     } else {
       setTextAnnotations([]);
     }
-  }, [questionId, src, syncCanvasDimensions]);
+  }, [questionId, src]);
 
   // Auto-focus active text annotation input
   useEffect(() => {
@@ -460,19 +464,77 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     }
   }, [editingItem]);
 
+  // Reset per-image view state only when the raw src prop changes
   useEffect(() => {
     setHasError(false);
-    setIsImageLoading(true);
     setUseLocalFallback(false);
     setZoom(1);
     strokeHistoryRef.current = [];
     setCanUndo(false);
-    syncCanvasDimensions();
-  }, [src, syncCanvasDimensions]);
+  }, [src]);
+
+  // Dedicated image loading effect: depends strictly on resolvedSrc (never on questionId, zoom, or resize callbacks)
+  useEffect(() => {
+    if (!resolvedSrc) {
+      setIsImageLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setHasError(false);
+
+    const probe = new Image();
+    probe.onload = () => {
+      if (cancelled) return;
+      setHasError(false);
+      setIsImageLoading(false);
+      requestAnimationFrame(() => {
+        if (!cancelled) {
+          syncCanvasDimensionsRef.current();
+        }
+      });
+    };
+    probe.onerror = () => {
+      if (cancelled) return;
+      setIsImageLoading(false);
+    };
+    probe.src = resolvedSrc;
+
+    // Synchronously handle already-cached / preloaded images on initial mount
+    const domImg = imgRef.current;
+    if (
+      (probe.complete && probe.naturalWidth > 0) ||
+      (domImg && domImg.complete && domImg.naturalWidth > 0 && domImg.getAttribute('src') === resolvedSrc)
+    ) {
+      setHasError(false);
+      setIsImageLoading(false);
+      syncCanvasDimensionsRef.current();
+    } else {
+      setIsImageLoading(true);
+    }
+
+    return () => {
+      cancelled = true;
+      probe.onload = null;
+      probe.onerror = null;
+    };
+  }, [resolvedSrc]);
+
+  // ResizeObserver strictly redraws/syncs canvas dimensions without ever resetting isImageLoading
+  useEffect(() => {
+    const imgEl = imgRef.current;
+    if (!imgEl || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      syncCanvasDimensionsRef.current();
+    });
+    observer.observe(imgEl);
+    return () => observer.disconnect();
+  }, [resolvedSrc]);
 
   const handleImageLoad = () => {
+    setHasError(false);
     setIsImageLoading(false);
-    syncCanvasDimensions();
+    syncCanvasDimensionsRef.current();
   };
 
   const handleLightboxImageLoad = () => {
@@ -1118,8 +1180,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             >
               <div 
                 className={`relative max-w-full transition-transform duration-100 ease-out origin-top rounded-xl overflow-hidden shadow-[0_12px_40px_-10px_rgba(0,0,0,0.65)] ring-1 ring-slate-200 dark:ring-white/10 bg-white ${
-                  !isAnnotating ? 'cursor-pointer' : ''
-                }`}
+                  isImageLoading ? 'w-full max-w-3xl min-h-[280px]' : ''
+                } ${!isAnnotating ? 'cursor-pointer' : ''}`}
                 style={{ transform: `scale(${zoom})` }}
                 onClick={() => {
                   if (!isAnnotating && zoom === 1) {
@@ -1129,7 +1191,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                 title={!isAnnotating ? "Click or tap to inspect in full-screen lightbox" : undefined}
               >
                 {isImageLoading && (
-                  <div className="absolute inset-0 z-10 bg-slate-100 dark:bg-slate-900 animate-pulse flex items-center justify-center min-h-[300px]">
+                  <div className="absolute inset-0 z-10 bg-slate-100 dark:bg-slate-900 animate-pulse flex items-center justify-center min-h-[280px] pointer-events-none">
                     <div className="w-8 h-8 rounded-full border-2 border-cyan-500/20 border-t-cyan-500 animate-spin" />
                   </div>
                 )}
@@ -1139,7 +1201,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                   alt={title}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
-                  className="w-full max-w-full h-auto object-contain block select-none pointer-events-none"
+                  className={`w-full max-w-full h-auto object-contain block select-none pointer-events-none bg-white ${
+                    isImageLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
                 />
                 {enableAnnotation && (
                   <canvas
