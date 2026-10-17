@@ -138,17 +138,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
   return (
     <>
-      <header className="surface-glass h-14 border-b border-slate-200 dark:border-white/[0.07] px-3 sm:px-6 flex items-center justify-between gap-3 select-none shrink-0 relative z-50 transition-colors">
+      <header className="surface-glass w-full max-w-full h-14 border-b border-slate-200 dark:border-white/[0.07] px-2.5 sm:px-4 lg:px-6 flex items-center justify-between gap-1.5 sm:gap-3 select-none shrink-0 relative z-50 transition-colors">
         {/* Subtle subject-colored top-edge gradient glint */}
         <div className={`absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r ${topGlintGradient} pointer-events-none opacity-80`} />
 
         {/* Brand Logo & Name */}
         <div 
           onClick={() => handleNavClick('home')}
-          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group transition-all shrink-0 active:scale-[0.99]"
+          className="flex items-center gap-2 sm:gap-3 cursor-pointer group transition-all min-w-0 flex-1 sm:flex-initial active:scale-[0.99]"
           title="Go to Home Portal"
         >
-          <div className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${brandIconGradient} flex items-center justify-center shadow-md border group-hover:scale-105 transition-transform`}>
+          <div className={`w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-lg bg-gradient-to-tr ${brandIconGradient} flex items-center justify-center shadow-md border group-hover:scale-105 transition-transform`}>
             {isMath ? (
               <Sigma className="w-4 h-4 text-white" />
             ) : isPhysics ? (
@@ -157,16 +157,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               <FlaskConical className="w-4 h-4 text-white" />
             )}
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="text-[13px] sm:text-sm md:text-base font-bold tracking-tight truncate text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                 Edexcel IAL Topicals
               </span>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${hubPillClass}`}>
+              <span className={`hidden sm:inline-flex shrink-0 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${hubPillClass}`}>
                 Hub
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline truncate">
               {currentView === 'home'
                 ? 'Chemistry, Physics & Maths Topicals & Exam Builder'
                 : isMath
@@ -421,13 +421,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
 
         {/* Mobile Action Controls (< 768px) */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1 sm:gap-2 shrink-0">
           {/* Mobile Auth Button */}
           {user ? (
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm active:scale-95"
+              className="w-8 h-8 sm:w-9 sm:h-9 p-0 flex items-center justify-center rounded-lg sm:rounded-xl shrink-0 bg-gradient-to-tr from-cyan-600 to-blue-600 text-white font-bold text-xs sm:text-sm shadow-sm active:scale-95"
               title={`Logged in as ${user.email}`}
             >
               {userInitial}
@@ -436,11 +436,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={openAuthModal}
-              className="h-10 px-3 flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs active:scale-95 transition-all shadow-sm"
+              className="h-8 sm:h-9 px-2.5 sm:px-3 shrink-0 flex items-center gap-1 rounded-lg sm:rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs active:scale-95 transition-all shadow-sm"
               title="Sign In"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
+              <LogIn className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden min-[380px]:inline">Sign In</span>
             </button>
           )}
 
@@ -451,7 +451,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               onClick={onOpenCommandPalette}
               aria-label="Open Command Palette"
               title="Open Command Palette (Ctrl+K)"
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all shadow-sm"
+              className="w-8 h-8 sm:w-9 sm:h-9 p-0 flex items-center justify-center rounded-lg sm:rounded-xl shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all shadow-sm"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -463,7 +463,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all shadow-sm"
+            className="w-8 h-8 sm:w-9 sm:h-9 p-0 flex items-center justify-center rounded-lg sm:rounded-xl shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all shadow-sm"
           >
             {theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />
@@ -477,24 +477,24 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={() => handleNavClick(testMakerView)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-dark-800 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-bold font-mono transition-all"
+              className="h-8 sm:h-9 px-2 shrink-0 flex items-center gap-1 rounded-lg sm:rounded-xl bg-amber-50 dark:bg-dark-800 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs font-bold font-mono tabular-nums transition-all"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>{cartCount}</span>
             </button>
           )}
 
-          {/* Hamburger Menu Toggle Button (44px min target) */}
+          {/* Hamburger Menu Toggle Button */}
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
+            className="w-8 h-8 sm:w-9 sm:h-9 p-0 flex items-center justify-center rounded-lg sm:rounded-xl shrink-0 bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 border border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-all"
           >
             {isMobileMenuOpen ? (
-              <X className="w-5 h-5 text-cyan-500 dark:text-cyan-400" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 dark:text-cyan-400" />
             ) : (
-              <Menu className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+              <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700 dark:text-slate-200" />
             )}
           </button>
         </div>
