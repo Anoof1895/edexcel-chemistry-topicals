@@ -31,6 +31,7 @@ import { ImageCanvas } from './ImageCanvas';
 import { useProgress } from '../context/ProgressContext';
 
 interface TestMakerPageProps {
+  subject?: Subject;
   questions: QuestionItem[];
   cartQuestionIds: string[];
   onAddToCart: (id: string) => void;
@@ -54,7 +55,14 @@ export type { SmartGenerateMode, ExamStructure };
 
 const PAGE_SIZE = 15;
 
+const DEFAULT_EXAM_TITLES: Record<Subject, string> = {
+  chemistry: 'Custom Chemistry Mock Exam',
+  physics: 'Custom Physics Mock Exam',
+  mathematics: 'Custom Mathematics Mock Exam',
+};
+
 export const TestMakerPage: React.FC<TestMakerPageProps> = ({
+  subject,
   questions,
   cartQuestionIds,
   onAddToCart,
@@ -64,6 +72,13 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   testTitle,
   onSetTestTitle,
 }) => {
+  // Detect active subject using single source of truth
+  const activeSubject: Subject = useMemo(() => {
+    return subject || getQuestionSubject(questions[0]);
+  }, [subject, questions]);
+
+  const isMath = activeSubject === 'mathematics';
+
   // Center preview state: question currently being inspected
   const [previewQuestionId, setPreviewQuestionId] = useState<string | null>(null);
   const [previewTab, setPreviewTab] = useState<'question' | 'ms' | 'split'>('split');
@@ -91,27 +106,48 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     bookmarkedOnly: false,
   });
 
-  // Detect active subject using single source of truth
-  const activeSubject: Subject = useMemo(() => {
-    return getQuestionSubject(questions[0]);
-  }, [questions]);
-
-  const isMath = activeSubject === 'mathematics';
-
   // Marks filter: 'all' | '1m' | '2-3m' | '4-5m' | '6m' (Science) or 'all' | '1-4m' | '5-7m' | '8-10m' | '11m+' (Math)
   const [marksFilter, setMarksFilter] = useState<string>('all');
 
   // Smart Auto-Generate Mock Exam State
-  const [targetMarks, setTargetMarks] = useState<number>(80);
+  const [targetMarks, setTargetMarks] = useState<number>(isMath ? 75 : 80);
   const [generateMode, setGenerateMode] = useState<SmartGenerateMode>('balanced');
-  const [examStructure, setExamStructure] = useState<ExamStructure>('authentic');
+  const [examStructure, setExamStructure] = useState<ExamStructure>(isMath ? 'theory_only' : 'authentic');
   const [isSmartGenerateOpen, setIsSmartGenerateOpen] = useState<boolean>(true);
   const [lastGeneratedInfo, setLastGeneratedInfo] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(filters.searchQuery);
+
+  // Clean cross-subject state reset when switching subjects inside Test Maker
+  useEffect(() => {
+    setFilters({
+      selectedUnits: [],
+      selectedSubtopics: [],
+      selectedYears: [],
+      selectedSeries: [],
+      searchQuery: '',
+      statusFilter: 'all',
+      questionType: 'all',
+      bookmarkedOnly: false,
+    });
+    setSearchInput('');
+    setMarksFilter('all');
+    setCurrentPage(1);
+    setLastGeneratedInfo(null);
+    setTargetMarks(activeSubject === 'mathematics' ? 75 : 80);
+    setExamStructure(activeSubject === 'mathematics' ? 'theory_only' : 'authentic');
+    setPreviewQuestionId(questions[0]?.id || null);
+
+    const isDefaultTitle = Object.values(DEFAULT_EXAM_TITLES).includes(testTitle);
+    if (isDefaultTitle && testTitle !== DEFAULT_EXAM_TITLES[activeSubject]) {
+      onSetTestTitle(DEFAULT_EXAM_TITLES[activeSubject]);
+    }
+  }, [activeSubject]);
 
   // Dynamic unit-aware preset and exam structure switching
   useEffect(() => {
     if (isMath) {
       setTargetMarks(75);
+      setExamStructure('theory_only');
       setMarksFilter('all');
       return;
     }
@@ -132,7 +168,6 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   const { questionStatuses, bookmarks } = useProgress();
 
   // Debounced search input
-  const [searchInput, setSearchInput] = useState(filters.searchQuery);
   useEffect(() => {
     const timer = setTimeout(() => {
       if (filters.searchQuery !== searchInput) {

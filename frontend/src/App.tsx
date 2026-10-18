@@ -823,6 +823,7 @@ export const App: React.FC = () => {
               <React.Suspense fallback={<ViewLoadingFallback />}>
                 <TestMakerPage
                   key={activeSubject}
+                  subject={activeSubject}
                   questions={questions}
                   cartQuestionIds={testCart}
                   onAddToCart={handleAddToCart}

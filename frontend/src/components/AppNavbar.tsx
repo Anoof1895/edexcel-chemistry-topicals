@@ -367,9 +367,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           {isSubjectMenuOpen && (
             <div role="menu" className="absolute right-0 top-full mt-2 w-64 rounded-2xl surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
               {([
-                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, dot: 'bg-emerald-500 text-emerald-400', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-cyan-500/30' },
-                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, dot: 'bg-indigo-500 text-indigo-400', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-indigo-500/30' },
-                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, dot: 'bg-amber-500 text-amber-400', activeCls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-amber-500/30' },
+                { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: (isTestMakerActive ? 'chemistry-test-maker' : 'chemistry-topical') as AppView, Icon: FlaskConical, dot: 'bg-emerald-500 text-emerald-400', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-cyan-500/30' },
+                { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: (isTestMakerActive ? 'physics-test-maker' : 'physics-topical') as AppView, Icon: Atom, dot: 'bg-indigo-500 text-indigo-400', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-indigo-500/30' },
+                { subject: 'mathematics' as Subject, label: 'Mathematics', count: mathCount, view: (isTestMakerActive ? 'mathematics-test-maker' : 'mathematics-topical') as AppView, Icon: Sigma, dot: 'bg-amber-500 text-amber-400', activeCls: 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-amber-500/30' },
               ]).map(({ subject, label, count, view, Icon, dot, activeCls }) => {
                 const isActive = currentView !== 'home' && (
                   subject === 'physics' ? isPhysics :
@@ -562,9 +562,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
               </p>
               <div className="grid grid-cols-3 gap-1.5">
                 {[
-                  { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: 'chemistry-topical' as AppView, Icon: FlaskConical, activeColor: 'bg-emerald-600 text-white' },
-                  { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: 'physics-topical' as AppView, Icon: Atom, activeColor: 'bg-indigo-600 text-white' },
-                  { subject: 'mathematics' as Subject, label: 'Maths', count: mathCount, view: 'mathematics-topical' as AppView, Icon: Sigma, activeColor: 'bg-amber-600 text-white' },
+                  { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: (isTestMakerActive ? 'chemistry-test-maker' : 'chemistry-topical') as AppView, Icon: FlaskConical, activeColor: 'bg-emerald-600 text-white' },
+                  { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: (isTestMakerActive ? 'physics-test-maker' : 'physics-topical') as AppView, Icon: Atom, activeColor: 'bg-indigo-600 text-white' },
+                  { subject: 'mathematics' as Subject, label: 'Maths', count: mathCount, view: (isTestMakerActive ? 'mathematics-test-maker' : 'mathematics-topical') as AppView, Icon: Sigma, activeColor: 'bg-amber-600 text-white' },
                 ].map(({ subject, label, count, view, Icon, activeColor }) => {
                   const isActive = currentView !== 'home' && (
                     subject === 'physics' ? isPhysics :

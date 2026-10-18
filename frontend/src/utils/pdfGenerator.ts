@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { QuestionItem } from '../types';
-import { getFullImageUrl } from './imageUrl';
+import { getFullImageUrl, getLocalImageUrl } from './imageUrl';
 import { calculateExamDurationMinutes } from './examDuration';
 import { getQuestionSubject } from './questionClassification';
 
@@ -17,12 +17,19 @@ export type PdfExportOptions = PDFExportOptions;
 
 /**
  * Loads an image from URL and converts it to a canvas data URL with dimensions.
- * Cleanly fetches remote HTTPS CDN image URLs via fetch() to prevent canvas CORS tainting.
+ * Cleanly fetches remote HTTPS CDN image URLs via fetch() with cache-busting & no-store
+ * to prevent non-CORS browser cache collisions from the live preview pane.
  */
 interface ImageSlice {
   dataUrl: string;
   width: number;
   height: number;
+}
+
+function appendCacheBuster(url: string): string {
+  if (!url || url.startsWith('blob:') || url.startsWith('data:')) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}pdf_cb=${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
 /**
@@ -34,24 +41,49 @@ async function loadImageSlices(
   maxSliceAspectRatio: number = 1.35
 ): Promise<ImageSlice[]> {
   const fullUrl = getFullImageUrl(rawUrl);
-  let imageSourceUrl = fullUrl;
+  const localUrl = getLocalImageUrl(rawUrl);
+  if (!fullUrl && !localUrl) {
+    throw new Error('Empty image URL');
+  }
+
+  let imageSourceUrl = '';
   let objectUrlToRevoke: string | null = null;
 
-  try {
-    const res = await fetch(fullUrl);
-    if (res.ok) {
-      const blob = await res.blob();
-      objectUrlToRevoke = URL.createObjectURL(blob);
-      imageSourceUrl = objectUrlToRevoke;
+  // 1. Primary path: fetch as Blob with cache: 'no-store' + cache-busting query parameter
+  // This bypasses any non-CORS cached response created by <img> in ImageCanvas preview.
+  const candidateUrls = Array.from(new Set([fullUrl, localUrl].filter(Boolean)));
+  for (const candidate of candidateUrls) {
+    try {
+      const fetchUrl = candidate.startsWith('http') ? appendCacheBuster(candidate) : candidate;
+      const res = await fetch(fetchUrl, {
+        mode: 'cors',
+        cache: 'no-store',
+        credentials: 'omit',
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.size > 0) {
+          objectUrlToRevoke = URL.createObjectURL(blob);
+          imageSourceUrl = objectUrlToRevoke;
+          break;
+        }
+      }
+    } catch (fetchErr) {
+      console.warn(`CORS no-store fetch failed for ${candidate}, trying fallback:`, fetchErr);
     }
-  } catch (fetchErr) {
-    console.warn(`Direct fetch failed for ${fullUrl}, falling back to Image.src:`, fetchErr);
-    imageSourceUrl = fullUrl;
+  }
+
+  // 2. Fallback path: cache-busted URL for <img crossOrigin="anonymous">
+  if (!imageSourceUrl) {
+    imageSourceUrl = fullUrl.startsWith('http') ? appendCacheBuster(fullUrl) : fullUrl || localUrl;
   }
 
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Only set crossOrigin on remote HTTP(S) URLs, never on same-origin blob: URLs
+    if (!imageSourceUrl.startsWith('blob:') && !imageSourceUrl.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       const w = img.naturalWidth || img.width || 800;
       const h = img.naturalHeight || img.height || 600;
@@ -280,8 +312,15 @@ export async function generateQuestionPaperPDF({
       onProgress(i + 1, questions.length, `Formatting Question ${i + 1} of ${questions.length}...`);
     }
 
+    const rawQuestionPath =
+      q.questionImagePath ||
+      (q as any).image ||
+      (q as any).crop_path ||
+      (q as any).image_path ||
+      '';
+
     try {
-      const slices = await loadImageSlices(q.questionImagePath, 1.35);
+      const slices = await loadImageSlices(rawQuestionPath, 1.35);
 
       for (let sIdx = 0; sIdx < slices.length; sIdx++) {
         const slice = slices[sIdx];
@@ -481,7 +520,15 @@ export async function generateMarkSchemePDF({
       onProgress(i + 1, questions.length, `Formatting Mark Scheme for Question ${i + 1}...`);
     }
 
-    if (!q.markSchemeImagePath) {
+    const rawMarkSchemePath =
+      q.markSchemeImagePath ||
+      (q as any).mark_scheme_image ||
+      (q as any).ms_crop_path ||
+      (q as any).ms_image_path ||
+      (q as any).mark_scheme_image_path ||
+      '';
+
+    if (!rawMarkSchemePath) {
       if (cursorY + 20 > pageHeight - marginBottom) {
         doc.addPage();
         cursorY = marginTop;
@@ -495,7 +542,7 @@ export async function generateMarkSchemePDF({
     }
 
     try {
-      const slices = await loadImageSlices(q.markSchemeImagePath, 1.35);
+      const slices = await loadImageSlices(rawMarkSchemePath, 1.35);
 
       for (let sIdx = 0; sIdx < slices.length; sIdx++) {
         const slice = slices[sIdx];
