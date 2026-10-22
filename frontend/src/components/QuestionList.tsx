@@ -10,6 +10,11 @@ import {
 } from 'lucide-react';
 import { QuestionItem, MasteryStatus } from '../types';
 import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 interface QuestionListProps {
   questions: QuestionItem[];
@@ -272,18 +277,23 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         </div>
 
         {/* Header Tabs: All Questions vs Bookmarked */}
-        <div className="p-2 border-b border-slate-200 dark:border-white/[0.07] bg-white/80 dark:bg-[#07090D]/80 backdrop-blur-md flex items-center gap-1.5 shrink-0">
+        <div
+          style={getSubjectSpotlightStyle(listSubject, 220)}
+          className="p-2 border-b border-slate-200 dark:border-white/[0.07] bg-white/80 dark:bg-[#07090D]/80 backdrop-blur-md flex items-center gap-1.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+        >
           <button
             type="button"
             onClick={() => onTabChange('all')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            className={`spotlight-surface flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'all'
-                ? 'bg-slate-100 dark:bg-white/[0.07] text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
+                ? 'bg-slate-100 dark:bg-white/[0.08] text-slate-900 dark:text-white shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.08)] border border-slate-200 dark:border-white/12'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.04]'
             }`}
           >
-            <span>All Questions</span>
-            <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300">
+            <span className="relative z-10">All Questions</span>
+            <span className="relative z-10 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/[0.07] text-slate-700 dark:text-slate-300">
               {activeTab === 'all' ? questions.length : 'All'}
             </span>
           </button>
@@ -291,15 +301,18 @@ export const QuestionList: React.FC<QuestionListProps> = ({
           <button
             type="button"
             onClick={() => onTabChange('bookmarked')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle('amber', 200)}
+            className={`spotlight-surface flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'bookmarked'
-                ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-300 dark:border-amber-500/30 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
+                ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.08)] border border-amber-300 dark:border-amber-500/30'
                 : 'text-slate-600 hover:text-amber-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-amber-300 dark:hover:bg-white/[0.04]'
             }`}
           >
-            <Bookmark className={`w-3.5 h-3.5 ${bookmarks.size > 0 ? 'fill-amber-500 text-amber-500' : ''}`} />
-            <span>Bookmarked</span>
-            <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
+            <Bookmark className={`relative z-10 w-3.5 h-3.5 ${bookmarks.size > 0 ? 'fill-amber-500 text-amber-500' : ''}`} />
+            <span className="relative z-10">Bookmarked</span>
+            <span className="relative z-10 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300">
               {bookmarks.size}
             </span>
           </button>
@@ -360,20 +373,23 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               return (
                 <div
                   key={q.id}
+                  onPointerMove={handleSpotlightMove}
+                  onPointerLeave={handleSpotlightLeave}
+                  style={getSubjectSpotlightStyle(qSubject, 280)}
                   onClick={() => {
                     onSelectQuestion(q);
                     if (onCloseDrawer) {
                       onCloseDrawer();
                     }
                   }}
-                  className={`group relative rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
+                  className={`spotlight-surface group relative rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
                     isSelected
                       ? `${selectedCardAccent} text-slate-900 dark:text-white`
-                      : 'bg-white dark:bg-[#07090D]/50 border-slate-200/80 dark:border-white/[0.05] border-l-transparent hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/10 hover:border-l-slate-400 dark:hover:border-l-slate-600 text-slate-700 dark:text-slate-300'
+                      : 'bg-white dark:bg-[#0B0E16]/70 border-slate-200/80 dark:border-white/[0.06] border-l-transparent hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/10 hover:border-l-slate-400 dark:hover:border-l-slate-600 text-slate-700 dark:text-slate-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
                   }`}
                 >
                   {/* Top Row: Q Number, Mark Badge, Type Pill, Stem Pill, Bookmark Action */}
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="relative z-10 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {/* Prominent Question Number */}
                       <span className={`font-mono tabular-nums font-bold text-sm tracking-tight ${isSelected ? 'text-slate-950 dark:text-white' : 'text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-white'}`}>
@@ -429,13 +445,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                   </div>
 
                   {/* Sub-row: Paper series and year clearly with improved contrast */}
-                  <div className="text-[11px] tabular-nums text-slate-600 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
+                  <div className="relative z-10 text-[11px] tabular-nums text-slate-600 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                     <span>{paperInfo}</span>
                   </div>
 
                   {/* Subtopic Title: Cleanly truncated / uncluttered on unselected, expanded on selected */}
                   <div 
-                    className={`mt-1 transition-colors ${
+                    className={`relative z-10 mt-1 transition-colors ${
                       isSelected 
                         ? selectedSubtopicText
                         : 'text-[11px] text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 truncate'
@@ -446,7 +462,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                   </div>
 
                   {/* Bottom Row: Status Pill */}
-                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-white/[0.06] text-[10px]">
+                  <div className="relative z-10 flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-white/[0.06] text-[10px]">
                     {/* Status Pill Button */}
                     <button
                       type="button"
@@ -469,8 +485,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
 
         {/* Pagination Bar */}
         {questions.length > 0 && (
-          <div className="p-2 border-t border-slate-200 dark:border-white/[0.07] bg-white/90 dark:bg-[#07090D]/90 backdrop-blur-md flex flex-col items-center gap-1.5 shrink-0">
-            <div className="flex items-center justify-between w-full px-1 text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
+          <div
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(listSubject, 280)}
+            className="spotlight-surface p-2 border-t border-slate-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#07090D]/95 backdrop-blur-xl flex flex-col items-center gap-1.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+          >
+            <div className="relative z-10 flex items-center justify-between w-full px-1 text-[11px] tabular-nums text-slate-600 dark:text-slate-400">
               <span>
                 Showing <span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{startIndex + 1}</span>–<span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{Math.min(startIndex + PAGE_SIZE, questions.length)}</span> of <span className="font-mono tabular-nums font-semibold text-slate-800 dark:text-slate-200">{questions.length}</span>
               </span>
@@ -479,7 +500,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center justify-center gap-1 w-full">
+            <div className="relative z-10 flex items-center justify-center gap-1 w-full">
               <button
                 type="button"
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -512,10 +533,10 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     className={`min-w-[28px] h-7 px-1.5 flex items-center justify-center rounded-lg text-xs font-mono tabular-nums font-semibold transition-all ${
                       isCurrent
                         ? listSubject === 'mathematics'
-                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 shadow-sm font-bold'
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)] font-bold'
                           : listSubject === 'physics'
-                          ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 dark:border-indigo-500/40 shadow-sm font-bold'
-                          : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 dark:border-cyan-500/40 shadow-sm font-bold'
+                          ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 dark:border-indigo-500/40 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)] font-bold'
+                          : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 dark:border-cyan-500/40 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)] font-bold'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent'
                     }`}
                   >

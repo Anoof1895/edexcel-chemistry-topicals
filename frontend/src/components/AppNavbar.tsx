@@ -20,6 +20,11 @@ import {
 import { AppView, Subject } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 interface AppNavbarProps {
   currentView: AppView;
@@ -180,46 +185,57 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         {/* Desktop / Tablet Nav & Theme Switch (> 768px) */}
         <div className="hidden md:flex items-center gap-2">
-          <nav className="flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-[#07090D] dark:border-white/[0.06] dark:shadow-inner dark:text-slate-300 p-1 rounded-xl">
+          <nav
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(activeSubject, 220)}
+            className="spotlight-surface flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 dark:bg-[#07090D] dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] dark:text-slate-300 p-1 rounded-xl"
+          >
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              className={`spotlight-surface relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                 currentView === 'home'
-                  ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/30'
+                  ? 'bg-cyan-600 text-white shadow-[0_2px_10px_rgba(6,182,212,0.35),inset_0_1px_0_0_rgba(255,255,255,0.25)]'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
-              <Home className="w-3.5 h-3.5" />
-              <span>Portal</span>
+              <Home className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">Portal</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigate(topicalView)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              className={`spotlight-surface relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                 isTopicalActive
-                  ? activeNavBtnClass
+                  ? `${activeNavBtnClass} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]`
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Topicals</span>
+              <Compass className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">Topicals</span>
             </button>
 
             <button
               type="button"
               onClick={() => onNavigate(testMakerView)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] relative ${
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              className={`spotlight-surface relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                 isTestMakerActive
-                  ? activeNavBtnClass
+                  ? `${activeNavBtnClass} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]`
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/[0.06]'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Test Maker</span>
+              <FileText className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">Test Maker</span>
               {cartCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums font-bold bg-amber-400 text-dark-950 animate-pulse-subtle">
+                <span className="relative z-10 px-1.5 py-0.2 rounded-full text-[10px] font-mono tabular-nums font-bold bg-amber-400 text-dark-950 animate-pulse-subtle">
                   {cartCount}
                 </span>
               )}
@@ -231,12 +247,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={onOpenCommandPalette}
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              style={getSubjectSpotlightStyle(activeSubject, 180)}
               title="Open Command Palette (Ctrl+K / Cmd+K)"
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-xs font-medium transition-all duration-150 active:scale-[0.98] shadow-xs"
+              className="spotlight-surface flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 text-xs font-medium transition-all duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
             >
-              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
-              <span className="hidden lg:inline text-slate-500 dark:text-slate-400">Jump...</span>
-              <kbd className="kbd-keycap">Ctrl K</kbd>
+              <Search className="relative z-10 w-3.5 h-3.5 text-slate-400 dark:text-slate-400" />
+              <span className="relative z-10 hidden lg:inline text-slate-500 dark:text-slate-400">Jump...</span>
+              <kbd className="relative z-10 kbd-keycap">Ctrl K</kbd>
             </button>
           )}
 
@@ -245,13 +264,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <button
               type="button"
               onClick={onOpenDataBooklet}
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              style={getSubjectSpotlightStyle(activeSubject, 180)}
               title="Official Pearson IAL Formula Sheet & Data Booklet (Press 'D')"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-[0.98] shadow-xs ${dataBtnClass}`}
+              className={`spotlight-surface flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] ${dataBtnClass}`}
             >
-              <BookOpen className={`w-3.5 h-3.5 ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`} />
-              <span className="hidden xl:inline">Data &amp; Formulae</span>
-              <span className="xl:hidden">Data</span>
-              <span className="kbd-keycap">D</span>
+              <BookOpen className={`relative z-10 w-3.5 h-3.5 ${isMath ? 'text-amber-600 dark:text-amber-400' : isPhysics ? 'text-indigo-600 dark:text-indigo-400' : 'text-cyan-600 dark:text-cyan-400'}`} />
+              <span className="relative z-10 hidden xl:inline">Data &amp; Formulae</span>
+              <span className="relative z-10 xl:hidden">Data</span>
+              <span className="relative z-10 kbd-keycap">D</span>
             </button>
           )}
 
@@ -344,24 +366,27 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           <button
             type="button"
             onClick={() => setIsSubjectMenuOpen((o) => !o)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)] text-xs font-medium transition-all duration-150 active:scale-[0.98]"
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(activeSubject, 200)}
+            className="spotlight-surface flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#07090D] dark:hover:bg-[#0C0F17] border border-slate-200 dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] text-xs font-medium transition-all duration-150 active:scale-[0.98]"
             title="Switch subject"
             aria-haspopup="menu"
             aria-expanded={isSubjectMenuOpen}
           >
-            <span className={`w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px_currentColor] ${
+            <span className={`relative z-10 w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px_currentColor] ${
               currentView === 'home'
                 ? 'text-cyan-400 bg-cyan-500'
                 : isMath ? 'text-amber-400 bg-amber-500'
                 : isPhysics ? 'text-indigo-400 bg-indigo-500' : 'text-emerald-400 bg-emerald-500'
             }`}></span>
-            <span className="text-slate-800 dark:text-slate-200 font-semibold">
+            <span className="relative z-10 text-slate-800 dark:text-slate-200 font-semibold">
               {currentView === 'home' ? 'All Subjects' : isMath ? 'Mathematics' : isPhysics ? 'Physics' : 'Chemistry'}
             </span>
-            <span className="font-mono tabular-nums text-slate-500 hidden lg:inline">
+            <span className="relative z-10 font-mono tabular-nums text-slate-500 hidden lg:inline">
               ({(currentView === 'home' ? chemCount + physCount + mathCount : totalQuestions).toLocaleString()} Qs)
             </span>
-            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform ${isSubjectMenuOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`relative z-10 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 transition-transform ${isSubjectMenuOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isSubjectMenuOpen && (
@@ -381,22 +406,25 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     key={subject}
                     type="button"
                     role="menuitem"
+                    onPointerMove={handleSpotlightMove}
+                    onPointerLeave={handleSpotlightLeave}
+                    style={getSubjectSpotlightStyle(subject, 220)}
                     onClick={() => {
                       setIsSubjectMenuOpen(false);
                       onNavigate(view);
                     }}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
+                    className={`spotlight-surface w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                       isActive
                         ? activeCls
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent'
                     }`}
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="relative z-10 flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${dot} shadow-[0_0_6px_currentColor]`}></span>
                       <Icon className="w-3.5 h-3.5" />
                       {label}
                     </span>
-                    <span className="font-mono tabular-nums text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="relative z-10 font-mono tabular-nums text-[11px] text-slate-500 dark:text-slate-400">
                       {count.toLocaleString()} Qs
                     </span>
                   </button>

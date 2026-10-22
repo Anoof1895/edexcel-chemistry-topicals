@@ -15,6 +15,11 @@ import { FilterState, ViewMode, QuestionItem } from '../types';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicGroup } from '../constants/taxonomy';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 export type { SubtopicGroup };
 
@@ -355,11 +360,16 @@ export const TopBar: React.FC<TopBarProps> = ({
 
           {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
           {!isMath && (
-            <div className="flex items-center bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] p-0.5 rounded-lg text-xs shrink-0">
+            <div
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              style={getSubjectSpotlightStyle(isPhysics ? 'physics' : 'chemistry', 180)}
+              className="spotlight-surface flex items-center bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] p-0.5 rounded-lg text-xs shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+            >
               <button
                 type="button"
                 onClick={() => onFilterChange({ questionType: 'all' })}
-                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                className={`relative z-10 px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'all'
                     ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -370,7 +380,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <button
                 type="button"
                 onClick={() => onFilterChange({ questionType: 'mcq' })}
-                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                className={`relative z-10 px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'mcq'
                     ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -381,7 +391,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <button
                 type="button"
                 onClick={() => onFilterChange({ questionType: 'theory' })}
-                className={`px-2 py-0.5 rounded-md transition-all font-medium ${
+                className={`relative z-10 px-2 py-0.5 rounded-md transition-all font-medium ${
                   filters.questionType === 'theory'
                     ? activePillBtnClass
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -397,17 +407,20 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               type="button"
               onClick={() => setIsSecondaryPopoverOpen((prev) => !prev)}
-              className={`h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
+              onPointerMove={handleSpotlightMove}
+              onPointerLeave={handleSpotlightLeave}
+              style={getSubjectSpotlightStyle(isMath ? 'mathematics' : isPhysics ? 'physics' : 'chemistry', 180)}
+              className={`spotlight-surface h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
                 activeSecondaryCount > 0
-                  ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-sm'
-                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)]'
+                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
               }`}
               title="Consolidated filters: Year, Series, Status"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-              <span>Filters</span>
+              <SlidersHorizontal className="relative z-10 w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              <span className="relative z-10">Filters</span>
               {activeSecondaryCount > 0 && (
-                <span className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-600 text-white">
+                <span className="relative z-10 font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-600 text-white">
                   • {activeSecondaryCount}
                 </span>
               )}
@@ -573,13 +586,18 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Desktop View Mode Switcher (>= 1024px) */}
         <div className="hidden lg:flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-slate-100 dark:bg-white/[0.04] p-1 rounded-lg border border-slate-200 dark:border-white/[0.08]">
+          <div
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(isMath ? 'mathematics' : isPhysics ? 'physics' : 'chemistry', 220)}
+            className="spotlight-surface flex items-center bg-slate-100 dark:bg-white/[0.04] p-1 rounded-lg border border-slate-200 dark:border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          >
             <button
               onClick={() => onViewModeChange('question-only')}
               title="Question Only (Focus Mode - Hides Answers)"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`relative z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'question-only'
-                  ? activePillBtnClass
+                  ? `${activePillBtnClass} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]`
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -590,9 +608,9 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={() => onViewModeChange('split')}
               title="Side-by-Side Split View"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`relative z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'split'
-                  ? activePillBtnClass
+                  ? `${activePillBtnClass} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]`
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -603,9 +621,9 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={() => onViewModeChange('ms-only')}
               title="Mark Scheme Only"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`relative z-10 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'ms-only'
-                  ? activePillBtnClass
+                  ? `${activePillBtnClass} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]`
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >

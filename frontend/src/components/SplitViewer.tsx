@@ -20,6 +20,11 @@ import { getStatusConfig } from './QuestionList';
 import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
 import { getFullImageUrl } from '../utils/imageUrl';
 import { useProgress } from '../context/ProgressContext';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 interface SplitViewerProps {
   question: QuestionItem | null;
@@ -263,9 +268,14 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
       {/* ===================================================================== */}
       {/* ACTIVE QUESTION TOP HEADER (Clean sub-bar: metadata, bookmarks & counter)*/}
-      <div className="h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] surface-glass flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none">
+      <div
+        onPointerMove={handleSpotlightMove}
+        onPointerLeave={handleSpotlightLeave}
+        style={getSubjectSpotlightStyle(activeSubject, 360)}
+        className="spotlight-surface h-10 sm:h-11 px-2.5 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] surface-glass flex items-center justify-between gap-1.5 sm:gap-3 shrink-0 select-none"
+      >
         {/* Left: Question Navigator Trigger (on mobile/tablet) & Metadata */}
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
+        <div className="relative z-10 flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Question List Drawer Button on mobile/tablet (< 1024px) */}
           <button
             type="button"
@@ -352,7 +362,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         </div>
 
         {/* Right: Actions & Navigation Controls (Clean: Status, Bookmark & Counter) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+        <div className="relative z-10 flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
           {/* Status Cycle Button */}
           <button
             type="button"
@@ -381,7 +391,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           <div className="hidden sm:block w-px h-3.5 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
           {/* Desktop/Tablet Question Navigation Arrows */}
-          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-slate-100 dark:bg-white/[0.04] p-0.5 rounded-md border border-slate-200 dark:border-white/[0.08]">
+          <div className="hidden sm:flex items-center gap-0.5 shrink-0 bg-slate-100 dark:bg-white/[0.04] p-0.5 rounded-md border border-slate-200 dark:border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <button
               onClick={onPrevQuestion}
               disabled={!hasPrev}
@@ -429,8 +439,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           >
             {/* Interactive MCQ A/B/C/D Floating Dock (Visible on both Desktop & Mobile whenever isMcq && !isMath) */}
             {isMcq && !isMath && (
-              <div className="w-full max-w-xl mt-4 px-4 py-3 rounded-2xl surface-card shadow-2xl flex flex-col items-center gap-2.5 animate-in fade-in duration-150 select-none">
-                <div className="flex items-center justify-between w-full px-0.5">
+              <div
+                onPointerMove={handleSpotlightMove}
+                onPointerLeave={handleSpotlightLeave}
+                style={getSubjectSpotlightStyle(activeSubject, 340)}
+                className="spotlight-surface w-full max-w-xl mt-4 px-4 py-3 rounded-2xl surface-card shadow-2xl dark:shadow-[0_16px_40px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.08)] flex flex-col items-center gap-2.5 animate-in fade-in duration-150 select-none"
+              >
+                <div className="relative z-10 flex items-center justify-between w-full px-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       Select Option
@@ -460,12 +475,12 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                 </div>
 
                 {/* 4 Interactive Option Buttons */}
-                <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
+                <div className="relative z-10 grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
                   {['A', 'B', 'C', 'D'].map((opt, optIdx) => {
                     const isSelected = selectedMcqOption === opt;
                     const isCorrect = Boolean(normalizedKey && opt === normalizedKey);
                     let btnStyle =
-                      'bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-200/80 dark:hover:bg-white/[0.1] hover:border-cyan-500/60 dark:hover:border-cyan-400/50';
+                      'bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-200/80 dark:hover:bg-white/[0.1] hover:border-cyan-500/60 dark:hover:border-cyan-400/50 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]';
 
                     if (selectedMcqOption !== null) {
                       if (isSelected) {
@@ -493,10 +508,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                         key={opt}
                         type="button"
                         onClick={() => handleMcqSelect(opt)}
-                        className={`h-11 sm:h-12 rounded-xl font-bold font-mono text-sm sm:text-base border flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-sm ${btnStyle}`}
+                        onPointerMove={handleSpotlightMove}
+                        onPointerLeave={handleSpotlightLeave}
+                        style={getSubjectSpotlightStyle(activeSubject, 180)}
+                        className={`spotlight-surface h-11 sm:h-12 rounded-xl font-bold font-mono text-sm sm:text-base border flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-sm ${btnStyle}`}
                       >
-                        <span>{opt}</span>
-                        <span className="hidden sm:inline-block text-[10px] font-mono opacity-30 font-normal">
+                        <span className="relative z-10">{opt}</span>
+                        <span className="relative z-10 hidden sm:inline-block text-[10px] font-mono opacity-30 font-normal">
                           {optIdx + 1}
                         </span>
                       </button>
@@ -507,7 +525,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                 {/* Instant visual feedback message banner */}
                 {selectedMcqOption !== null && normalizedKey && (
                   <div
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
+                    className={`relative z-10 w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
                       selectedMcqOption === normalizedKey
                         ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
                         : 'bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200'
@@ -603,47 +621,66 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       {/* ===================================================================== */}
       {/* ANCHORED BOTTOM ACTION BAR (Desktop & Tablet >= 768px)               */}
       {/* ===================================================================== */}
-      <div className="hidden md:flex sticky bottom-0 w-full py-2.5 px-6 surface-glass border-t border-slate-200 dark:border-white/[0.08] shadow-2xl items-center justify-center gap-3 z-10 shrink-0 select-none">
+      <div
+        onPointerMove={handleSpotlightMove}
+        onPointerLeave={handleSpotlightLeave}
+        style={getSubjectSpotlightStyle(activeSubject, 420)}
+        className="spotlight-surface hidden md:flex sticky bottom-0 w-full py-2.5 px-6 surface-glass border-t border-slate-200 dark:border-white/[0.08] shadow-2xl dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_-10px_30px_rgba(0,0,0,0.45)] items-center justify-center gap-3 z-10 shrink-0 select-none"
+      >
         {/* Left: Previous Question */}
         <button
           type="button"
           onClick={onPrevQuestion}
+          onPointerMove={handleSpotlightMove}
+          onPointerLeave={handleSpotlightLeave}
           disabled={!hasPrev}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm"
+          className="spotlight-surface relative z-10 flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
           title="Previous Question [← or []"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
-          <span>Prev</span>
-          <kbd className="hidden lg:inline-block kbd-keycap">
+          <ChevronLeft className="relative z-10 w-3.5 h-3.5" />
+          <span className="relative z-10">Prev</span>
+          <kbd className="relative z-10 hidden lg:inline-block kbd-keycap">
             ←
           </kbd>
         </button>
 
-        {/* Center: Prominent primary toggle button */}
+        {/* Center: Prominent primary toggle button with tactile gradient-glass + top specular edge */}
         <button
           type="button"
           onClick={onToggleMarkScheme}
+          onPointerMove={handleSpotlightMove}
+          onPointerLeave={handleSpotlightLeave}
           title={isMarkSchemeVisible ? 'Hide Mark Scheme [Space or M]' : 'Show Mark Scheme [Space or M]'}
-          className={`flex items-center gap-2 px-5 py-1.5 rounded-xl font-semibold text-xs shadow-sm active:scale-[0.98] transition-all ${
+          className={`spotlight-surface relative z-10 flex items-center gap-2 px-5 py-1.5 rounded-xl font-semibold text-xs active:scale-[0.98] transition-all ${
             isMarkSchemeVisible
-              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-white/[0.07] dark:hover:bg-white/[0.12] dark:text-slate-200 dark:border-white/10 border'
-              : 'bg-cyan-600 hover:bg-cyan-500 text-white border border-cyan-500 shadow-lg shadow-cyan-500/20'
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:text-slate-100 dark:border-white/15 border shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)]'
+              : isMath
+              ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold border border-amber-400/50 shadow-[0_8px_20px_-4px_rgba(245,158,11,0.45),inset_0_1px_0_0_rgba(255,255,255,0.35)]'
+              : isPhysics
+              ? 'bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 text-white border border-indigo-400/50 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.45),inset_0_1px_0_0_rgba(255,255,255,0.28)]'
+              : 'bg-gradient-to-b from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white border border-cyan-400/50 shadow-[0_8px_20px_-4px_rgba(6,182,212,0.45),inset_0_1px_0_0_rgba(255,255,255,0.28)]'
           }`}
         >
           {isMarkSchemeVisible ? (
             <>
-              <EyeOff className="w-3.5 h-3.5" />
-              <span>Hide Mark Scheme</span>
+              <EyeOff className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">Hide Mark Scheme</span>
             </>
           ) : (
             <>
-              <Eye className="w-3.5 h-3.5" />
-              <span>Show Mark Scheme</span>
+              <Eye className="relative z-10 w-3.5 h-3.5" />
+              <span className="relative z-10">Show Mark Scheme</span>
             </>
           )}
           <kbd
-            className={`kbd-keycap ${
-              !isMarkSchemeVisible ? 'bg-cyan-700/70 border-cyan-400/40 text-cyan-100' : ''
+            className={`relative z-10 kbd-keycap ${
+              !isMarkSchemeVisible
+                ? isMath
+                  ? 'bg-amber-950/30 border-amber-900/30 text-amber-950'
+                  : isPhysics
+                  ? 'bg-indigo-800/70 border-indigo-300/40 text-indigo-100'
+                  : 'bg-cyan-800/70 border-cyan-300/40 text-cyan-100'
+                : ''
             }`}
           >
             Space
@@ -654,15 +691,17 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         <button
           type="button"
           onClick={onNextQuestion}
+          onPointerMove={handleSpotlightMove}
+          onPointerLeave={handleSpotlightLeave}
           disabled={!hasNext}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm"
+          className="spotlight-surface relative z-10 flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:text-slate-200 dark:border-white/10 border text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none active:scale-[0.98] transition-all shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
           title="Next Question [→ or ]]"
         >
-          <span>Next</span>
-          <kbd className="hidden lg:inline-block kbd-keycap">
+          <span className="relative z-10">Next</span>
+          <kbd className="relative z-10 hidden lg:inline-block kbd-keycap">
             →
           </kbd>
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="relative z-10 w-3.5 h-3.5" />
         </button>
       </div>
 

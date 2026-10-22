@@ -6,6 +6,7 @@ import {
   ChevronRight, 
   X
 } from 'lucide-react';
+import { handleSpotlightMove, handleSpotlightLeave } from '../utils/spotlight';
 
 interface SubtopicHierarchy {
   topicName: string;
@@ -115,15 +116,17 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
         type="button"
         title="Filter by subtopics"
         onClick={() => setIsOpen(prev => !prev)}
-        className={`${
+        onPointerMove={handleSpotlightMove}
+        onPointerLeave={handleSpotlightLeave}
+        className={`spotlight-surface ${
           fullWidth ? 'w-full' : ''
-        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] ${
+        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
           selectedSubtopics.length > 0
             ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm shadow-cyan-500/10'
             : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
         }`}
       >
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <div className="relative z-10 flex items-center gap-1.5 min-w-0 flex-1">
           <BookOpen className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
           <span
             className="truncate text-left"
@@ -143,7 +146,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 ml-1">
+        <div className="relative z-10 flex items-center gap-1 shrink-0 ml-1">
           {selectedSubtopics.length > 0 && (
             <span 
               role="button"

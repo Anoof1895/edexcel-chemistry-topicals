@@ -15,6 +15,11 @@ import {
   Undo2
 } from 'lucide-react';
 import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 // Module-scoped in-memory LRU cache for annotations across question navigation & view mode toggles
 // Kept purely in RAM (max 25 questions per session); zero localStorage, sessionStorage, or backend persistence
@@ -1076,11 +1081,23 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     );
   };
 
+  const ambientGlowClass =
+    badgeColor === 'amber'
+      ? 'from-amber-500/10 via-amber-500/5 to-transparent'
+      : badgeColor === 'indigo'
+      ? 'from-indigo-500/12 via-indigo-500/5 to-transparent'
+      : 'from-cyan-500/10 via-sky-500/5 to-transparent';
+
   return (
     <div className="flex-1 flex flex-col h-full w-full min-h-[300px] bg-slate-100/60 dark:bg-dark-950/80 overflow-hidden transition-colors">
       {/* Canvas Header */}
-      <div className="h-10 px-3 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] bg-white/85 dark:bg-slate-950/75 backdrop-blur-md flex items-center justify-between shrink-0 select-none">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-wrap sm:flex-nowrap">
+      <div
+        onPointerMove={handleSpotlightMove}
+        onPointerLeave={handleSpotlightLeave}
+        style={getSubjectSpotlightStyle(badgeColor, 260)}
+        className="spotlight-surface h-10 px-3 sm:px-4 border-b border-slate-200 dark:border-white/[0.07] bg-white/85 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-between shrink-0 select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+      >
+        <div className="relative z-10 flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-wrap sm:flex-nowrap">
           <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{title}</span>
           {badgeText && (
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 font-mono tabular-nums ${getBadgeClass()}`}>
@@ -1092,7 +1109,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
         {/* Zoom & Lightbox Controls */}
         {src && !hasError && (
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-white/[0.04] rounded-lg p-0.5 border border-slate-200 dark:border-white/[0.08] shrink-0">
+          <div className="relative z-10 flex items-center gap-0.5 sm:gap-1 bg-slate-100 dark:bg-white/[0.04] rounded-lg p-0.5 border border-slate-200 dark:border-white/[0.08] shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             {enableAnnotation && (
               <>
                 <button
@@ -1157,8 +1174,14 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
         className="flex-1 w-full min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-5 flex items-start justify-center bg-slate-100/50 dark:bg-[#07090D] bg-drafting-grid relative"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
       >
+        {/* Subtle Subject-Reactive Radial Ambient Glow in Top Center */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[560px] h-[220px] bg-gradient-to-b ${ambientGlowClass} blur-3xl rounded-full z-0`}
+        />
+
         {!src || hasError ? (
-          <div className="m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-sm">
+          <div className="relative z-10 m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-sm">
             <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-dark-850 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 mb-3">
               <FileQuestion className="w-6 h-6" />
             </div>
@@ -1166,7 +1189,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             <p className="text-xs text-slate-500">{placeholderMessage}</p>
           </div>
         ) : (
-          <div className="flex flex-col justify-start items-center pt-1 pb-12 w-full max-w-full">
+          <div className="relative z-10 flex flex-col justify-start items-center pt-1 pb-12 w-full max-w-full">
             {/* Minimal Floating Annotation Controls */}
             {enableAnnotation && (
               <div className="sticky top-2 z-10 mb-3.5 flex items-center justify-center pointer-events-auto">

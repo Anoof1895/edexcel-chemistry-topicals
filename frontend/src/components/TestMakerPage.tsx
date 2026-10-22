@@ -29,6 +29,12 @@ import { getQuestionType, getQuestionSubject } from '../utils/questionClassifica
 import { sortQuestionsLatestFirst } from './QuestionList';
 import { ImageCanvas } from './ImageCanvas';
 import { useProgress } from '../context/ProgressContext';
+import { SpotlightCard } from './SpotlightCard';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 interface TestMakerPageProps {
   subject?: Subject;
@@ -657,25 +663,29 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
               const isSelected = previewQuestionId === q.id;
               const isInCart = cartQuestionIds.includes(q.id);
               const qType = getQuestionType(q);
+              const qSubject = getQuestionSubject(q);
 
               return (
                 <div
                   key={q.id}
+                  onPointerMove={handleSpotlightMove}
+                  onPointerLeave={handleSpotlightLeave}
+                  style={getSubjectSpotlightStyle(qSubject, 280)}
                   onClick={() => {
                     setPreviewQuestionId(q.id);
                   }}
-                  className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                  className={`spotlight-surface p-3 rounded-xl cursor-pointer transition-all border ${
                     isSelected
-                      ? 'bg-cyan-50/70 dark:bg-dark-800 border-cyan-400 dark:border-cyan-500/50 shadow-sm dark:shadow-md dark:shadow-cyan-950/20'
-                      : 'bg-white dark:bg-dark-900/60 hover:bg-slate-50 dark:hover:bg-dark-850 border-slate-200/80 dark:border-dark-800/80 hover:border-slate-300 dark:hover:border-dark-750'
+                      ? 'bg-cyan-50/70 dark:bg-[#0D131F] border-cyan-400 dark:border-cyan-500/50 shadow-sm dark:shadow-[0_4px_20px_rgba(6,182,212,0.12),inset_0_1px_0_0_rgba(255,255,255,0.1)]'
+                      : 'bg-white dark:bg-[#0B0E16]/75 hover:bg-slate-50 dark:hover:bg-white/[0.03] border-slate-200/80 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/12 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="relative z-10 flex items-center justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-mono font-bold text-xs text-cyan-700 dark:text-cyan-300">
+                      <span className="font-mono tabular-nums font-bold text-xs text-cyan-700 dark:text-cyan-300">
                         Q{q.questionNumber}
                       </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
+                      <span className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
                         {q.marks}m
                       </span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -698,7 +708,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                         Inspect
                       </button>
 
-                      {/* Quick Add / Remove Toggle - Large Touch Target (44px min height) */}
+                      {/* Quick Add / Remove Toggle - Specular Border & Large Touch Target */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -710,10 +720,10 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                           }
                         }}
                         title={isInCart ? 'Remove from test' : 'Add to test'}
-                        className={`flex items-center justify-center gap-1 min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        className={`flex items-center justify-center gap-1 min-h-[36px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 ${
                           isInCart
-                            ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 hover:bg-emerald-100 dark:hover:bg-emerald-500/30'
-                            : 'bg-slate-100 dark:bg-dark-750 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 hover:bg-cyan-600 hover:text-white hover:border-cyan-500'
+                            ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 hover:bg-emerald-100 dark:hover:bg-emerald-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)]'
+                            : 'bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 hover:bg-gradient-to-b hover:from-cyan-500 hover:to-cyan-600 hover:text-white hover:border-cyan-400/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]'
                         }`}
                       >
                         {isInCart ? (
@@ -731,10 +741,10 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-slate-800 dark:text-slate-300 truncate font-medium">
+                  <p className="relative z-10 text-[11px] text-slate-800 dark:text-slate-300 truncate font-medium">
                     {q.subtopic || q.topic}
                   </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                  <p className="relative z-10 text-[10px] text-slate-500 mt-0.5 truncate tabular-nums">
                     {q.series && q.year && q.series.includes(String(q.year))
                       ? q.series
                       : `${q.series || q.session} ${q.year}`} • {qType === 'mcq' ? 'Section A' : 'Theory'}
@@ -997,39 +1007,71 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             />
           </div>
 
-          {/* Test Metrics Bar */}
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <div className="surface-card p-2 rounded-xl text-center">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Questions</div>
-              <div className="text-sm font-extrabold text-cyan-600 dark:text-cyan-400 font-mono tabular-nums mt-0.5 tracking-tight">
-                {cartQuestions.length}
+          {/* Unified Monochrome Metallic Telemetry Console Ribbon */}
+          <div
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(subject, 300)}
+            className="spotlight-surface rounded-2xl bg-white dark:bg-[#0B0F19]/90 border border-slate-200/80 dark:border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] overflow-hidden"
+          >
+            <div className="relative z-10 grid grid-cols-3 divide-x divide-slate-200/70 dark:divide-white/[0.06]">
+              <div className="p-2.5 flex flex-col items-center justify-center text-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Questions
+                  </span>
+                </div>
+                <div className="text-base font-extrabold text-slate-900 dark:text-white font-mono tabular-nums tracking-tight">
+                  {cartQuestions.length}
+                </div>
               </div>
-            </div>
 
-            <div className="surface-card p-2 rounded-xl text-center">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Marks</div>
-              <div className="text-sm font-extrabold text-amber-600 dark:text-amber-400 font-mono tabular-nums mt-0.5 tracking-tight">
-                {totalCartMarks}
+              <div className="p-2.5 flex flex-col items-center justify-center text-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Total Marks
+                  </span>
+                </div>
+                <div className="text-base font-extrabold text-slate-900 dark:text-white font-mono tabular-nums tracking-tight">
+                  {totalCartMarks}
+                </div>
               </div>
-            </div>
 
-            <div className="surface-card p-2 rounded-xl text-center">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Est. Time</div>
-              <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums mt-0.5 tracking-tight">
-                {targetTimeMinutes}m
+              <div className="p-2.5 flex flex-col items-center justify-center text-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Est. Time
+                  </span>
+                </div>
+                <div className="text-base font-extrabold text-slate-900 dark:text-white font-mono tabular-nums tracking-tight">
+                  {targetTimeMinutes}m
+                </div>
               </div>
             </div>
           </div>
 
           {/* Smart Auto-Generate Mock Exam Panel */}
-          <div className="rounded-2xl surface-card p-3 transition-all border-amber-500/30 dark:border-amber-500/25">
+          <SpotlightCard
+            spotlightColor="rgba(245, 158, 11, 0.11)"
+            borderGlowColor="rgba(251, 191, 36, 0.45)"
+            spotlightSize={360}
+            className="rounded-2xl bg-white dark:bg-[#0D111C]/90 p-3 transition-all border border-amber-500/30 dark:border-amber-500/25 shadow-[0_8px_24px_rgba(0,0,0,0.04)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+          >
+            {/* Top Specular Laser Line */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute top-0 inset-x-6 h-[1px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent"
+            />
             <button
               type="button"
               onClick={() => setIsSmartGenerateOpen(!isSmartGenerateOpen)}
               className="w-full flex items-center justify-between text-left focus:outline-none"
             >
               <div className="flex items-center gap-1.5">
-                <span className="p-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm">
+                <span className="p-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 shadow-sm">
                   <Zap className="w-3.5 h-3.5 fill-current" />
                 </span>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-tight">
@@ -1162,9 +1204,9 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   <button
                     type="button"
                     onClick={handleSmartGenerate}
-                    className="flex-1 py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-[0.98]"
+                    className="group/gen flex-1 py-2 px-3 rounded-xl bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 border border-amber-400/50 shadow-[0_8px_20px_-4px_rgba(245,158,11,0.45),inset_0_1px_0_0_rgba(255,255,255,0.35)] transition-all active:scale-[0.98]"
                   >
-                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <Zap className="w-3.5 h-3.5 fill-current transition-transform duration-200 group-hover/gen:scale-110" />
                     <span>Generate Test ({targetMarks}m)</span>
                   </button>
 
@@ -1173,7 +1215,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                       type="button"
                       onClick={handleSmartGenerate}
                       title="Reshuffle with current settings"
-                      className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-750 bg-white dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-750 text-slate-700 dark:text-slate-300 transition-colors"
+                      className="p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all active:scale-95"
                     >
                       <Sparkles className="w-4 h-4 text-amber-500" />
                     </button>
@@ -1181,7 +1223,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 </div>
               </div>
             )}
-          </div>
+          </SpotlightCard>
         </div>
 
         {/* Selected Questions Reorderable List */}
@@ -1199,10 +1241,14 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
               const isFirst = idx === 0;
               const isLast = idx === cartQuestions.length - 1;
               const isPreviewed = previewQuestionId === q.id;
+              const qSubj = getQuestionSubject(q);
 
               return (
                 <div
                   key={q.id}
+                  onPointerMove={handleSpotlightMove}
+                  onPointerLeave={handleSpotlightLeave}
+                  style={getSubjectSpotlightStyle(qSubj, 240)}
                   onClick={() => {
                     setPreviewQuestionId(q.id);
                     if (window.innerWidth < 1024) {
@@ -1210,23 +1256,23 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                       setIsCartDrawerOpen(false);
                     }
                   }}
-                  className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                  className={`spotlight-surface p-2.5 rounded-xl border flex items-center justify-between gap-2 transition-all cursor-pointer ${
                     isPreviewed
-                      ? 'bg-cyan-50/70 dark:bg-dark-800 border-cyan-400 dark:border-cyan-500/50 shadow-sm'
-                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-dark-850 dark:hover:bg-dark-800/90 border-slate-200 dark:border-dark-750'
+                      ? 'bg-cyan-50/70 dark:bg-[#0D131F] border-cyan-400 dark:border-cyan-500/50 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]'
+                      : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#0B0E16]/80 dark:hover:bg-white/[0.04] border-slate-200 dark:border-white/[0.07] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
                   }`}
                 >
                   {/* Left: Index & Question Info */}
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <span className="w-5 h-5 rounded-md bg-slate-200 dark:bg-dark-750 flex items-center justify-center font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300 shrink-0">
+                  <div className="relative z-10 flex items-center gap-2.5 overflow-hidden">
+                    <span className="w-5 h-5 rounded-md bg-slate-200 dark:bg-white/[0.08] flex items-center justify-center font-mono tabular-nums font-bold text-[11px] text-slate-700 dark:text-slate-300 shrink-0">
                       {idx + 1}
                     </span>
                     <div className="truncate">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-xs text-cyan-700 dark:text-cyan-300">
+                        <span className="font-mono tabular-nums font-bold text-xs text-cyan-700 dark:text-cyan-300">
                           Q{q.questionNumber}
                         </span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
+                        <span className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/25">
                           {q.marks}m
                         </span>
                       </div>
@@ -1237,13 +1283,13 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   </div>
 
                   {/* Right: Reorder & Remove Controls (44px min tap friendly) */}
-                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative z-10 flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       disabled={isFirst}
                       onClick={() => handleMoveUp(idx)}
                       title="Move Question Up"
-                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 disabled:pointer-events-none transition-colors"
                     >
                       <ArrowUp className="w-4 h-4" />
                     </button>
@@ -1252,7 +1298,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                       disabled={isLast}
                       onClick={() => handleMoveDown(idx)}
                       title="Move Question Down"
-                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-dark-700 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-20 disabled:pointer-events-none transition-colors"
                     >
                       <ArrowDown className="w-4 h-4" />
                     </button>
@@ -1274,8 +1320,13 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
         {/* Action Bar: PDF Export Options & Buttons */}
         <div className="p-3.5 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-850 space-y-2.5 shrink-0">
           {/* Export Options Configuration Box */}
-          <div className="p-2.5 rounded-xl bg-white dark:bg-dark-800/80 border border-slate-200 dark:border-dark-750 space-y-2 shadow-sm">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-dark-750/70">
+          <div
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={getSubjectSpotlightStyle(subject, 260)}
+            className="spotlight-surface p-2.5 rounded-xl bg-white dark:bg-[#0B0E16]/90 border border-slate-200 dark:border-white/[0.08] space-y-2 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+          >
+            <div className="relative z-10 flex items-center justify-between pb-1 border-b border-slate-100 dark:border-white/[0.06]">
               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Export Options
               </span>
@@ -1293,7 +1344,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             </div>
 
             {/* Include Header & Page Footer Checkbox */}
-            <label className="flex items-start gap-2.5 cursor-pointer group pt-0.5">
+            <label className="relative z-10 flex items-start gap-2.5 cursor-pointer group pt-0.5">
               <input
                 type="checkbox"
                 checked={includeHeaderFooter}
@@ -1312,7 +1363,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
             {/* Formal Exam Header Checkbox */}
             <label
-              className={`flex items-start gap-2.5 cursor-pointer group pt-1.5 border-t border-slate-100 dark:border-dark-750/60 transition-opacity ${
+              className={`relative z-10 flex items-start gap-2.5 cursor-pointer group pt-1.5 border-t border-slate-100 dark:border-white/[0.06] transition-opacity ${
                 !includeHeaderFooter ? 'opacity-40 pointer-events-none' : ''
               }`}
             >
@@ -1336,7 +1387,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             </label>
 
             {/* Include Source Citation Tag Checkbox */}
-            <label className="flex items-start gap-2.5 cursor-pointer group pt-1.5 border-t border-slate-100 dark:border-dark-750/60">
+            <label className="relative z-10 flex items-start gap-2.5 cursor-pointer group pt-1.5 border-t border-slate-100 dark:border-white/[0.06]">
               <input
                 type="checkbox"
                 checked={includeSourceTags}
@@ -1364,10 +1415,12 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             type="button"
             disabled={cartQuestions.length === 0 || isExportingQP || isExportingMS}
             onClick={handleExportQP}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-900/10 dark:shadow-cyan-950/40 border border-cyan-400/30 transition-all hover:brightness-105 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none"
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            className="spotlight-surface group/qp w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-b from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white font-bold text-xs shadow-[0_10px_24px_-6px_rgba(6,182,212,0.45),inset_0_1px_0_0_rgba(255,255,255,0.28)] border border-cyan-400/40 transition-all active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none"
           >
-            <Printer className="w-4 h-4" />
-            <span>
+            <Printer className="relative z-10 w-4 h-4 transition-transform duration-200 group-hover/qp:-translate-y-0.5" />
+            <span className="relative z-10">
               {!includeHeaderFooter
                 ? 'Export Questions Only (PDF)'
                 : includeFormalHeader
@@ -1380,10 +1433,16 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
             type="button"
             disabled={cartQuestions.length === 0 || isExportingQP || isExportingMS}
             onClick={handleExportMS}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-750 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-slate-200 dark:border-dark-700 hover:border-emerald-500/40 transition-all active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none"
+            onPointerMove={handleSpotlightMove}
+            onPointerLeave={handleSpotlightLeave}
+            style={{
+              '--spotlight-color': 'rgba(16, 185, 129, 0.14)',
+              '--border-glow-color': 'rgba(52, 211, 153, 0.45)',
+            } as React.CSSProperties}
+            className="spotlight-surface group/ms w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.09] text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-slate-200 dark:border-white/[0.1] hover:border-emerald-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none"
           >
-            <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Export Mark Scheme (PDF)</span>
+            <Download className="relative z-10 w-4 h-4 text-emerald-600 dark:text-emerald-400 transition-transform duration-200 group-hover/ms:translate-y-0.5" />
+            <span className="relative z-10">Export Mark Scheme (PDF)</span>
           </button>
         </div>
       </aside>

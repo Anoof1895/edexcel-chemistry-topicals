@@ -33,6 +33,11 @@ import {
   calculatePhi,
 } from '../constants/referenceData';
 import { MathFormula } from './MathFormula';
+import {
+  handleSpotlightMove,
+  handleSpotlightLeave,
+  getSubjectSpotlightStyle,
+} from '../utils/spotlight';
 
 interface DataBookletDrawerProps {
   isOpen: boolean;
@@ -401,9 +406,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
       return (
         <div
           key={item.id}
-          className="p-3 flex flex-col gap-2 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
+          onPointerMove={handleSpotlightMove}
+          onPointerLeave={handleSpotlightLeave}
+          style={getSubjectSpotlightStyle('mathematics', 320)}
+          className="spotlight-surface p-3 flex flex-col gap-2 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="relative z-10 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 shrink-0">
                 {item.unit}
@@ -431,12 +439,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
             </button>
           </div>
 
-          <div className="w-full overflow-x-auto px-3 py-2 rounded-lg bg-slate-50 dark:bg-[#07090D] border border-slate-200/80 dark:border-white/[0.06] text-slate-900 dark:text-white flex items-center min-h-[38px]">
+          <div className="relative z-10 w-full overflow-x-auto px-3 py-2 rounded-lg bg-slate-50 dark:bg-[#07090D] border border-slate-200/80 dark:border-white/[0.06] text-slate-900 dark:text-white flex items-center min-h-[38px]">
             <MathFormula latex={item.latex} className="text-xs sm:text-[13px] whitespace-nowrap" />
           </div>
 
           {item.description && (
-            <div className="text-[10.5px] text-slate-500 dark:text-slate-400 italic">
+            <div className="relative z-10 text-[10.5px] text-slate-500 dark:text-slate-400 italic">
               {item.description.includes('\\') ? (
                 <MathFormula latex={item.description} className="text-[11px]" />
               ) : (
@@ -451,9 +459,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     return (
       <div
         key={item.id}
-        className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
+        onPointerMove={handleSpotlightMove}
+        onPointerLeave={handleSpotlightLeave}
+        style={getSubjectSpotlightStyle('mathematics', 320)}
+        className="spotlight-surface p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
       >
-        <div className="sm:max-w-[44%] min-w-[140px] space-y-1 shrink-0">
+        <div className="relative z-10 sm:max-w-[44%] min-w-[140px] space-y-1 shrink-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 shrink-0">
               {item.unit}
@@ -481,7 +492,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between sm:justify-end gap-2 flex-1 min-w-0 max-w-full">
+        <div className="relative z-10 flex items-center justify-between sm:justify-end gap-2 flex-1 min-w-0 max-w-full">
           <div className="overflow-x-auto max-w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#07090D] border border-slate-200/80 dark:border-white/[0.06] text-slate-900 dark:text-white flex items-center min-h-[36px]">
             <MathFormula latex={item.latex} className="text-xs sm:text-sm whitespace-nowrap" />
           </div>
@@ -813,9 +824,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     return (
                       <div
                         key={id}
-                        className="p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                        onPointerMove={handleSpotlightMove}
+                        onPointerLeave={handleSpotlightLeave}
+                        style={getSubjectSpotlightStyle('physics', 300)}
+                        className="spotlight-surface p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
                       >
-                        <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="relative z-10 min-w-0 flex-1 space-y-0.5">
                           <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                             {c.name}
                           </div>
@@ -825,7 +839,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="relative z-10 flex items-center gap-2 shrink-0">
                           <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
                             <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-900 border border-slate-200 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
                               <MathFormula latex={c.symbolLatex || c.symbol} className="text-xs" />
@@ -877,9 +891,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                         return (
                           <div
                             key={eq.id}
-                            className="p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                            onPointerMove={handleSpotlightMove}
+                            onPointerLeave={handleSpotlightLeave}
+                            style={getSubjectSpotlightStyle('physics', 300)}
+                            className="spotlight-surface p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
                           >
-                            <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="relative z-10 min-w-0 flex-1 space-y-0.5">
                               <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                                 {eq.title}
                               </div>
@@ -889,7 +906,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                                 </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="relative z-10 flex items-center gap-2 shrink-0">
                               <div className="text-right px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center justify-center min-h-[36px]">
                                 <MathFormula latex={eq.latex || eq.formula} className="text-xs sm:text-sm" />
                               </div>
@@ -938,9 +955,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                         return (
                           <div
                             key={eq.id}
-                            className="p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                            onPointerMove={handleSpotlightMove}
+                            onPointerLeave={handleSpotlightLeave}
+                            style={getSubjectSpotlightStyle('physics', 300)}
+                            className="spotlight-surface p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
                           >
-                            <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="relative z-10 min-w-0 flex-1 space-y-0.5">
                               <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                                 {eq.title}
                               </div>
@@ -950,7 +970,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                                 </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="relative z-10 flex items-center gap-2 shrink-0">
                               <div className="text-right px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center justify-center min-h-[36px]">
                                 <MathFormula latex={eq.latex || eq.formula} className="text-xs sm:text-sm" />
                               </div>
@@ -996,14 +1016,17 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                       return (
                         <div
                           key={id}
-                          className="p-2.5 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                          onPointerMove={handleSpotlightMove}
+                          onPointerLeave={handleSpotlightLeave}
+                          style={getSubjectSpotlightStyle('chemistry', 300)}
+                          className="spotlight-surface p-2.5 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
                         >
-                          <div className="min-w-0 flex-1">
+                          <div className="relative z-10 min-w-0 flex-1">
                             <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                               {c.name}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="relative z-10 flex items-center gap-2 shrink-0">
                             <div className="flex items-center justify-end gap-1.5 font-mono text-xs">
                               <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-900 border border-slate-200 dark:border-dark-750 text-cyan-700 dark:text-cyan-300">
                                 <MathFormula latex={c.symbolLatex || c.symbol} className="text-xs" />
@@ -1056,9 +1079,12 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                           return (
                             <div
                               key={eq.id}
-                              className="p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                              onPointerMove={handleSpotlightMove}
+                              onPointerLeave={handleSpotlightLeave}
+                              style={getSubjectSpotlightStyle('chemistry', 300)}
+                              className="spotlight-surface p-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 dark:hover:bg-white/[0.03] transition-colors"
                             >
-                              <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="relative z-10 min-w-0 flex-1 space-y-0.5">
                                 <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                                   {eq.title}
                                 </div>
@@ -1068,7 +1094,7 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                                   </div>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="relative z-10 flex items-center gap-2 shrink-0">
                                 <div className="text-right px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-200/80 dark:border-dark-750 text-slate-900 dark:text-white flex items-center justify-center min-h-[36px]">
                                   <MathFormula latex={eq.latex || eq.formula} className="text-xs sm:text-sm" />
                                 </div>
@@ -1099,15 +1125,18 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   {filteredIndicators.map((ind, i) => (
                     <div
                       key={i}
-                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 space-y-1 text-xs"
+                      onPointerMove={handleSpotlightMove}
+                      onPointerLeave={handleSpotlightLeave}
+                      style={getSubjectSpotlightStyle('chemistry', 260)}
+                      className="spotlight-surface p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 space-y-1 text-xs shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="relative z-10 flex items-center justify-between">
                         <span className="font-bold text-slate-900 dark:text-white">{ind.name}</span>
                         <span className="font-mono text-[11px] font-semibold text-cyan-600 dark:text-cyan-400">
                           pK_in = {ind.pKin}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px]">
+                      <div className="relative z-10 flex items-center gap-2 text-[11px]">
                         <span className="capitalize font-medium text-slate-600 dark:text-slate-300">
                           {ind.acidColour}
                         </span>
@@ -1159,7 +1188,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                         {items.map((item, idx) => (
                           <div
                             key={idx}
-                            className="grid grid-cols-12 items-center px-3.5 py-2 text-xs hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
+                            onPointerMove={handleSpotlightMove}
+                            onPointerLeave={handleSpotlightLeave}
+                            className="spotlight-surface grid grid-cols-12 items-center px-3.5 py-2 text-xs hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors"
                           >
                             <div className="col-span-7 font-medium text-slate-800 dark:text-slate-200 pr-2">
                               {item.environment}
@@ -1216,7 +1247,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="p-3 hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors space-y-1.5"
+                        onPointerMove={handleSpotlightMove}
+                        onPointerLeave={handleSpotlightLeave}
+                        className="spotlight-surface p-3 hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors space-y-1.5"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
@@ -1291,7 +1324,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="p-3 hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors space-y-1.5"
+                        onPointerMove={handleSpotlightMove}
+                        onPointerLeave={handleSpotlightLeave}
+                        className="spotlight-surface p-3 hover:bg-slate-50/80 dark:hover:bg-dark-800/40 transition-colors space-y-1.5"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
@@ -1348,7 +1383,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   return (
                     <div
                       key={item.id}
-                      className={`px-3 py-2 flex items-center justify-between gap-3 text-xs group transition-colors ${
+                      onPointerMove={handleSpotlightMove}
+                      onPointerLeave={handleSpotlightLeave}
+                      className={`spotlight-surface px-3 py-2 flex items-center justify-between gap-3 text-xs group transition-colors ${
                         isSHE
                           ? 'bg-cyan-50/70 dark:bg-cyan-950/25 ring-1 ring-inset ring-cyan-500/40'
                           : 'hover:bg-slate-50/80 dark:hover:bg-dark-850/60'
@@ -1616,7 +1653,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
                   {filteredElements.map((el) => (
                     <div
                       key={el.atomicNumber}
-                      className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all text-xs ${getElementCategoryStyle(el.category)}`}
+                      onPointerMove={handleSpotlightMove}
+                      onPointerLeave={handleSpotlightLeave}
+                      className={`spotlight-surface p-2.5 rounded-xl border flex flex-col justify-between transition-all text-xs ${getElementCategoryStyle(el.category)}`}
                     >
                       <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 mb-1">
                         <span className="font-mono font-bold">Z = {el.atomicNumber}</span>
