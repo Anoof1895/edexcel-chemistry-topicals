@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -14,6 +14,7 @@ import {
   Type,
   Undo2
 } from 'lucide-react';
+import { Subject } from '../types';
 import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
 import {
   handleSpotlightMove,
@@ -22,8 +23,9 @@ import {
 } from '../utils/spotlight';
 
 // Module-scoped in-memory LRU cache for annotations across question navigation & view mode toggles
-// Kept purely in RAM (max 25 questions per session); zero localStorage, sessionStorage, or backend persistence
-const MAX_CACHE_ENTRIES = 25;
+// Kept purely in RAM (max 8 questions per session); zero localStorage, sessionStorage, or backend persistence
+const MAX_CACHE_ENTRIES = 8;
+const MAX_UNDO_SNAPSHOTS = 3;
 const inMemoryDrawingCache = new Map<string, HTMLCanvasElement>();
 
 function touchAndEnforceLRU<K, V>(map: Map<K, V>, key: K, value: V, limit: number = MAX_CACHE_ENTRIES) {
@@ -34,6 +36,11 @@ function touchAndEnforceLRU<K, V>(map: Map<K, V>, key: K, value: V, limit: numbe
   while (map.size > limit) {
     const firstKey = map.keys().next().value;
     if (firstKey !== undefined) {
+      const evicted = map.get(firstKey);
+      if (evicted && typeof HTMLCanvasElement !== 'undefined' && evicted instanceof HTMLCanvasElement) {
+        evicted.width = 0;
+        evicted.height = 0;
+      }
       map.delete(firstKey);
     } else {
       break;
@@ -92,6 +99,12 @@ const HIGHLIGHTER_CURSOR = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.
 
 const ERASER_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23f43f5e' stroke-width='2' stroke-dasharray='3 2'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23f43f5e'/%3E%3C/svg%3E") 12 12, crosshair`;
 
+function getSubjectPenColor(activeSubject?: Subject, badgeColor?: string): string {
+  if (activeSubject === 'mathematics' || badgeColor === 'amber') return '#F59E0B';
+  if (activeSubject === 'physics' || badgeColor === 'indigo') return '#38BDF8';
+  return '#00E5FF';
+}
+
 interface ImageCanvasProps {
   src: string | null;
   title: string;
@@ -103,6 +116,8 @@ interface ImageCanvasProps {
   children?: React.ReactNode;
   enableAnnotation?: boolean;
   questionId?: string;
+  paperCitation?: string;
+  activeSubject?: Subject;
 }
 
 export const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -116,9 +131,12 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   children,
   enableAnnotation = false,
   questionId,
+  paperCitation,
+  activeSubject,
 }) => {
   const [zoom, setZoom] = useState(1);
   const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxZoom, setLightboxZoom] = useState(1.2);
@@ -126,7 +144,25 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [useLocalFallback, setUseLocalFallback] = useState(false);
   const cdnSrc = getFullImageUrl(src);
   const localSrc = getLocalImageUrl(src);
-  const resolvedSrc = useLocalFallback ? localSrc : cdnSrc;
+  const baseResolvedSrc = useLocalFallback ? localSrc : cdnSrc;
+  const resolvedSrc = useMemo(() => {
+    if (!baseResolvedSrc) return '';
+    if (retryCount === 0) return baseResolvedSrc;
+    const sep = baseResolvedSrc.includes('?') ? '&' : '?';
+    return `${baseResolvedSrc}${sep}retry=${retryCount}`;
+  }, [baseResolvedSrc, retryCount]);
+
+  const citationDisplay = useMemo(
+    () => (paperCitation && paperCitation.trim() ? paperCitation.trim() : questionId ? questionId.replace(/-ms$/i, '') : null),
+    [questionId, paperCitation]
+  );
+
+  const handleRetryImage = useCallback(() => {
+    setHasError(false);
+    setUseLocalFallback(false);
+    setIsImageLoading(true);
+    setRetryCount((prev) => prev + 1);
+  }, []);
 
   // Annotation Tooling State
   const [isAnnotating, setIsAnnotating] = useState<boolean>(false);
@@ -134,6 +170,18 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [brushSize, setBrushSize] = useState<BrushSizeTier>('fine');
   const brushSizeRef = useRef<BrushSizeTier>(brushSize);
   brushSizeRef.current = brushSize;
+
+  const defaultSubjectColor = useMemo(
+    () => getSubjectPenColor(activeSubject, badgeColor),
+    [activeSubject, badgeColor]
+  );
+  const [penColor, setPenColor] = useState<string>(defaultSubjectColor);
+  const penColorRef = useRef<string>(penColor);
+  penColorRef.current = penColor;
+
+  useEffect(() => {
+    setPenColor(defaultSubjectColor);
+  }, [defaultSubjectColor]);
 
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(() => {
     const cacheKey = questionId || src;
@@ -469,14 +517,18 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     }
   }, [editingItem]);
 
-  // Reset per-image view state only when the raw src prop changes
+  // Reset per-image view state when the raw src or questionId prop changes
   useEffect(() => {
     setHasError(false);
     setUseLocalFallback(false);
+    setRetryCount(0);
     setZoom(1);
     strokeHistoryRef.current = [];
     setCanUndo(false);
-  }, [src]);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, left: 0 });
+    }
+  }, [src, questionId]);
 
   // Dedicated image loading effect: depends strictly on resolvedSrc (never on questionId, zoom, or resize callbacks)
   useEffect(() => {
@@ -489,6 +541,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     setHasError(false);
 
     const probe = new Image();
+    probe.crossOrigin = 'anonymous';
     probe.onload = () => {
       if (cancelled) return;
       setHasError(false);
@@ -501,6 +554,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     };
     probe.onerror = () => {
       if (cancelled) return;
+      if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
+        setUseLocalFallback(true);
+        return;
+      }
       setIsImageLoading(false);
     };
     probe.src = resolvedSrc;
@@ -646,7 +703,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       if (canvas.width > 0 && canvas.height > 0) {
         const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
         strokeHistoryRef.current.push(snapshot);
-        if (strokeHistoryRef.current.length > 10) {
+        if (strokeHistoryRef.current.length > MAX_UNDO_SNAPSHOTS) {
           strokeHistoryRef.current.shift();
         }
         setCanUndo(true);
@@ -672,11 +729,11 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       ctx.strokeStyle = 'rgba(255, 235, 59, 0.35)';
       ctx.fillStyle = 'rgba(255, 235, 59, 0.35)';
     } else {
-      // Pen: Cyan #00E5FF
+      // Pen: Subject-reactive ink
       ctx.globalCompositeOperation = 'source-over';
       ctx.lineWidth = config.penWidth * coords.scale;
-      ctx.strokeStyle = '#00E5FF';
-      ctx.fillStyle = '#00E5FF';
+      ctx.strokeStyle = penColorRef.current;
+      ctx.fillStyle = penColorRef.current;
     }
 
     ctx.lineCap = 'round';
@@ -709,7 +766,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     } else {
       ctx.globalCompositeOperation = 'source-over';
       ctx.lineWidth = config.penWidth * coords.scale;
-      ctx.strokeStyle = '#00E5FF';
+      ctx.strokeStyle = penColorRef.current;
     }
 
     ctx.lineCap = 'round';
@@ -852,16 +909,34 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
           <button
             type="button"
             onClick={() => switchTool('pen')}
-            title={`Pen (${SIZE_CONFIG[brushSize].penWidth}px Cyan)`}
+            title={`Pen (${SIZE_CONFIG[brushSize].penWidth}px)`}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all active:scale-[0.98] ${
               currentTool === 'pen'
-                ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 font-semibold'
+                ? 'bg-slate-200 dark:bg-white/[0.12] text-slate-900 dark:text-white border border-slate-300 dark:border-white/20 font-semibold'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.06]'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] shadow-sm inline-block" />
+            <span className="w-2.5 h-2.5 rounded-full shadow-sm inline-block" style={{ backgroundColor: penColor }} />
             <span>Pen</span>
           </button>
+
+          {/* Subject Reactive Palette Swatches */}
+          {(currentTool === 'pen' || currentTool === 'text') && (
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/[0.05] p-0.5 px-1.5 rounded-full border border-slate-200/80 dark:border-white/10">
+              {[defaultSubjectColor, '#10B981', '#FACC15', '#F43F5E'].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setPenColor(c)}
+                  className={`w-3.5 h-3.5 rounded-full transition-transform ${
+                    penColor === c ? 'scale-125 ring-2 ring-white/60 shadow-sm' : 'opacity-70 hover:opacity-100 hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: c }}
+                  title={`Select ink color: ${c}`}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Highlighter */}
           <button
@@ -1010,17 +1085,19 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                   startEditing(item, isLightbox);
                 }
               }}
-              className={`absolute z-20 font-sans text-cyan-400 select-none whitespace-pre leading-tight transition-all ${
+              className={`absolute z-20 font-sans select-none whitespace-pre leading-tight transition-all ${
                 isAnnotating
                   ? currentTool === 'eraser'
                     ? 'cursor-pointer hover:line-through hover:opacity-60'
-                    : 'cursor-pointer hover:border-b hover:border-cyan-400/60'
+                    : 'cursor-pointer hover:border-b'
                   : 'pointer-events-none'
               }`}
               style={{
                 left: `${item.xPercent}%`,
                 top: `${item.yPercent}%`,
                 fontSize: `${displayFontSize}px`,
+                color: penColor,
+                borderColor: penColor,
               }}
               title={
                 isAnnotating
@@ -1067,13 +1144,15 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             onTouchStart={(e) => e.stopPropagation()}
             placeholder="Type note..."
             autoFocus
-            className="absolute z-30 bg-transparent text-cyan-400 border-b border-cyan-400/80 outline-none p-0 m-0 font-sans shadow-none whitespace-pre text-base placeholder-cyan-400/40"
+            className="absolute z-30 bg-transparent border-b outline-none p-0 m-0 font-sans shadow-none whitespace-pre text-base placeholder-slate-400/60"
             style={{
               left: `${editingItem.xPercent}%`,
               top: `${editingItem.yPercent}%`,
               fontSize: `${Math.round(editingItem.fontSize * scaleFactor)}px`,
               width: `${Math.max(8, editingItem.text.length + 1)}ch`,
               maxWidth: '90%',
+              color: penColor,
+              borderColor: penColor,
             }}
           />
         )}
@@ -1181,12 +1260,27 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
         />
 
         {!src || hasError ? (
-          <div className="relative z-10 m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-sm">
+          <div className="relative z-10 m-auto flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-md rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/70 backdrop-blur-md shadow-lg">
             <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-dark-850 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-500 mb-3">
               <FileQuestion className="w-6 h-6" />
             </div>
-            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{placeholderTitle}</h4>
-            <p className="text-xs text-slate-500">{placeholderMessage}</p>
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">{placeholderTitle}</h4>
+            {citationDisplay && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 mb-2">
+                Citation: {citationDisplay}
+              </span>
+            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">{placeholderMessage}</p>
+            {src && (
+              <button
+                type="button"
+                onClick={handleRetryImage}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm transition-all active:scale-95"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Retry Loading Asset</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="relative z-10 flex flex-col justify-start items-center pt-1 pb-12 w-full max-w-full">
@@ -1202,10 +1296,10 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               style={zoom > 1 ? { minWidth: `${Math.round(zoom * 100)}%` } : undefined}
             >
               <div 
-                className={`relative max-w-full transition-transform duration-100 ease-out origin-top rounded-xl overflow-hidden shadow-[0_12px_40px_-10px_rgba(0,0,0,0.65)] ring-1 ring-slate-200 dark:ring-white/10 bg-white ${
-                  isImageLoading ? 'w-full max-w-3xl min-h-[280px]' : ''
+                className={`relative w-full max-w-full transition-transform duration-100 ease-out origin-top rounded-xl overflow-hidden shadow-[0_12px_40px_-10px_rgba(0,0,0,0.65)] ring-1 ring-slate-200 dark:ring-white/10 bg-white ${
+                  isImageLoading ? 'max-w-3xl min-h-[280px]' : ''
                 } ${!isAnnotating ? 'cursor-pointer' : ''}`}
-                style={{ transform: `scale(${zoom})` }}
+                style={{ transform: `scale(${zoom})`, width: '100%' }}
                 onClick={() => {
                   if (!isAnnotating && zoom === 1) {
                     openLightbox();
@@ -1222,6 +1316,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                   ref={imgRef}
                   src={resolvedSrc}
                   alt={title}
+                  crossOrigin="anonymous"
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                   className={`w-full max-w-full h-auto object-contain block select-none pointer-events-none bg-white ${
@@ -1348,6 +1443,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                   ref={lightboxImgRef}
                   src={resolvedSrc}
                   alt={title}
+                  crossOrigin="anonymous"
                   onLoad={handleLightboxImageLoad}
                   className="w-full max-w-full h-auto object-contain block select-none pointer-events-none"
                 />

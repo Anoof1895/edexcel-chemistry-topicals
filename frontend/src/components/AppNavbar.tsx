@@ -183,8 +183,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </div>
         </div>
 
-        {/* Desktop / Tablet Nav & Theme Switch (> 768px) */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Desktop Nav & Theme Switch (>= 1024px) */}
+        <div className="hidden lg:flex items-center gap-2">
           <nav
             onPointerMove={handleSpotlightMove}
             onPointerLeave={handleSpotlightLeave}
@@ -313,7 +313,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* User Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] mb-1.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
@@ -361,8 +361,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </div>
         </div>
 
-        {/* Desktop Subject Switcher (> 768px) */}
-        <div className="hidden md:flex items-center gap-2 relative" ref={subjectMenuRef}>
+        {/* Desktop Subject Switcher (>= 1024px) */}
+        <div className="hidden lg:flex items-center gap-2 relative" ref={subjectMenuRef}>
           <button
             type="button"
             onClick={() => setIsSubjectMenuOpen((o) => !o)}
@@ -390,7 +390,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           </button>
 
           {isSubjectMenuOpen && (
-            <div role="menu" className="absolute right-0 top-full mt-2 w-64 rounded-2xl surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div role="menu" className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-2xl surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
               {([
                 { subject: 'chemistry' as Subject, label: 'Chemistry', count: chemCount, view: (isTestMakerActive ? 'chemistry-test-maker' : 'chemistry-topical') as AppView, Icon: FlaskConical, dot: 'bg-emerald-500 text-emerald-400', activeCls: 'bg-cyan-50 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-cyan-500/30' },
                 { subject: 'physics' as Subject, label: 'Physics', count: physCount, view: (isTestMakerActive ? 'physics-test-maker' : 'physics-topical') as AppView, Icon: Atom, dot: 'bg-indigo-500 text-indigo-400', activeCls: 'bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_2px_10px_rgba(0,0,0,0.5)] border border-indigo-500/30' },
@@ -448,13 +448,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
           )}
         </div>
 
-        {/* Mobile Action Controls (< 768px) */}
-        <div className="flex md:hidden items-center gap-1 sm:gap-2 shrink-0">
+        {/* Mobile / Tablet Action Controls (< 1024px) */}
+        <div className="flex lg:hidden items-center gap-1 sm:gap-2 shrink-0">
           {/* Mobile Auth Button */}
           {user ? (
             <button
               type="button"
-              onClick={() => setIsMobileMenuOpen(true)}
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
               className="w-8 h-8 sm:w-9 sm:h-9 p-0 flex items-center justify-center rounded-lg sm:rounded-xl shrink-0 bg-gradient-to-tr from-cyan-600 to-blue-600 text-white font-bold text-xs sm:text-sm shadow-sm active:scale-95"
               title={`Logged in as ${user.email}`}
             >
@@ -528,10 +528,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
       </header>
 
-      {/* Mobile Slide-down Navigation Sheet (< 768px) */}
+      {/* Mobile / Tablet Slide-down Navigation Sheet (< 1024px) */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 top-14 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-md md:hidden flex flex-col justify-start animate-in fade-in duration-150"
+          className="fixed inset-0 top-14 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-md lg:hidden flex flex-col justify-start animate-in fade-in duration-150"
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <div 

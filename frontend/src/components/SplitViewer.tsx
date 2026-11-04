@@ -18,8 +18,9 @@ import { QuestionItem, ViewMode, MasteryStatus } from '../types';
 import { ImageCanvas } from './ImageCanvas';
 import { getStatusConfig } from './QuestionList';
 import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
-import { getFullImageUrl } from '../utils/imageUrl';
+import { resolveQuestionImageUrl, resolveMarkSchemeImageUrl } from '../utils/imageUrl';
 import { useProgress } from '../context/ProgressContext';
+import { usePrefetchQuestions } from '../hooks/usePrefetchQuestions';
 import {
   handleSpotlightMove,
   handleSpotlightLeave,
@@ -31,6 +32,7 @@ interface SplitViewerProps {
   prevQuestion?: QuestionItem | null;
   nextQuestion?: QuestionItem | null;
   allQuestions?: QuestionItem[];
+  questions?: QuestionItem[];
   onSelectQuestionById?: (id: string) => void;
   viewMode: ViewMode;
   onToggleMarkScheme: () => void;
@@ -53,6 +55,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   prevQuestion,
   nextQuestion,
   allQuestions,
+  questions,
   onSelectQuestionById,
   viewMode,
   onToggleMarkScheme,
@@ -76,42 +79,17 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   // Student's interactive selection for MCQ items
   const [selectedMcqOption, setSelectedMcqOption] = useState<string | null>(null);
 
-  // Background idle prefetcher for adjacent questions (prev & next)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // Non-spoiling practice mode state
+  const [mcqAttempts, setMcqAttempts] = useState<number>(0);
+  const [wrongOptions, setWrongOptions] = useState<string[]>([]);
+  const [isShaking, setIsShaking] = useState<boolean>(false);
 
-    const prefetchUrls: string[] = [];
-    if (prevQuestion) {
-      if (prevQuestion.questionImagePath) prefetchUrls.push(getFullImageUrl(prevQuestion.questionImagePath));
-      if (prevQuestion.markSchemeImagePath) prefetchUrls.push(getFullImageUrl(prevQuestion.markSchemeImagePath));
-    }
-    if (nextQuestion) {
-      if (nextQuestion.questionImagePath) prefetchUrls.push(getFullImageUrl(nextQuestion.questionImagePath));
-      if (nextQuestion.markSchemeImagePath) prefetchUrls.push(getFullImageUrl(nextQuestion.markSchemeImagePath));
-    }
-
-    if (prefetchUrls.length === 0) return;
-
-    const schedulePrefetch = (window as any).requestIdleCallback || ((cb: () => void) => setTimeout(cb, 100));
-    const handle = schedulePrefetch(() => {
-      prefetchUrls.forEach((url) => {
-        const img = new Image();
-        img.src = url;
-      });
-    });
-
-    return () => {
-      if ((window as any).cancelIdleCallback) {
-        (window as any).cancelIdleCallback(handle);
-      } else {
-        clearTimeout(handle);
-      }
-    };
-  }, [prevQuestion?.id, nextQuestion?.id]);
-
-  // Reset mobile view tab to 'question' ONLY when navigating to a new question
+  // Reset mobile view tab to 'question' & reset attempts ONLY when navigating to a new question
   useEffect(() => {
     setMobileTab('question');
+    setMcqAttempts(0);
+    setWrongOptions([]);
+    setIsShaking(false);
   }, [question?.id]);
 
   // Sync MCQ selection when question or userAnswers update
@@ -145,6 +123,16 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   }, [question, allQuestions]);
 
   const activeSubject = getQuestionSubject(question);
+
+  // Adaptive background prefetching: sliding window (2 backward, 5 forward)
+  const prefetchPool = useMemo(() => {
+    if (questions && questions.length > 0) return questions;
+    if (allQuestions && allQuestions.length > 0) return allQuestions;
+    return [prevQuestion, question, nextQuestion].filter(Boolean) as QuestionItem[];
+  }, [questions, allQuestions, prevQuestion, question, nextQuestion]);
+
+  usePrefetchQuestions(prefetchPool, currentIndex, activeSubject);
+
   const isMath = activeSubject === 'mathematics';
   const isPhysics = activeSubject === 'physics';
   const qType = question ? getQuestionType(question) : 'theory';
@@ -164,13 +152,26 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       if (!question) return;
       setSelectedMcqOption(opt);
       const isCorrect = normalizedKey ? opt.toUpperCase() === normalizedKey.toUpperCase() : undefined;
-      setMcqAnswer(question.id, opt, isCorrect);
+      if (isCorrect) {
+        setMcqAnswer(question.id, opt, true);
+      } else if (isCorrect === false) {
+        setMcqAttempts((prev) => prev + 1);
+        setWrongOptions((prev) => (prev.includes(opt) ? prev : [...prev, opt]));
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 450);
+        setMcqAnswer(question.id, opt, false);
+      } else {
+        setMcqAnswer(question.id, opt, undefined);
+      }
     },
     [question, normalizedKey, setMcqAnswer]
   );
 
   const handleResetMcq = useCallback(() => {
     setSelectedMcqOption(null);
+    setWrongOptions([]);
+    setMcqAttempts(0);
+    setIsShaking(false);
     if (question) {
       setMcqAnswer(question.id, '', undefined);
     }
@@ -236,16 +237,8 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
   const isMarkSchemeVisible = viewMode === 'split' || viewMode === 'ms-only';
   const statusCfg = getStatusConfig(questionStatus);
 
-  const questionImagePath = question.questionImagePath 
-    || (question as any).crop_path 
-    || (question as any).image_path 
-    || '';
-
-  const markSchemePath = question.markSchemeImagePath 
-    || (question as any).ms_crop_path 
-    || (question as any).ms_image_path 
-    || (question as any).mark_scheme_image_path 
-    || null;
+  const questionImagePath = question ? resolveQuestionImageUrl(question, activeSubject) : '';
+  const markSchemePath = question ? resolveMarkSchemeImageUrl(question, activeSubject) : null;
 
   const isMcqAnsweredCorrectly = Boolean(
     selectedMcqOption !== null && normalizedKey && selectedMcqOption === normalizedKey
@@ -265,7 +258,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     : 'text-cyan-600 dark:text-cyan-400';
 
   return (
-    <main className="flex-1 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
+    <main className="flex-1 min-w-0 min-h-0 flex flex-col h-full bg-slate-100/50 dark:bg-dark-950 overflow-hidden select-none relative transition-colors">
       {/* ===================================================================== */}
       {/* ACTIVE QUESTION TOP HEADER (Clean sub-bar: metadata, bookmarks & counter)*/}
       <div
@@ -418,24 +411,36 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
       </div>
 
       {/* ===================================================================== */}
-      {/* MAIN CANVAS AREA (Responsive: Split on Desktop/Tablet, Single on Phone)*/}
+      {/* MAIN CANVAS AREA (Responsive: Split on >=1280px, Stacked on <1280px, Single on Phone) */}
       {/* ===================================================================== */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative pb-16 md:pb-0">
+      <div
+        className={`flex-1 min-h-0 min-w-0 flex flex-col xl:flex-row relative pb-16 md:pb-0 ${
+          viewMode === 'split'
+            ? 'md:overflow-y-auto xl:overflow-hidden overflow-hidden'
+            : 'overflow-hidden'
+        }`}
+      >
         {/* Question Canvas */}
         <div
-          className={`flex-1 flex-col h-full w-full overflow-hidden ${
-            mobileTab === 'question' ? 'flex' : 'hidden'
-          } ${viewMode === 'ms-only' ? 'md:hidden' : 'md:flex'}`}
+          className={`flex-1 flex-col min-w-0 w-full overflow-hidden ${
+            viewMode === 'split'
+              ? 'h-full md:min-h-[420px] xl:min-h-0 xl:h-full md:border-b xl:border-b-0 border-slate-200 dark:border-white/[0.07]'
+              : 'h-full'
+          } ${mobileTab === 'question' ? 'flex' : 'hidden'} ${
+            viewMode === 'ms-only' ? 'md:hidden' : 'md:flex'
+          }`}
         >
           <ImageCanvas
             src={questionImagePath}
             title={`Question ${question.questionNumber}`}
             badgeText={`${question.marks} ${question.marks === 1 ? 'Mark' : 'Marks'}`}
             badgeColor={isMath ? 'amber' : isPhysics ? 'indigo' : 'cyan'}
+            activeSubject={activeSubject}
             placeholderTitle="Question Image Not Available"
             placeholderMessage="Could not load the question image asset."
             enableAnnotation={true}
             questionId={question.id}
+            paperCitation={`${question.unitCode || question.unit} · ${question.series || question.session || ''} ${question.year} · Q${question.questionNumber}`}
           >
             {/* Interactive MCQ A/B/C/D Floating Dock (Visible on both Desktop & Mobile whenever isMcq && !isMath) */}
             {isMcq && !isMath && (
@@ -466,7 +471,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                       type="button"
                       onClick={handleResetMcq}
                       className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-colors"
-                      title="Clear selected answer and reset status to Unattempted"
+                      title="Clear selected answer and retry"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>Reset</span>
@@ -474,39 +479,40 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                   )}
                 </div>
 
-                {/* 4 Interactive Option Buttons */}
+                {/* 4 Interactive Option Buttons (Non-Spoiling Practice Mode) */}
                 <div className="relative z-10 grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
                   {['A', 'B', 'C', 'D'].map((opt, optIdx) => {
                     const isSelected = selectedMcqOption === opt;
+                    const isWrong = wrongOptions.includes(opt);
                     const isCorrect = Boolean(normalizedKey && opt === normalizedKey);
+                    const isAnsweredCorrectly = isMcqAnsweredCorrectly && isCorrect;
+
                     let btnStyle =
                       'bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-white/10 hover:bg-slate-200/80 dark:hover:bg-white/[0.1] hover:border-cyan-500/60 dark:hover:border-cyan-400/50 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]';
 
-                    if (selectedMcqOption !== null) {
-                      if (isSelected) {
-                        if (isCorrect) {
-                          btnStyle =
-                            'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/60';
-                        } else {
-                          btnStyle =
-                            'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-600/30 ring-2 ring-rose-400/60';
-                        }
-                      } else if (isCorrect && isMcqAnswerRevealed) {
-                        btnStyle =
-                          'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50 animate-pulse-subtle';
-                      } else if (isMcqAnswerRevealed) {
-                        btnStyle =
-                          'bg-slate-100/50 dark:bg-white/[0.02] text-slate-400 dark:text-slate-600 border-transparent opacity-40';
-                      }
-                    } else if (isCorrect && isMcqAnswerRevealed) {
+                    if (isAnsweredCorrectly) {
+                      btnStyle =
+                        'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/40 ring-2 ring-emerald-400/80';
+                    } else if (isWrong) {
+                      btnStyle = `bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500 ring-2 ring-rose-500/40 ${
+                        isShaking && isSelected ? 'animate-shake' : ''
+                      }`;
+                    } else if (isMarkSchemeVisible && isCorrect) {
                       btnStyle =
                         'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 ring-2 ring-emerald-400/50';
+                    } else if (isMarkSchemeVisible) {
+                      btnStyle =
+                        'bg-slate-100/50 dark:bg-white/[0.02] text-slate-400 dark:text-slate-600 border-transparent opacity-40';
+                    } else if (isSelected) {
+                      btnStyle =
+                        'bg-cyan-600 text-white border-cyan-500 shadow-md ring-2 ring-cyan-400/60';
                     }
 
                     return (
                       <button
                         key={opt}
                         type="button"
+                        disabled={isMcqAnsweredCorrectly}
                         onClick={() => handleMcqSelect(opt)}
                         onPointerMove={handleSpotlightMove}
                         onPointerLeave={handleSpotlightLeave}
@@ -522,22 +528,22 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                   })}
                 </div>
 
-                {/* Instant visual feedback message banner */}
+                {/* Instant visual feedback message banner (Anti-Spoiler Practice Mode) */}
                 {selectedMcqOption !== null && normalizedKey && (
                   <div
-                    className={`relative z-10 w-full py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
-                      selectedMcqOption === normalizedKey
+                    className={`relative z-10 w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-200 ${
+                      isMcqAnsweredCorrectly
                         ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
                         : 'bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-500/40 text-rose-800 dark:text-rose-200'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      {selectedMcqOption === normalizedKey ? (
+                      {isMcqAnsweredCorrectly ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>Correct! Option [{normalizedKey}] is the right answer.</span>
                         </>
-                      ) : isMcqAnswerRevealed ? (
+                      ) : isMarkSchemeVisible ? (
                         <>
                           <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                           <span>Incorrect. Option [{normalizedKey}] is the correct answer.</span>
@@ -545,7 +551,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                       ) : (
                         <>
                           <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                          <span>Incorrect — try again or view mark scheme</span>
+                          <span>Incorrect{mcqAttempts > 0 ? ` (Attempt ${mcqAttempts})` : ''} — try another option or reveal the answer!</span>
                         </>
                       )}
                     </div>
@@ -561,7 +567,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                       }}
                       className="text-[11px] font-bold underline shrink-0 hover:opacity-80"
                     >
-                      {isMarkSchemeVisible || mobileTab === 'ms' ? 'Hide Mark Scheme' : 'View Mark Scheme'}
+                      {isMarkSchemeVisible || mobileTab === 'ms' ? 'Hide Mark Scheme' : 'Reveal Mark Scheme'}
                     </button>
                   </div>
                 )}
@@ -573,7 +579,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
         {/* Smooth Vertical Split Divider (visible in side-by-side split mode) */}
         {viewMode === 'split' && (
           <div
-            className="hidden md:flex w-px bg-slate-200 dark:bg-white/[0.07] relative items-center justify-center group hover:bg-cyan-500/40 dark:hover:bg-cyan-400/40 transition-colors shrink-0 select-none"
+            className="hidden xl:flex w-px bg-slate-200 dark:bg-white/[0.07] relative items-center justify-center group hover:bg-cyan-500/40 dark:hover:bg-cyan-400/40 transition-colors shrink-0 select-none"
             aria-hidden="true"
           >
             <div className={`w-1 h-8 rounded-full bg-slate-300 dark:bg-white/15 transition-all ${
@@ -588,9 +594,13 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
 
         {/* Mark Scheme Canvas */}
         <div
-          className={`flex-1 flex-col h-full w-full min-h-[300px] overflow-hidden ${
-            mobileTab === 'ms' ? 'flex' : 'hidden'
-          } ${viewMode === 'question-only' ? 'md:hidden' : 'md:flex'}`}
+          className={`flex-1 flex-col min-w-0 w-full overflow-hidden ${
+            viewMode === 'split'
+              ? 'h-full md:min-h-[420px] xl:min-h-0 xl:h-full'
+              : 'h-full min-h-[300px]'
+          } ${mobileTab === 'ms' ? 'flex' : 'hidden'} ${
+            viewMode === 'question-only' ? 'md:hidden' : 'md:flex'
+          }`}
         >
           <ImageCanvas
             src={markSchemePath}
@@ -603,6 +613,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                 : 'Official Answers'
             }
             badgeColor={qType === 'mcq' ? 'purple' : 'emerald'}
+            activeSubject={activeSubject}
             extraBadge={
               mcqAnswer ? (
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
@@ -614,6 +625,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
             placeholderMessage="This question's mark scheme row is either still processing or was not included in the sample pages."
             enableAnnotation={true}
             questionId={`${question.id}-ms`}
+            paperCitation={`${question.unitCode || question.unit} · ${question.series || question.session || ''} ${question.year} · Q${question.questionNumber}`}
           />
         </div>
       </div>
@@ -855,7 +867,7 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
                     {/* Image */}
                     <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-dark-750 bg-white shadow-sm">
                       <img 
-                        src={getFullImageUrl(sub.questionImagePath)} 
+                        src={resolveQuestionImageUrl(sub, activeSubject)} 
                         alt={`Question ${sub.questionNumber}`} 
                         className="w-full h-auto block select-none"
                         loading="lazy"

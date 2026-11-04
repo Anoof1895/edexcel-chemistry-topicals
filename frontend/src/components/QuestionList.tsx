@@ -176,42 +176,40 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     return [...questions].sort(sortQuestionsLatestFirst);
   }, [questions]);
 
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(() => {
+    if (selectedQuestionId && sortedQuestions.length > 0) {
+      const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
+      if (idx !== -1) return Math.floor(idx / PAGE_SIZE) + 1;
+    }
+    return 1;
+  });
   const listRef = useRef<HTMLDivElement>(null);
-  const prevSelectedIdRef = useRef<string | null>(selectedQuestionId);
-  const firstQuestionId = sortedQuestions[0]?.id;
-  const prevFirstIdRef = useRef<string | undefined>(firstQuestionId);
+  const prevTabRef = useRef<'all' | 'bookmarked'>(activeTab);
 
   const totalPages = Math.max(1, Math.ceil(sortedQuestions.length / PAGE_SIZE));
 
-  // Sync currentPage when active question changes (e.g. via Next/Prev navigation or direct selection)
+  // Sync currentPage when active question or sorted filtered list changes (including initial reload hydration)
   useEffect(() => {
-    if (selectedQuestionId !== prevSelectedIdRef.current) {
-      prevSelectedIdRef.current = selectedQuestionId;
-      if (selectedQuestionId) {
-        const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
-        if (idx !== -1) {
-          const targetPage = Math.floor(idx / PAGE_SIZE) + 1;
-          setCurrentPage(targetPage);
-        }
-      }
+    if (!selectedQuestionId || sortedQuestions.length === 0) return;
+    const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
+    if (idx !== -1) {
+      const targetPage = Math.floor(idx / PAGE_SIZE) + 1;
+      setCurrentPage(targetPage);
     }
   }, [selectedQuestionId, sortedQuestions]);
 
-  // Handle filter changes (e.g. topic filter or search change changes the question list)
+  // Scroll the active question card into view when active question, page, or tab changes
   useEffect(() => {
-    if (firstQuestionId !== prevFirstIdRef.current) {
-      prevFirstIdRef.current = firstQuestionId;
-      if (selectedQuestionId) {
-        const idx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
-        if (idx !== -1) {
-          setCurrentPage(Math.floor(idx / PAGE_SIZE) + 1);
-          return;
-        }
+    if (!selectedQuestionId || !listRef.current) return;
+    const raf = requestAnimationFrame(() => {
+      const safeId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(selectedQuestionId) : selectedQuestionId;
+      const activeEl = listRef.current?.querySelector<HTMLElement>(`[data-question-id="${safeId}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-      setCurrentPage(1);
-    }
-  }, [firstQuestionId, selectedQuestionId, sortedQuestions]);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [selectedQuestionId, currentPage, sortedQuestions.length, activeTab]);
 
   // Reset to page 1 if current page is out of bounds
   useEffect(() => {
@@ -220,10 +218,46 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     }
   }, [currentPage, totalPages]);
 
-  // Reset to page 1 when switching between All and Bookmarked tabs
+  // Reset to page 1 only when switching tabs (not on initial mount)
   useEffect(() => {
-    setCurrentPage(1);
+    if (prevTabRef.current !== activeTab) {
+      prevTabRef.current = activeTab;
+      setCurrentPage(1);
+    }
   }, [activeTab]);
+
+  // Linear / Raycast keyboard shortcuts: 'j'/'Alt+ArrowDown' = next, 'k'/'Alt+ArrowUp' = prev
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (sortedQuestions.length === 0) return;
+
+      const currentIdx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
+
+      if (e.key === 'j' || e.key === 'J' || (e.key === 'ArrowDown' && e.altKey)) {
+        e.preventDefault();
+        const nextIdx = currentIdx < sortedQuestions.length - 1 ? currentIdx + 1 : 0;
+        onSelectQuestion(sortedQuestions[nextIdx]);
+      } else if (e.key === 'k' || e.key === 'K' || (e.key === 'ArrowUp' && e.altKey)) {
+        e.preventDefault();
+        const prevIdx = currentIdx > 0 ? currentIdx - 1 : sortedQuestions.length - 1;
+        onSelectQuestion(sortedQuestions[prevIdx]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sortedQuestions, selectedQuestionId, onSelectQuestion]);
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
@@ -321,7 +355,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         {/* Scrollable Questions List Container */}
         <div 
           ref={listRef}
-          className="flex-1 overflow-y-auto p-2 space-y-1.5 divide-y divide-transparent"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 py-2 space-y-1.5"
         >
           {paginatedQuestions.length === 0 ? (
             activeTab === 'bookmarked' ? (
@@ -373,6 +407,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               return (
                 <div
                   key={q.id}
+                  data-question-id={q.id}
                   onPointerMove={handleSpotlightMove}
                   onPointerLeave={handleSpotlightLeave}
                   style={getSubjectSpotlightStyle(qSubject, 280)}
@@ -382,7 +417,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       onCloseDrawer();
                     }
                   }}
-                  className={`spotlight-surface group relative rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
+                  className={`spotlight-surface group relative min-w-0 overflow-hidden rounded-xl py-2.5 px-3.5 cursor-pointer transition-all duration-150 border-y border-r border-l-4 ${
                     isSelected
                       ? `${selectedCardAccent} text-slate-900 dark:text-white`
                       : 'bg-white dark:bg-[#0B0E16]/70 border-slate-200/80 dark:border-white/[0.06] border-l-transparent hover:bg-slate-50 dark:hover:bg-white/[0.03] hover:border-slate-300 dark:hover:border-white/10 hover:border-l-slate-400 dark:hover:border-l-slate-600 text-slate-700 dark:text-slate-300 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
@@ -476,6 +511,13 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                       <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
                       <span>{statusCfg.label}</span>
                     </button>
+
+                    {/* Keyboard navigation helper on selected card */}
+                    {isSelected && (
+                      <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500 hidden sm:inline">
+                        <kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10">J</kbd>/<kbd className="px-1 py-0.2 rounded bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10">K</kbd> to nav
+                      </span>
+                    )}
                   </div>
                 </div>
               );

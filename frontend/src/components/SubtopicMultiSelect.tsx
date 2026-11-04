@@ -4,7 +4,8 @@ import {
   Search, 
   ChevronDown, 
   ChevronRight, 
-  X
+  X,
+  Check
 } from 'lucide-react';
 import { handleSpotlightMove, handleSpotlightLeave } from '../utils/spotlight';
 
@@ -20,6 +21,7 @@ interface SubtopicMultiSelectProps {
   hierarchy: SubtopicHierarchy[];
   selectedSubtopics: string[];
   onChange: (selected: string[]) => void;
+  questions?: { subtopic?: string; subtopics?: string[] }[];
   fullWidth?: boolean;
   align?: 'left' | 'right';
   className?: string;
@@ -29,6 +31,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
   hierarchy,
   selectedSubtopics,
   onChange,
+  questions,
   fullWidth = false,
   align = 'left',
   className = '',
@@ -38,15 +41,38 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
   const [collapsedTopics, setCollapsedTopics] = useState<Set<string>>(new Set());
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // Dynamic question counts per subtopic (incrementing every subtopic in q.subtopics)
+  const effectiveHierarchy = useMemo(() => {
+    if (!questions || questions.length === 0) return hierarchy;
+    const subtopicCounts = new Map<string, number>();
+    for (const q of questions) {
+      const subs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : q.subtopic ? [q.subtopic] : [];
+      for (const s of subs) {
+        if (!s) continue;
+        subtopicCounts.set(s, (subtopicCounts.get(s) || 0) + 1);
+      }
+    }
+    return hierarchy.map((group) => ({
+      ...group,
+      subtopics: group.subtopics.map((sub) => ({
+        ...sub,
+        count: subtopicCounts.get(sub.name) ?? sub.count,
+      })),
+    }));
+  }, [hierarchy, questions]);
+
   // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setSearch('');
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      setSearch('');
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -73,26 +99,24 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
   const handleSelectAllInTopic = (subtopicNames: string[]) => {
     const allSelected = subtopicNames.every(s => selectedSubtopics.includes(s));
     if (allSelected) {
-      // Deselect these
       onChange(selectedSubtopics.filter(s => !subtopicNames.includes(s)));
     } else {
-      // Add all missing
       const newItems = subtopicNames.filter(s => !selectedSubtopics.includes(s));
       onChange([...selectedSubtopics, ...newItems]);
     }
   };
 
-  const handleClearAll = (e: React.MouseEvent) => {
+  const handleClearAll = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     onChange([]);
   };
 
   // Filter hierarchy by search term
   const filteredHierarchy = useMemo(() => {
-    if (!search.trim()) return hierarchy;
+    if (!search.trim()) return effectiveHierarchy;
     const q = search.toLowerCase();
 
-    return hierarchy
+    return effectiveHierarchy
       .map(group => {
         const matchingSubtopics = group.subtopics.filter(
           s => s.name.toLowerCase().includes(q) || group.topicName.toLowerCase().includes(q)
@@ -103,11 +127,11 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
         };
       })
       .filter(group => group.subtopics.length > 0);
-  }, [hierarchy, search]);
+  }, [effectiveHierarchy, search]);
 
   const totalAvailable = useMemo(() => {
-    return hierarchy.reduce((sum, g) => sum + g.subtopics.length, 0);
-  }, [hierarchy]);
+    return effectiveHierarchy.reduce((sum, g) => sum + g.subtopics.length, 0);
+  }, [effectiveHierarchy]);
 
   return (
     <div className={`relative ${fullWidth ? 'w-full' : ''} ${className}`} ref={popoverRef}>
@@ -119,8 +143,8 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
         onPointerMove={handleSpotlightMove}
         onPointerLeave={handleSpotlightLeave}
         className={`spotlight-surface ${
-          fullWidth ? 'w-full' : ''
-        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
+          fullWidth ? 'w-full' : 'max-w-[200px] xl:max-w-[260px]'
+        } h-8 whitespace-nowrap flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
           selectedSubtopics.length > 0
             ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm shadow-cyan-500/10'
             : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
@@ -153,7 +177,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
               tabIndex={0}
               onClick={handleClearAll}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleClearAll(e as any);
+                if (e.key === 'Enter') handleClearAll(e);
               }}
               title="Clear subtopics"
               className="w-4 h-4 rounded-full bg-cyan-700 dark:bg-cyan-500/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] transition-colors cursor-pointer shrink-0"
@@ -168,7 +192,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
 
       {/* Popover Dropdown */}
       {isOpen && (
-        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] max-h-[480px] surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl z-30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}>
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 w-[360px] max-w-[calc(100vw-2rem)] max-h-[min(480px,70vh)] surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}>
           {/* Header Search */}
           <div className="p-2.5 border-b border-slate-100 dark:border-dark-800 bg-slate-50/80 dark:bg-dark-900/90 shrink-0 space-y-2">
             <div className="relative">
@@ -191,8 +215,9 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const all = hierarchy.flatMap(g => g.subtopics.map(s => s.name));
-                    onChange(all);
+                    const visibleSubs = filteredHierarchy.flatMap(g => g.subtopics.map(s => s.name));
+                    const next = Array.from(new Set([...selectedSubtopics, ...visibleSubs]));
+                    onChange(next);
                   }}
                   className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 font-medium"
                 >
@@ -278,8 +303,17 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => handleToggleSubtopic(sub.name)}
-                                  className="w-3.5 h-3.5 rounded bg-slate-100 dark:bg-dark-800 border-slate-300 dark:border-dark-700 text-cyan-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                  className="sr-only"
                                 />
+                                <div
+                                  className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-colors ${
+                                    isChecked
+                                      ? 'bg-cyan-600 border-cyan-600 text-white'
+                                      : 'bg-white dark:bg-dark-800 border-slate-300 dark:border-dark-600'
+                                  }`}
+                                >
+                                  {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </div>
                               </div>
                               <span className="flex-1 leading-snug truncate" title={sub.name}>{sub.name}</span>
                               {sub.count > 0 && (

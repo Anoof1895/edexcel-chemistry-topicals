@@ -1,9 +1,10 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, RotateCcw, FilterX } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
   fallbackMessage?: string;
+  onResetFilters?: () => void;
 }
 
 interface State {
@@ -29,6 +30,21 @@ export class CanvasErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  private handleResetFiltersAndReload = () => {
+    try {
+      if (this.props.onResetFilters) {
+        this.props.onResetFilters();
+      }
+      if (window.location.hash.includes('?')) {
+        const baseHash = window.location.hash.split('?')[0];
+        window.history.replaceState(null, '', `${window.location.pathname}${baseHash}`);
+      }
+    } catch {
+      // ignore storage/history errors
+    }
+    this.setState({ hasError: false, error: null });
+  };
+
   public render() {
     if (this.state.hasError) {
       return (
@@ -42,7 +58,7 @@ export class CanvasErrorBoundary extends Component<Props, State> {
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-4 leading-relaxed">
             {this.state.error?.message || 'An unexpected rendering error occurred while loading this question image or drawing canvas.'}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
               onClick={this.handleReset}
@@ -50,6 +66,14 @@ export class CanvasErrorBoundary extends Component<Props, State> {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Retry Canvas</span>
+            </button>
+            <button
+              type="button"
+              onClick={this.handleResetFiltersAndReload}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+            >
+              <FilterX className="w-3.5 h-3.5" />
+              <span>Reset Filters &amp; Reload</span>
             </button>
             <button
               type="button"

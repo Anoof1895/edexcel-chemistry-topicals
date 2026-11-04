@@ -533,7 +533,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Command Palette"
-      className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-md flex items-start justify-center pt-[10vh] sm:pt-[13vh] px-3 sm:px-4 animate-in fade-in duration-150 select-none"
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-start justify-center pt-[10vh] sm:pt-[13vh] px-3 sm:px-4 animate-in fade-in duration-150 select-none"
       onClick={onClose}
       onKeyDown={handleModalKeyDown}
     >

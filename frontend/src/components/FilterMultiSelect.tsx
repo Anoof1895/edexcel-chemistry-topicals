@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, X } from 'lucide-react';
+import { Search, ChevronDown, X, Check } from 'lucide-react';
 import { handleSpotlightMove, handleSpotlightLeave } from '../utils/spotlight';
 
 export interface FilterOption {
@@ -44,10 +44,13 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setSearch('');
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      setSearch('');
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -62,15 +65,6 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
     }
   };
 
-  const handleSelectAll = () => {
-    onChange(options.map((o) => o.value));
-  };
-
-  const handleClearAll = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onChange([]);
-  };
-
   // Filter options by search term
   const filteredOptions = useMemo(() => {
     if (!search.trim()) return options;
@@ -80,6 +74,17 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
         opt.label.toLowerCase().includes(q) || opt.value.toLowerCase().includes(q)
     );
   }, [options, search]);
+
+  const handleSelectAll = () => {
+    const visibleValues = filteredOptions.map((o) => o.value);
+    const next = Array.from(new Set([...selectedValues, ...visibleValues]));
+    onChange(next);
+  };
+
+  const handleClearAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange([]);
+  };
 
   const shouldShowSearch = showSearch ?? options.length > 5;
 
@@ -94,7 +99,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
         onPointerLeave={handleSpotlightLeave}
         className={`spotlight-surface ${
           fullWidth ? 'w-full' : ''
-        } flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
+        } h-8 whitespace-nowrap flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all select-none duration-150 active:scale-[0.98] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
           selectedValues.length > 0
             ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm shadow-cyan-500/10'
             : 'bg-slate-100 dark:bg-white/[0.04] border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300'
@@ -142,7 +147,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
         <div
           className={`absolute ${
             align === 'right' ? 'right-0' : 'left-0'
-          } top-full mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] max-h-[380px] surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl z-30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
+          } top-full mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] max-h-[min(380px,70vh)] surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
         >
           {/* Header Search & Actions */}
           <div className="p-2.5 border-b border-slate-100 dark:border-dark-800 bg-slate-50/80 dark:bg-dark-900/90 shrink-0 space-y-2">
@@ -206,8 +211,17 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => handleToggle(opt.value)}
-                      className="w-3.5 h-3.5 rounded bg-slate-100 dark:bg-dark-800 border-slate-300 dark:border-dark-700 text-cyan-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                      className="sr-only"
                     />
+                    <div
+                      className={`w-3.5 h-3.5 rounded flex items-center justify-center border shrink-0 transition-colors ${
+                        isChecked
+                          ? 'bg-cyan-600 border-cyan-600 text-white'
+                          : 'bg-white dark:bg-dark-800 border-slate-300 dark:border-dark-600'
+                      }`}
+                    >
+                      {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
                     <span
                       className={`flex-1 leading-snug truncate ${
                         badgeFontMono ? 'font-mono' : ''

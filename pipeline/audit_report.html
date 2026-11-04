@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edexcel IAL Extraction Audit Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0B0E14; color: #E2E8F0; font-family: ui-sans-serif, system-ui, sans-serif; }
+    .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="glass p-6 rounded-2xl border border-white/10 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          <span>Edexcel IAL Extraction Auditor</span>
+          <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Auto-Auditor</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">
+          Automated QA audit across Edexcel IAL Chemistry (WCH11–16), Physics (WPH11–16), and Mathematics (WMA11–14, WME01, WST01).
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-right">
+          <div class="text-[10px] uppercase font-mono text-slate-400">Integrity Score</div>
+          <div class="text-xl font-bold text-amber-400">99.25%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="glass p-4 rounded-xl border border-white/10">
+        <div class="text-[11px] font-mono text-slate-400">Total Questions</div>
+        <div class="text-2xl font-black text-white mt-1">11,117</div>
+      </div>
+      <div class="glass p-4 rounded-xl border border-white/10">
+        <div class="text-[11px] font-mono text-slate-400">Clean Questions</div>
+        <div class="text-2xl font-black text-emerald-400 mt-1">11,034</div>
+      </div>
+      <div class="glass p-4 rounded-xl border border-white/10">
+        <div class="text-[11px] font-mono text-slate-400">Flagged Questions</div>
+        <div class="text-2xl font-black text-rose-400 mt-1">83</div>
+      </div>
+      <div class="glass p-4 rounded-xl border border-white/10">
+        <div class="text-[11px] font-mono text-slate-400">Audit Timestamp</div>
+        <div class="text-xs font-mono text-cyan-300 mt-2">2026-11-04 07:26:52</div>
+      </div>
+    </div>
+
+    <!-- Coverage Table -->
+    <div class="glass rounded-xl border border-white/10 overflow-hidden">
+      <div class="px-4 py-3 border-b border-white/10 font-bold text-xs uppercase tracking-wider text-slate-300">
+        Breakdown by Subject
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-white/10 text-[11px] font-mono uppercase text-slate-400 bg-white/[0.02]">
+              <th class="py-2.5 px-3">Subject</th>
+              <th class="py-2.5 px-3 text-right">Checked</th>
+              <th class="py-2.5 px-3 text-right">Clean</th>
+              <th class="py-2.5 px-3 text-right">Flagged</th>
+              <th class="py-2.5 px-3 text-right text-amber-300">Height Outlier</th>
+              <th class="py-2.5 px-3 text-right text-indigo-300">Barcode</th>
+              <th class="py-2.5 px-3 text-right text-purple-300">Banned Text</th>
+              <th class="py-2.5 px-3 text-right text-rose-300">Missing</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+          <tr class="border-b border-white/5 text-xs font-mono">
+            <td class="py-2.5 px-3 font-bold text-white">Chemistry (WCH11–16)</td>
+            <td class="py-2.5 px-3 text-right text-slate-300">5,712</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">5,666</td>
+            <td class="py-2.5 px-3 text-right text-rose-400 font-bold">46</td>
+            <td class="py-2.5 px-3 text-right text-amber-400">46</td>
+            <td class="py-2.5 px-3 text-right text-indigo-400">0</td>
+            <td class="py-2.5 px-3 text-right text-purple-400">0</td>
+            <td class="py-2.5 px-3 text-right text-rose-400">0</td>
+          </tr>
+        
+          <tr class="border-b border-white/5 text-xs font-mono">
+            <td class="py-2.5 px-3 font-bold text-white">Physics (WPH11–16)</td>
+            <td class="py-2.5 px-3 text-right text-slate-300">4,136</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">4,100</td>
+            <td class="py-2.5 px-3 text-right text-rose-400 font-bold">36</td>
+            <td class="py-2.5 px-3 text-right text-amber-400">35</td>
+            <td class="py-2.5 px-3 text-right text-indigo-400">0</td>
+            <td class="py-2.5 px-3 text-right text-purple-400">0</td>
+            <td class="py-2.5 px-3 text-right text-rose-400">1</td>
+          </tr>
+        
+          <tr class="border-b border-white/5 text-xs font-mono">
+            <td class="py-2.5 px-3 font-bold text-white">Mathematics (P1–S1)</td>
+            <td class="py-2.5 px-3 text-right text-slate-300">1,269</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">1,268</td>
+            <td class="py-2.5 px-3 text-right text-rose-400 font-bold">1</td>
+            <td class="py-2.5 px-3 text-right text-amber-400">1</td>
+            <td class="py-2.5 px-3 text-right text-indigo-400">0</td>
+            <td class="py-2.5 px-3 text-right text-purple-400">0</td>
+            <td class="py-2.5 px-3 text-right text-rose-400">0</td>
+          </tr>
+        
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="flex items-center gap-2 flex-wrap text-xs">
+      <span class="text-slate-400 font-mono text-[11px]">Filter Issues:</span>
+      <button onclick="filterIssues('ALL')" class="filter-btn px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold active">All (83)</button>
+      <button onclick="filterIssues('HEIGHT_OUTLIER')" class="filter-btn px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Height Outliers</button>
+      <button onclick="filterIssues('BARCODE_LEAK')" class="filter-btn px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Barcode Leaks</button>
+      <button onclick="filterIssues('BANNED_TEXT')" class="filter-btn px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Banned Text</button>
+      <button onclick="filterIssues('MISSING_QP')" class="filter-btn px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Missing Assets</button>
+    </div>
+
+    <!-- Cards Grid -->
+    <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch11_2024_june_q19_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2268x3799px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3799px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch11_2024_june_q19_b_ii.png" alt="wch11_2024_june_q19_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch11_2024_june_q19_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch11_2024_june_q19_b_ii.png">
+            /extracted/questions/wch11_2024_june_q19_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch11_2024_october_q17_a_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4984px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4984px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch11_2024_october_q17_a_i.png" alt="wch11_2024_october_q17_a_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch11_2024_october_q17_a_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch11_2024_october_q17_a_i.png">
+            /extracted/questions/wch11_2024_october_q17_a_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch11_2024_october_q17_a_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3863px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3863px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch11_2024_october_q17_a_iii.png" alt="wch11_2024_october_q17_a_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch11_2024_october_q17_a_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch11_2024_october_q17_a_iii.png">
+            /extracted/questions/wch11_2024_october_q17_a_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch11_2024_october_q17_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3978px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3978px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch11_2024_october_q17_b.png" alt="wch11_2024_october_q17_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch11_2024_october_q17_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch11_2024_october_q17_b.png">
+            /extracted/questions/wch11_2024_october_q17_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch12_2026_june_q22_b_iv</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2281x5139px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 5139px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch12_2026_june_q22_b_iv.png" alt="wch12_2026_june_q22_b_iv" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch12_2026_june_q22_b_iv.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch12_2026_june_q22_b_iv.png">
+            /extracted/questions/wch12_2026_june_q22_b_iv.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch12_2024_june_q20_a_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4375px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4375px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch12_2024_june_q20_a_iii.png" alt="wch12_2024_june_q20_a_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch12_2024_june_q20_a_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch12_2024_june_q20_a_iii.png">
+            /extracted/questions/wch12_2024_june_q20_a_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2026_january_q1_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4850px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4850px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2026_january_q1_b.png" alt="wch14_2026_january_q1_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2026_january_q1_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2026_january_q1_b.png">
+            /extracted/questions/wch14_2026_january_q1_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2026_january_q11_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3835px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3835px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2026_january_q11_b.png" alt="wch14_2026_january_q11_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2026_january_q11_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2026_january_q11_b.png">
+            /extracted/questions/wch14_2026_january_q11_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2026_january_q11_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3835px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3835px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2026_january_q11_c.png" alt="wch14_2026_january_q11_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2026_january_q11_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2026_january_q11_c.png">
+            /extracted/questions/wch14_2026_january_q11_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2025_june_q18_a_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4036px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4036px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2025_june_q18_a_iii.png" alt="wch14_2025_june_q18_a_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2025_june_q18_a_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2025_june_q18_a_iii.png">
+            /extracted/questions/wch14_2025_june_q18_a_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2025_june_q18_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3933px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3933px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2025_june_q18_b.png" alt="wch14_2025_june_q18_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2025_june_q18_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2025_june_q18_b.png">
+            /extracted/questions/wch14_2025_june_q18_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2025_october_q13_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x5253px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 5253px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2025_october_q13_b.png" alt="wch14_2025_october_q13_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2025_october_q13_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2025_october_q13_b.png">
+            /extracted/questions/wch14_2025_october_q13_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2024_october_q3_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4071px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 4071px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2024_october_q3_c.png" alt="wch14_2024_october_q3_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2024_october_q3_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2024_october_q3_c.png">
+            /extracted/questions/wch14_2024_october_q3_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_june_q18_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3625px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3625px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_june_q18_a_ii.png" alt="wch14_2023_june_q18_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_june_q18_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_june_q18_a_ii.png">
+            /extracted/questions/wch14_2023_june_q18_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_june_q18_a_v</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3861px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3861px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_june_q18_a_v.png" alt="wch14_2023_june_q18_a_v" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_june_q18_a_v.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_june_q18_a_v.png">
+            /extracted/questions/wch14_2023_june_q18_a_v.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_a_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3975px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3975px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_a_i.png" alt="wch14_2023_october_q18_a_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_a_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_a_i.png">
+            /extracted/questions/wch14_2023_october_q18_a_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4052px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4052px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_a_ii.png" alt="wch14_2023_october_q18_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_a_ii.png">
+            /extracted/questions/wch14_2023_october_q18_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_a_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3897px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3897px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_a_iii.png" alt="wch14_2023_october_q18_a_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_a_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_a_iii.png">
+            /extracted/questions/wch14_2023_october_q18_a_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_a_iv</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3677px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3677px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_a_iv.png" alt="wch14_2023_october_q18_a_iv" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_a_iv.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_a_iv.png">
+            /extracted/questions/wch14_2023_october_q18_a_iv.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_a_v</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4827px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4827px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_a_v.png" alt="wch14_2023_october_q18_a_v" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_a_v.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_a_v.png">
+            /extracted/questions/wch14_2023_october_q18_a_v.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3917px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3917px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_b.png" alt="wch14_2023_october_q18_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_b.png">
+            /extracted/questions/wch14_2023_october_q18_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_c_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4407px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4407px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_c_i.png" alt="wch14_2023_october_q18_c_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_c_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_c_i.png">
+            /extracted/questions/wch14_2023_october_q18_c_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch14_2023_october_q18_c_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4353px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4353px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch14_2023_october_q18_c_ii.png" alt="wch14_2023_october_q18_c_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch14_2023_october_q18_c_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch14_2023_october_q18_c_ii.png">
+            /extracted/questions/wch14_2023_october_q18_c_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_a_2026_january_q21_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3676px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3676px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_a_2026_january_q21_c.png" alt="wch15_a_2026_january_q21_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_a_2026_january_q21_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_a_2026_january_q21_c.png">
+            /extracted/questions/wch15_a_2026_january_q21_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2025_october_q11_b_iv</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3760px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3760px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2025_october_q11_b_iv.png" alt="wch15_2025_october_q11_b_iv" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2025_october_q11_b_iv.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2025_october_q11_b_iv.png">
+            /extracted/questions/wch15_2025_october_q11_b_iv.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2025_october_q14_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3723px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3723px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2025_october_q14_b.png" alt="wch15_2025_october_q14_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2025_october_q14_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2025_october_q14_b.png">
+            /extracted/questions/wch15_2025_october_q14_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2025_october_q14_d</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4385px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4385px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2025_october_q14_d.png" alt="wch15_2025_october_q14_d" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2025_october_q14_d.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2025_october_q14_d.png">
+            /extracted/questions/wch15_2025_october_q14_d.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_a_2025_october_q14_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4291px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4291px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_a_2025_october_q14_c.png" alt="wch15_a_2025_october_q14_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_a_2025_october_q14_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_a_2025_october_q14_c.png">
+            /extracted/questions/wch15_a_2025_october_q14_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_a_2025_october_q14_d</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3621px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3621px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_a_2025_october_q14_d.png" alt="wch15_a_2025_october_q14_d" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_a_2025_october_q14_d.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_a_2025_october_q14_d.png">
+            /extracted/questions/wch15_a_2025_october_q14_d.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2024_january_q17_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3792px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 3792px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2024_january_q17_b_ii.png" alt="wch15_2024_january_q17_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2024_january_q17_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2024_january_q17_b_ii.png">
+            /extracted/questions/wch15_2024_january_q17_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2024_january_q17_b_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4214px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4214px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2024_january_q17_b_iii.png" alt="wch15_2024_january_q17_b_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2024_january_q17_b_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2024_january_q17_b_iii.png">
+            /extracted/questions/wch15_2024_january_q17_b_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2024_june_q15_c_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4701px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4701px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2024_june_q15_c_iii.png" alt="wch15_2024_june_q15_c_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2024_june_q15_c_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2024_june_q15_c_iii.png">
+            /extracted/questions/wch15_2024_june_q15_c_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2024_june_q16_b_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3699px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3699px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2024_june_q16_b_iii.png" alt="wch15_2024_june_q16_b_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2024_june_q16_b_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2024_june_q16_b_iii.png">
+            /extracted/questions/wch15_2024_june_q16_b_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2023_january_q19_c_vi</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4048px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4048px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2023_january_q19_c_vi.png" alt="wch15_2023_january_q19_c_vi" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2023_january_q19_c_vi.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2023_january_q19_c_vi.png">
+            /extracted/questions/wch15_2023_january_q19_c_vi.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2023_january_q20_d</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4331px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4331px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2023_january_q20_d.png" alt="wch15_2023_january_q20_d" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2023_january_q20_d.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2023_january_q20_d.png">
+            /extracted/questions/wch15_2023_january_q20_d.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2023_october_q21_e</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4014px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4014px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2023_october_q21_e.png" alt="wch15_2023_october_q21_e" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2023_october_q21_e.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2023_october_q21_e.png">
+            /extracted/questions/wch15_2023_october_q21_e.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2022_june_q12_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3714px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3714px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2022_june_q12_a_ii.png" alt="wch15_2022_june_q12_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2022_june_q12_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2022_june_q12_a_ii.png">
+            /extracted/questions/wch15_2022_june_q12_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2022_june_q17_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3738px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3738px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2022_june_q17_a_ii.png" alt="wch15_2022_june_q17_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2022_june_q17_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2022_june_q17_a_ii.png">
+            /extracted/questions/wch15_2022_june_q17_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_january_q24_a_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4777px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4777px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_january_q24_a_i.png" alt="wch15_2021_january_q24_a_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_january_q24_a_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_january_q24_a_i.png">
+            /extracted/questions/wch15_2021_january_q24_a_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_january_q24_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4475px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4475px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_january_q24_a_ii.png" alt="wch15_2021_january_q24_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_january_q24_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_january_q24_a_ii.png">
+            /extracted/questions/wch15_2021_january_q24_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_january_q24_c_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4016px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 4016px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_january_q24_c_ii.png" alt="wch15_2021_january_q24_c_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_january_q24_c_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_january_q24_c_ii.png">
+            /extracted/questions/wch15_2021_january_q24_c_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_october_q19_e</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3907px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3907px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_october_q19_e.png" alt="wch15_2021_october_q19_e" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_october_q19_e.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_october_q19_e.png">
+            /extracted/questions/wch15_2021_october_q19_e.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_october_q21_a</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4123px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 1m question has excessive height 4123px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_october_q21_a.png" alt="wch15_2021_october_q21_a" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_october_q21_a.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_october_q21_a.png">
+            /extracted/questions/wch15_2021_october_q21_a.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_october_q21_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4086px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4086px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_october_q21_b.png" alt="wch15_2021_october_q21_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_october_q21_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_october_q21_b.png">
+            /extracted/questions/wch15_2021_october_q21_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_october_q21_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4611px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4611px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_october_q21_c.png" alt="wch15_2021_october_q21_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_october_q21_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_october_q21_c.png">
+            /extracted/questions/wch15_2021_october_q21_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wch15_2021_october_q21_d_v</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3858px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3858px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/extracted/questions/wch15_2021_october_q21_d_v.png" alt="wch15_2021_october_q21_d_v" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/extracted/questions/wch15_2021_october_q21_d_v.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\frontend\public\extracted\questions\wch15_2021_october_q21_d_v.png">
+            /extracted/questions/wch15_2021_october_q21_d_v.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2026_june_q20_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4056px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4056px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2026_june_q20_b.png" alt="wph11_2026_june_q20_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2026_june_q20_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2026_june_q20_b.png">
+            /crops_physics/questions/wph11_2026_june_q20_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2024_october_q14_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4311px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4311px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2024_october_q14_b_ii.png" alt="wph11_2024_october_q14_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2024_october_q14_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2024_october_q14_b_ii.png">
+            /crops_physics/questions/wph11_2024_october_q14_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2023_october_q15_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4383px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4383px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2023_october_q15_b_ii.png" alt="wph11_2023_october_q15_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2023_october_q15_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2023_october_q15_b_ii.png">
+            /crops_physics/questions/wph11_2023_october_q15_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2019_january_q16_a_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2029x3894px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3894px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2019_january_q16_a_ii.png" alt="wph11_2019_january_q16_a_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2019_january_q16_a_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2019_january_q16_a_ii.png">
+            /crops_physics/questions/wph11_2019_january_q16_a_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2024_june_q19_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4841px • 4m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4841px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2024_june_q19_b_ii.png" alt="wph11_2024_june_q19_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2024_june_q19_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2024_june_q19_b_ii.png">
+            /crops_physics/questions/wph11_2024_june_q19_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2023_june_q17_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4455px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4455px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2023_june_q17_b.png" alt="wph11_2023_june_q17_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2023_june_q17_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2023_june_q17_b.png">
+            /crops_physics/questions/wph11_2023_june_q17_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2021_january_q16_b_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3800px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3800px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2021_january_q16_b_iii.png" alt="wph11_2021_january_q16_b_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2021_january_q16_b_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2021_january_q16_b_iii.png">
+            /crops_physics/questions/wph11_2021_january_q16_b_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2020_october_q19_b_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4471px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4471px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2020_october_q19_b_iii.png" alt="wph11_2020_october_q19_b_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2020_october_q19_b_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2020_october_q19_b_iii.png">
+            /crops_physics/questions/wph11_2020_october_q19_b_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph11_2019_october_q16_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4609px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4609px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph11_2019_october_q16_b.png" alt="wph11_2019_october_q16_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph11_2019_october_q16_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph11_2019_october_q16_b.png">
+            /crops_physics/questions/wph11_2019_october_q16_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2025_january_q17_c_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4177px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4177px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2025_january_q17_c_ii.png" alt="wph12_2025_january_q17_c_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2025_january_q17_c_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2025_january_q17_c_ii.png">
+            /crops_physics/questions/wph12_2025_january_q17_c_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2023_june_q13_b_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3882px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3882px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2023_june_q13_b_i.png" alt="wph12_2023_june_q13_b_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2023_june_q13_b_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2023_june_q13_b_i.png">
+            /crops_physics/questions/wph12_2023_june_q13_b_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2023_june_q13_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3893px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3893px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2023_june_q13_b_ii.png" alt="wph12_2023_june_q13_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2023_june_q13_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2023_june_q13_b_ii.png">
+            /crops_physics/questions/wph12_2023_june_q13_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2021_january_q15_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4678px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4678px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2021_january_q15_b.png" alt="wph12_2021_january_q15_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2021_january_q15_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2021_january_q15_b.png">
+            /crops_physics/questions/wph12_2021_january_q15_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2020_january_q16_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4369px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4369px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2020_january_q16_b.png" alt="wph12_2020_january_q16_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2020_january_q16_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2020_january_q16_b.png">
+            /crops_physics/questions/wph12_2020_january_q16_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2019_october_q14_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3706px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3706px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2019_october_q14_b.png" alt="wph12_2019_october_q14_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2019_october_q14_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2019_october_q14_b.png">
+            /crops_physics/questions/wph12_2019_october_q14_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph12_2019_october_q18_c_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4114px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4114px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph12_2019_october_q18_c_iii.png" alt="wph12_2019_october_q18_c_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph12_2019_october_q18_c_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph12_2019_october_q18_c_iii.png">
+            /crops_physics/questions/wph12_2019_october_q18_c_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2026_january_q12_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3966px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3966px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2026_january_q12_b.png" alt="wph14_2026_january_q12_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2026_january_q12_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2026_january_q12_b.png">
+            /crops_physics/questions/wph14_2026_january_q12_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="MISSING_MS">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_a_2026_january_q19_d</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x1550px • 1m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-rose-500/20 text-rose-300 border-rose-500/30">Missing Asset: Mark scheme image missing on disk: None</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_a_2026_january_q19_d.png" alt="wph14_a_2026_january_q19_d" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_a_2026_january_q19_d.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_a_2026_january_q19_d.png">
+            /crops_physics/questions/wph14_a_2026_january_q19_d.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2025_january_q15_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3745px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3745px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2025_january_q15_b_ii.png" alt="wph14_2025_january_q15_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2025_january_q15_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2025_january_q15_b_ii.png">
+            /crops_physics/questions/wph14_2025_january_q15_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2024_june_q18_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4050px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4050px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2024_june_q18_c.png" alt="wph14_2024_june_q18_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2024_june_q18_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2024_june_q18_c.png">
+            /crops_physics/questions/wph14_2024_june_q18_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2024_october_q16_b_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4339px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4339px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2024_october_q16_b_i.png" alt="wph14_2024_october_q16_b_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2024_october_q16_b_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2024_october_q16_b_i.png">
+            /crops_physics/questions/wph14_2024_october_q16_b_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2024_october_q16_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4337px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4337px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2024_october_q16_b_ii.png" alt="wph14_2024_october_q16_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2024_october_q16_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2024_october_q16_b_ii.png">
+            /crops_physics/questions/wph14_2024_october_q16_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2024_october_q17_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3620px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3620px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2024_october_q17_b_ii.png" alt="wph14_2024_october_q17_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2024_october_q17_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2024_october_q17_b_ii.png">
+            /crops_physics/questions/wph14_2024_october_q17_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2023_june_q16_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4847px • 4m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4847px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2023_june_q16_c.png" alt="wph14_2023_june_q16_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2023_june_q16_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2023_june_q16_c.png">
+            /crops_physics/questions/wph14_2023_june_q16_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2023_june_q18_b_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4662px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 4662px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_i.png" alt="wph14_2023_june_q18_b_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2023_june_q18_b_i.png">
+            /crops_physics/questions/wph14_2023_june_q18_b_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2023_june_q18_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4662px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 4662px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_ii.png" alt="wph14_2023_june_q18_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2023_june_q18_b_ii.png">
+            /crops_physics/questions/wph14_2023_june_q18_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2023_june_q18_b_iii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x4986px • 4m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 4986px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_iii.png" alt="wph14_2023_june_q18_b_iii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2023_june_q18_b_iii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2023_june_q18_b_iii.png">
+            /crops_physics/questions/wph14_2023_june_q18_b_iii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2023_october_q20_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3885px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3885px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2023_october_q20_c.png" alt="wph14_2023_october_q20_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2023_october_q20_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2023_october_q20_c.png">
+            /crops_physics/questions/wph14_2023_october_q20_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2021_june_q11_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3655px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3655px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2021_june_q11_b.png" alt="wph14_2021_june_q11_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2021_june_q11_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2021_june_q11_b.png">
+            /crops_physics/questions/wph14_2021_june_q11_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph14_2020_october_q15_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3673px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3673px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph14_2020_october_q15_b_ii.png" alt="wph14_2020_october_q15_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph14_2020_october_q15_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph14_2020_october_q15_b_ii.png">
+            /crops_physics/questions/wph14_2020_october_q15_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_2025_january_q17_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3905px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3905px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_2025_january_q17_b_ii.png" alt="wph15_2025_january_q17_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_2025_january_q17_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_2025_january_q17_b_ii.png">
+            /crops_physics/questions/wph15_2025_january_q17_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_2024_january_q20_b</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x5555px • 5m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 5555px exceeds 4800px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_2024_january_q20_b.png" alt="wph15_2024_january_q20_b" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_2024_january_q20_b.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_2024_january_q20_b.png">
+            /crops_physics/questions/wph15_2024_january_q20_b.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_unused_2022_january_q20_d</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3796px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3796px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_unused_2022_january_q20_d.png" alt="wph15_unused_2022_january_q20_d" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_unused_2022_january_q20_d.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_unused_2022_january_q20_d.png">
+            /crops_physics/questions/wph15_unused_2022_january_q20_d.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_2022_june_q20_b_i</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3807px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3807px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_2022_june_q20_b_i.png" alt="wph15_2022_june_q20_b_i" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_2022_june_q20_b_i.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_2022_june_q20_b_i.png">
+            /crops_physics/questions/wph15_2022_june_q20_b_i.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_2022_june_q20_b_ii</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3931px • 2m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 2m question has excessive height 3931px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_2022_june_q20_b_ii.png" alt="wph15_2022_june_q20_b_ii" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_2022_june_q20_b_ii.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_2022_june_q20_b_ii.png">
+            /crops_physics/questions/wph15_2022_june_q20_b_ii.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wph15_2021_june_q19_c</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2220x3702px • 3m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Low-mark runaway stitching: 3m question has excessive height 3702px (> 3600px)</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_physics/questions/wph15_2021_june_q19_c.png" alt="wph15_2021_june_q19_c" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_physics/questions/wph15_2021_june_q19_c.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_physics\questions\wph15_2021_june_q19_c.png">
+            /crops_physics/questions/wph15_2021_june_q19_c.png
+          </div>
+        </div>
+        
+
+        <div class="card p-4 rounded-xl border border-white/10 bg-slate-900/90 shadow-lg flex flex-col gap-3"
+             data-categories="HEIGHT_OUTLIER">
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-sm text-cyan-400">wma11_2020_october_q5</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+              2272x9677px • 9m
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border bg-amber-500/20 text-amber-300 border-amber-500/30">Height Outlier: Image height 9677px exceeds 7200px limit for this paper type</span></div>
+          <div class="relative bg-black/40 rounded-lg overflow-hidden border border-white/5 flex items-center justify-center min-h-[140px] max-h-[300px]">
+            <img src="../frontend/public/crops_math/questions/wma11_2020_october_q5.png" alt="wma11_2020_october_q5" loading="lazy" class="max-h-[300px] w-auto object-contain cursor-pointer hover:scale-[1.02] transition-transform" onclick="openModal('../frontend/public/crops_math/questions/wma11_2020_october_q5.png')" onerror="this.parentElement.innerHTML='<span class=\'text-xs text-rose-400 p-4\'>Image not accessible</span>'"/>
+          </div>
+          <div class="text-[11px] font-mono text-slate-500 truncate" title="C:\Projects\edexcel-chemistry-topicals\crops_math\questions\wma11_2020_october_q5.png">
+            /crops_math/questions/wma11_2020_october_q5.png
+          </div>
+        </div>
+        
+    </div>
+  </div>
+
+  <!-- Image Inspection Modal -->
+  <div id="imageModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="closeModal()">
+    <div class="relative max-w-5xl max-h-[90vh] bg-slate-900 border border-white/20 rounded-2xl p-2 overflow-auto" onclick="event.stopPropagation()">
+      <button onclick="closeModal()" class="absolute top-3 right-3 px-3 py-1 rounded bg-black/60 text-white hover:bg-rose-600 text-sm">✕ Close</button>
+      <img id="modalImg" src="" alt="Inspection" class="w-full h-auto rounded-lg"/>
+    </div>
+  </div>
+
+  <script>
+    function openModal(src) {
+      document.getElementById('modalImg').src = src;
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+    function closeModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+    }
+    function filterIssues(code) {
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        if (code === 'ALL' || (card.getAttribute('data-categories') || '').includes(code)) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/30'));
+      event.target.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/30');
+    }
+  </script>
+</body>
+</html>

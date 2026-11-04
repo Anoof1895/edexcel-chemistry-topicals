@@ -328,7 +328,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         {/* ===================================================================== */}
         {/* DESKTOP STREAMLINED FILTER TOOLBAR (>= 1024px)                       */}
         {/* ===================================================================== */}
-        <div className="hidden lg:flex items-center gap-2 flex-1 justify-center max-w-4xl">
+        <div className="hidden lg:flex items-center gap-2 flex-1 min-w-0 justify-center max-w-4xl">
           {/* Primary 1: Search Input */}
           <div className="relative w-36 xl:w-48">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -356,6 +356,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             hierarchy={subtopicHierarchy}
             selectedSubtopics={filters.selectedSubtopics}
             onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
+            questions={allQuestions}
           />
 
           {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
@@ -428,7 +429,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
             {/* Secondary Filters Popover Dropdown */}
             {isSecondaryPopoverOpen && (
-              <div className="absolute top-full mt-2 left-0 w-80 surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl p-3 z-30 animate-in fade-in zoom-in-95 duration-150 space-y-3">
+              <div className="absolute top-full mt-2 right-0 xl:left-0 xl:right-auto w-80 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-5rem)] overflow-y-auto surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
                 {/* Popover Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.07]">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
@@ -720,6 +721,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   hierarchy={subtopicHierarchy}
                   selectedSubtopics={filters.selectedSubtopics}
                   onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
+                  questions={allQuestions}
                 />
               </div>
 

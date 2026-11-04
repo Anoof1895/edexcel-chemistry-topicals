@@ -5,19 +5,21 @@ import { TopBar } from './components/TopBar';
 import { buildStaticSubtopicHierarchy } from './constants/taxonomy';
 import { getQuestionType } from './utils/questionClassification';
 import { QuestionList, sortQuestionsLatestFirst } from './components/QuestionList';
-import { SplitViewer } from './components/SplitViewer';
 import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
+import { AmbientBackground } from './components/AmbientBackground';
 import { DataBookletDrawer } from './components/DataBookletDrawer';
 import { AuthModal } from './components/AuthModal';
 import { CommandPalette } from './components/CommandPalette';
 import { useAuth } from './context/AuthContext';
 import { useProgress } from './context/ProgressContext';
+import { useTheme } from './context/ThemeContext';
 import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 
 // Route-level code-splitting for large views
 const HomePage = React.lazy(() => import('./components/HomePage').then((m) => ({ default: m.HomePage })));
 const TestMakerPage = React.lazy(() => import('./components/TestMakerPage').then((m) => ({ default: m.TestMakerPage })));
+const SplitViewer = React.lazy(() => import('./components/SplitViewer').then((m) => ({ default: m.SplitViewer })));
 
 const ViewLoadingFallback: React.FC = () => (
   <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-500 dark:text-slate-400 gap-3">
@@ -26,8 +28,12 @@ const ViewLoadingFallback: React.FC = () => (
   </div>
 );
 
-// URL hash router helper: parses view and optional ?q=question_id
-const parseHashRoute = (): { view: AppView; questionId: string | null } => {
+// URL hash router helper: parses view, optional ?q=question_id, and active filter search params
+const parseHashRoute = (): {
+  view: AppView;
+  questionId: string | null;
+  urlFilters: Partial<FilterState>;
+} => {
   try {
     const fullHash = window.location.hash || '';
     const [hashPath, hashQuery] = fullHash.split('?');
@@ -49,15 +55,129 @@ const parseHashRoute = (): { view: AppView; questionId: string | null } => {
     }
 
     let questionId: string | null = null;
+    const urlFilters: Partial<FilterState> = {};
+
     if (hashQuery) {
       const params = new URLSearchParams(hashQuery);
       questionId = params.get('q');
+
+      const unitParams = params.getAll('unit');
+      if (unitParams.length > 0) {
+        const units = unitParams
+          .flatMap((u) => u.split('|'))
+          .map((u) => u.trim())
+          .filter(Boolean);
+        if (units.length > 0) {
+          urlFilters.selectedUnits = units;
+        }
+      }
+
+      const subtopicParams = params.getAll('subtopic');
+      if (subtopicParams.length > 0) {
+        const subs = subtopicParams
+          .flatMap((s) => s.split('|'))
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (subs.length > 0) {
+          urlFilters.selectedSubtopics = subs;
+        }
+      }
+
+      const typeParam = params.get('type');
+      if (typeParam === 'mcq' || typeParam === 'theory' || typeParam === 'all') {
+        urlFilters.questionType = typeParam;
+      }
+
+      const yearParam = params.get('year');
+      if (yearParam) {
+        const yrs = yearParam.split(',').map((y) => y.trim()).filter(Boolean);
+        if (yrs.length > 0) urlFilters.selectedYears = yrs;
+      }
+
+      const seriesParam = params.get('series');
+      if (seriesParam) {
+        const srs = seriesParam.split(',').map((s) => s.trim()).filter(Boolean);
+        if (srs.length > 0) urlFilters.selectedSeries = srs;
+      }
+
+      const statusParam = params.get('status');
+      if (statusParam === 'unattempted' || statusParam === 'review' || statusParam === 'mastered') {
+        urlFilters.statusFilter = statusParam;
+      }
+
+      const bookmarkedParam = params.get('bookmarked');
+      if (bookmarkedParam === '1' || bookmarkedParam === 'true') {
+        urlFilters.bookmarkedOnly = true;
+      }
+
+      const searchParam = params.get('search');
+      if (searchParam) {
+        urlFilters.searchQuery = searchParam;
+      }
     }
 
-    return { view, questionId };
+    return { view, questionId, urlFilters };
   } catch {
-    return { view: 'home', questionId: null };
+    return { view: 'home', questionId: null, urlFilters: {} };
   }
+};
+
+// Helper to normalize raw JSON questions to unified QuestionItem format with strict null safety
+const normalizeQuestions = (data: unknown[]): QuestionItem[] => {
+  if (!Array.isArray(data)) return [];
+  return data.map((raw) => {
+    const q = (raw || {}) as Partial<QuestionItem> & Record<string, any>;
+    const qNum =
+      q.questionNumber ??
+      (q.question_number !== undefined
+        ? String(q.question_number)
+        : q.id
+        ? q.id.split('_').pop()?.replace(/^q/i, '') || '1'
+        : '1');
+    const qImg =
+      q.questionImagePath ||
+      q.question_image_url ||
+      q.question_image ||
+      q.image ||
+      q.image_url ||
+      q.crop_path ||
+      '';
+    const msImg =
+      q.markSchemeImagePath ||
+      q.mark_scheme_image_url ||
+      q.mark_scheme_image ||
+      q.ms_image ||
+      q.ms_image_url ||
+      q.ms_crop_path ||
+      null;
+    const totalMarks = Number(q.marks ?? q.total_marks ?? 1) || 1;
+    const subtopics = Array.isArray(q.subtopics) && q.subtopics.length > 0
+      ? q.subtopics
+      : q.subtopic
+      ? [q.subtopic]
+      : [];
+
+    return {
+      ...q,
+      id: q.id || '',
+      paperId: q.paperId || q.paper_id || '',
+      unit: q.unit || q.topic || '',
+      unitCode: q.unitCode || q.paperCode || q.paper_code || '',
+      year: Number(q.year) || 2024,
+      series: q.series || q.session || '',
+      questionNumber: String(qNum),
+      parentQuestion: q.parentQuestion || String(qNum).replace(/\([a-z0-9]+\).*$/i, '') || String(qNum),
+      subPart: q.subPart || q.subpart || '',
+      marks: totalMarks,
+      topic: q.topic || 'General',
+      subtopic: q.subtopic || subtopics[0] || q.topic || 'General',
+      subtopics,
+      hasStem: Boolean(q.hasStem),
+      stemSummary: q.stemSummary ?? null,
+      questionImagePath: qImg,
+      markSchemeImagePath: msImg,
+    };
+  });
 };
 
 export const App: React.FC = () => {
@@ -99,11 +219,26 @@ export const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(initialRoute.current.view);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(initialRoute.current.questionId);
 
-  const activeSubject: Subject = currentView.startsWith('physics')
-    ? 'physics'
-    : currentView.startsWith('mathematics')
-    ? 'mathematics'
-    : 'chemistry';
+  const activeSubject: Subject = useMemo(() => {
+    if (currentView.startsWith('physics')) return 'physics';
+    if (currentView.startsWith('mathematics')) return 'mathematics';
+    if (currentView.startsWith('chemistry')) return 'chemistry';
+    try {
+      const saved = localStorage.getItem('edexcel_active_subject') as Subject;
+      if (saved && ['chemistry', 'physics', 'mathematics'].includes(saved)) {
+        return saved;
+      }
+    } catch {}
+    return 'chemistry';
+  }, [currentView]);
+
+  const { setSubjectTheme } = useTheme();
+  useEffect(() => {
+    setSubjectTheme(activeSubject);
+    try {
+      localStorage.setItem('edexcel_active_subject', activeSubject);
+    } catch {}
+  }, [activeSubject, setSubjectTheme]);
 
   const handleNavigate = useCallback((view: AppView) => {
     const nextSubject: Subject = view.startsWith('physics')
@@ -139,32 +274,22 @@ export const App: React.FC = () => {
   // Listen to popstate / hashchange for browser back and forward navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const { view, questionId } = parseHashRoute();
+      const { view, questionId, urlFilters } = parseHashRoute();
       setCurrentView((prev) => (prev !== view ? view : prev));
       if (questionId) {
         setSelectedQuestionId(questionId);
+      }
+      if (Object.keys(urlFilters).length > 0) {
+        setFilters((prev) => ({ ...prev, ...urlFilters }));
+        if (urlFilters.bookmarkedOnly !== undefined) {
+          setActiveTab(urlFilters.bookmarkedOnly ? 'bookmarked' : 'all');
+        }
       }
     };
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
-  // Sync selected question ID to URL hash in topical view
-  useEffect(() => {
-    if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical' && currentView !== 'mathematics-topical') return;
-    if (!selectedQuestionId) return;
-
-    const basePath = currentView === 'physics-topical'
-      ? '#/physics/topical'
-      : currentView === 'mathematics-topical'
-      ? '#/mathematics/topical'
-      : '#/topical';
-    const newHash = `${basePath}?q=${encodeURIComponent(selectedQuestionId)}`;
-    if (window.location.hash !== newHash) {
-      window.history.replaceState(null, '', newHash);
-    }
-  }, [currentView, selectedQuestionId]);
 
   // Dynamic Browser Tab Title
   useEffect(() => {
@@ -195,8 +320,22 @@ export const App: React.FC = () => {
     return chemQuestions || [];
   }, [activeSubject, physQuestions, mathQuestions, chemQuestions]);
 
-  // Default view: Question Only mode so answers aren't spoiled
-  const [viewMode, setViewMode] = useState<ViewMode>('question-only');
+  // Persist viewMode across page reloads (defaults to 'question-only' so answers aren't spoiled)
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('edexcel_view_mode');
+      if (saved === 'split') return 'split';
+      if (saved === 'question-only' || saved === 'question') return 'question-only';
+      if (saved === 'ms-only' || saved === 'mark_scheme') return 'ms-only';
+    } catch {}
+    return 'question-only';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('edexcel_view_mode', viewMode);
+    } catch {}
+  }, [viewMode]);
 
   // Cloud-synced bookmarks and question statuses from ProgressContext
   const { 
@@ -345,7 +484,7 @@ export const App: React.FC = () => {
     }
   }, [activeSubject]);
 
-  // On-demand dataset loading per active subject (avoids fetching both concurrently on cold start)
+  // On-demand dataset loading per active subject (avoids fetching all concurrently on cold start)
   useEffect(() => {
     if (currentView === 'home') {
       return;
@@ -361,9 +500,10 @@ export const App: React.FC = () => {
           if (!res.ok) throw new Error(`Failed to load Chemistry dataset: ${res.statusText}`);
           return res.json();
         })
-        .then((data: QuestionItem[]) => {
+        .then((data: unknown[]) => {
           if (isMounted) {
-            setChemQuestions([...data].sort(sortQuestionsLatestFirst));
+            const normalized = normalizeQuestions(data);
+            setChemQuestions([...normalized].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -381,9 +521,10 @@ export const App: React.FC = () => {
           if (!res.ok) throw new Error(`Failed to load Physics dataset: ${res.statusText}`);
           return res.json();
         })
-        .then((data: QuestionItem[]) => {
+        .then((data: unknown[]) => {
           if (isMounted) {
-            setPhysQuestions([...data].sort(sortQuestionsLatestFirst));
+            const normalized = normalizeQuestions(data);
+            setPhysQuestions([...normalized].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -401,9 +542,10 @@ export const App: React.FC = () => {
           if (!res.ok) throw new Error(`Failed to load Mathematics dataset: ${res.statusText}`);
           return res.json();
         })
-        .then((data: QuestionItem[]) => {
+        .then((data: unknown[]) => {
           if (isMounted) {
-            setMathQuestions([...data].sort(sortQuestionsLatestFirst));
+            const normalized = normalizeQuestions(data);
+            setMathQuestions([...normalized].sort(sortQuestionsLatestFirst));
             setLoadingSubject(null);
           }
         })
@@ -421,22 +563,73 @@ export const App: React.FC = () => {
   }, [activeSubject, currentView, chemQuestions, physQuestions, mathQuestions]);
 
   // Active drawer tab: 'all' | 'bookmarked'
-  const [activeTab, setActiveTab] = useState<'all' | 'bookmarked'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'bookmarked'>(
+    initialRoute.current.urlFilters.bookmarkedOnly ? 'bookmarked' : 'all'
+  );
 
   // Responsive question list drawer state (< 1024px)
   const [isQuestionDrawerOpen, setIsQuestionDrawerOpen] = useState<boolean>(false);
 
-  // Filter state for topical explorer
-  const [filters, setFilters] = useState<FilterState>({
-    selectedUnits: [],
-    selectedSubtopics: [],
-    selectedYears: [],
-    selectedSeries: [],
-    searchQuery: '',
-    statusFilter: 'all',
-    questionType: 'all',
-    bookmarkedOnly: false,
+  // Filter state for topical explorer (hydrated from URL search params on initial load)
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const uf = initialRoute.current.urlFilters;
+    return {
+      selectedUnits: uf.selectedUnits ?? [],
+      selectedSubtopics: uf.selectedSubtopics ?? [],
+      selectedYears: uf.selectedYears ?? [],
+      selectedSeries: uf.selectedSeries ?? [],
+      searchQuery: uf.searchQuery ?? '',
+      statusFilter: uf.statusFilter ?? 'all',
+      questionType: uf.questionType ?? 'all',
+      bookmarkedOnly: uf.bookmarkedOnly ?? false,
+    };
   });
+
+  // Sync active filters and selected question ID to URL hash search params in topical view
+  useEffect(() => {
+    if (currentView !== 'chemistry-topical' && currentView !== 'physics-topical' && currentView !== 'mathematics-topical') return;
+
+    const basePath = currentView === 'physics-topical'
+      ? '#/physics/topical'
+      : currentView === 'mathematics-topical'
+      ? '#/mathematics/topical'
+      : '#/topical';
+
+    const params = new URLSearchParams();
+    if (filters.selectedUnits.length > 0) {
+      filters.selectedUnits.forEach((u) => params.append('unit', u));
+    }
+    if (filters.selectedSubtopics.length > 0) {
+      filters.selectedSubtopics.forEach((s) => params.append('subtopic', s));
+    }
+    if (filters.questionType && filters.questionType !== 'all') {
+      params.set('type', filters.questionType);
+    }
+    if (filters.selectedYears.length > 0) {
+      params.set('year', filters.selectedYears.join(','));
+    }
+    if (filters.selectedSeries.length > 0) {
+      params.set('series', filters.selectedSeries.join(','));
+    }
+    if (filters.statusFilter && filters.statusFilter !== 'all') {
+      params.set('status', filters.statusFilter);
+    }
+    if (filters.bookmarkedOnly) {
+      params.set('bookmarked', '1');
+    }
+    if (filters.searchQuery.trim()) {
+      params.set('search', filters.searchQuery.trim());
+    }
+    if (selectedQuestionId) {
+      params.set('q', selectedQuestionId);
+    }
+
+    const queryStr = params.toString();
+    const newHash = queryStr ? `${basePath}?${queryStr}` : basePath;
+    if (window.location.hash !== newHash) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [currentView, selectedQuestionId, filters]);
 
   const prevSubjectRef = useRef<Subject>(activeSubject);
   useEffect(() => {
@@ -626,14 +819,10 @@ export const App: React.FC = () => {
   }, [activeQuestion, toggleBookmark]);
 
   // Keyboard navigation shortcuts (active in Topical Explorer mode):
-  // - ArrowLeft / [: Previous question
-  // - ArrowRight / ]: Next question
-  // - M or Space: Toggle mark scheme visibility
-  // - B: Toggle Bookmark
-  // Keyboard navigation shortcuts (active in Topical Explorer mode):
-  // - ArrowLeft / [: Previous question
-  // - ArrowRight / ]: Next question
-  // - M or Space: Toggle mark scheme visibility
+  // - ArrowLeft / [ / K: Previous question
+  // - ArrowRight / ] / J: Next question
+  // - Space: Toggle mark scheme visibility
+  // - M: 3-way view mode cycle (split -> question-only -> ms-only)
   // - B: Toggle Bookmark
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -653,16 +842,20 @@ export const App: React.FC = () => {
         return;
       }
 
-      if (e.key === 'ArrowLeft' || e.key === '[') {
+      if (e.key === 'ArrowLeft' || e.key === '[' || e.key === 'k' || e.key === 'K') {
         e.preventDefault();
         handlePrevQuestion();
-      } else if (e.key === 'ArrowRight' || e.key === ']') {
+      } else if (e.key === 'ArrowRight' || e.key === ']' || e.key === 'j' || e.key === 'J') {
         e.preventDefault();
         handleNextQuestion();
-      } else if (e.key === ' ' || e.code === 'Space' || e.key === 'm' || e.key === 'M') {
+      } else if (e.key === ' ' || e.code === 'Space') {
         if (e.repeat) return;
         e.preventDefault();
         handleToggleMarkScheme();
+      } else if (e.key === 'm' || e.key === 'M') {
+        if (e.repeat) return;
+        e.preventDefault();
+        setViewMode((prev) => (prev === 'split' ? 'question-only' : prev === 'question-only' ? 'ms-only' : 'split'));
       } else if (e.key === 'b' || e.key === 'B') {
         if (e.repeat) return;
         e.preventDefault();
@@ -762,6 +955,18 @@ export const App: React.FC = () => {
     return filteredQuestions.reduce((sum, q) => sum + (q.marks || 0), 0);
   }, [filteredQuestions]);
 
+  const accentSpotlight = useMemo(() => {
+    switch (activeSubject) {
+      case 'mathematics':
+        return 'rgba(249, 115, 22, 0.06)'; // Orange
+      case 'physics':
+        return 'rgba(59, 130, 246, 0.06)'; // Blue
+      case 'chemistry':
+      default:
+        return 'rgba(6, 182, 212, 0.06)';  // Cyan
+    }
+  }, [activeSubject]);
+
   const isSubjectLoading = currentView !== 'home' && (
     loadingSubject === activeSubject ||
     (activeSubject === 'chemistry' && !chemQuestions) ||
@@ -770,7 +975,14 @@ export const App: React.FC = () => {
   );
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
+    <div
+      className="h-screen w-screen min-h-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-dark-950 dark:text-slate-100 font-sans flex flex-col relative transition-colors"
+      style={{
+        '--accent-spotlight': accentSpotlight,
+      } as React.CSSProperties}
+    >
+      <AmbientBackground />
+
       {/* Top Application Navbar */}
       <AppNavbar
         currentView={currentView}
@@ -786,14 +998,14 @@ export const App: React.FC = () => {
       />
 
       {isSubjectLoading ? (
-        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-600 dark:text-slate-400 gap-3">
+        <div className="flex-1 flex flex-col items-center justify-center bg-transparent text-slate-600 dark:text-slate-400 gap-3 relative z-10">
           <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
           <p className="text-sm font-medium">
             Loading {activeSubject === 'physics' ? 'Physics' : activeSubject === 'mathematics' ? 'Mathematics' : 'Chemistry'} past papers & topical taxonomy...
           </p>
         </div>
       ) : datasetError && currentView !== 'home' && questions.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-950 text-rose-500 dark:text-rose-400 gap-3">
+        <div className="flex-1 flex flex-col items-center justify-center bg-transparent text-rose-500 dark:text-rose-400 gap-3 relative z-10">
           <p className="text-sm font-medium">Error: {datasetError}</p>
           <button
             onClick={() => window.location.reload()}
@@ -817,29 +1029,31 @@ export const App: React.FC = () => {
           )}
 
           {(currentView === 'chemistry-test-maker' || currentView === 'physics-test-maker' || currentView === 'mathematics-test-maker') && (
-            <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
-              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+            <div className={`flex-1 min-h-0 min-w-0 w-auto flex flex-col overflow-hidden relative z-10 transition-[margin] duration-200 ${
+              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px]' : '2xl:mr-[560px]') : ''
             }`}>
-              <React.Suspense fallback={<ViewLoadingFallback />}>
-                <TestMakerPage
-                  key={activeSubject}
-                  subject={activeSubject}
-                  questions={questions}
-                  cartQuestionIds={testCart}
-                  onAddToCart={handleAddToCart}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onClearCart={handleClearCart}
-                  onReorderCart={handleReorderCart}
-                  testTitle={testTitle}
-                  onSetTestTitle={setTestTitle}
-                />
-              </React.Suspense>
+              <CanvasErrorBoundary onResetFilters={handleResetFilters}>
+                <React.Suspense fallback={<ViewLoadingFallback />}>
+                  <TestMakerPage
+                    key={activeSubject}
+                    subject={activeSubject}
+                    questions={questions}
+                    cartQuestionIds={testCart}
+                    onAddToCart={handleAddToCart}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    onClearCart={handleClearCart}
+                    onReorderCart={handleReorderCart}
+                    testTitle={testTitle}
+                    onSetTestTitle={setTestTitle}
+                  />
+                </React.Suspense>
+              </CanvasErrorBoundary>
             </div>
           )}
 
           {(currentView === 'chemistry-topical' || currentView === 'physics-topical' || currentView === 'mathematics-topical') && (
-            <div className={`flex-1 flex flex-col overflow-hidden transition-[margin] duration-200 ${
-              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px] md:mr-[500px] lg:mr-[560px]' : 'md:mr-[500px] lg:mr-[560px]') : ''
+            <div className={`flex-1 min-h-0 min-w-0 w-auto flex flex-col overflow-visible relative z-20 transition-[margin] duration-200 ${
+              isDataBookletOpen ? (isDataBookletExpanded ? '2xl:mr-[960px]' : '2xl:mr-[560px]') : ''
             }`}>
               {/* Top Filter & Search Bar */}
               <TopBar
@@ -858,7 +1072,7 @@ export const App: React.FC = () => {
               />
 
               {/* Main Workspace: Left Drawer + Split Canvas */}
-              <div className="flex-1 flex overflow-hidden relative">
+              <div className="flex-1 min-h-0 w-full flex overflow-hidden relative">
                 <QuestionList
                   questions={filteredQuestions}
                   selectedQuestionId={activeQuestion?.id || null}
@@ -874,28 +1088,31 @@ export const App: React.FC = () => {
                   onCloseDrawer={() => setIsQuestionDrawerOpen(false)}
                 />
 
-                <CanvasErrorBoundary>
-                  <SplitViewer
-                    question={activeQuestion}
-                    prevQuestion={hasPrev ? filteredQuestions[currentIndex - 1] : null}
-                    nextQuestion={hasNext ? filteredQuestions[currentIndex + 1] : null}
-                    allQuestions={questions}
-                    onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
-                    viewMode={viewMode}
-                    onToggleMarkScheme={handleToggleMarkScheme}
-                    onSetViewMode={setViewMode}
-                    onPrevQuestion={handlePrevQuestion}
-                    onNextQuestion={handleNextQuestion}
-                    hasPrev={hasPrev}
-                    hasNext={hasNext}
-                    currentIndex={currentIndex}
-                    totalQuestions={filteredQuestions.length}
-                    questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
-                    onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
-                    isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
-                    onToggleBookmark={handleToggleActiveBookmark}
-                    onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
-                  />
+                <CanvasErrorBoundary onResetFilters={handleResetFilters}>
+                  <React.Suspense fallback={<ViewLoadingFallback />}>
+                    <SplitViewer
+                      question={activeQuestion}
+                      prevQuestion={hasPrev ? filteredQuestions[currentIndex - 1] : null}
+                      nextQuestion={hasNext ? filteredQuestions[currentIndex + 1] : null}
+                      allQuestions={questions}
+                      questions={filteredQuestions}
+                      onSelectQuestionById={(id: string) => setSelectedQuestionId(id)}
+                      viewMode={viewMode}
+                      onToggleMarkScheme={handleToggleMarkScheme}
+                      onSetViewMode={setViewMode}
+                      onPrevQuestion={handlePrevQuestion}
+                      onNextQuestion={handleNextQuestion}
+                      hasPrev={hasPrev}
+                      hasNext={hasNext}
+                      currentIndex={currentIndex}
+                      totalQuestions={filteredQuestions.length}
+                      questionStatus={activeQuestion ? (questionStatuses[activeQuestion.id] || 'unattempted') : 'unattempted'}
+                      onCycleStatus={() => activeQuestion && handleCycleStatus(activeQuestion.id)}
+                      isBookmarked={activeQuestion ? bookmarks.has(activeQuestion.id) : false}
+                      onToggleBookmark={handleToggleActiveBookmark}
+                      onOpenQuestionList={() => setIsQuestionDrawerOpen(true)}
+                    />
+                  </React.Suspense>
                 </CanvasErrorBoundary>
               </div>
             </div>
