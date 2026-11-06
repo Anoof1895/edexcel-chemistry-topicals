@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Columns, 
   Eye, 
@@ -52,7 +53,33 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isSecondaryPopoverOpen, setIsSecondaryPopoverOpen] = useState(false);
+  const secondaryTriggerRef = useRef<HTMLButtonElement>(null);
   const secondaryPopoverRef = useRef<HTMLDivElement>(null);
+  const [secondaryPos, setSecondaryPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+
+  const updateSecondaryPosition = useCallback(() => {
+    const el = secondaryTriggerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const width = Math.min(320, vw - 16);
+    const left = Math.max(8, Math.min(rect.left, vw - width - 8));
+    const top = rect.bottom + 8;
+    const maxHeight = Math.min(480, Math.max(200, vh - top - 16));
+    setSecondaryPos({ top, left, maxHeight });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isSecondaryPopoverOpen) return;
+    updateSecondaryPosition();
+    window.addEventListener('resize', updateSecondaryPosition);
+    window.addEventListener('scroll', updateSecondaryPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateSecondaryPosition);
+      window.removeEventListener('scroll', updateSecondaryPosition, true);
+    };
+  }, [isSecondaryPopoverOpen, updateSecondaryPosition]);
 
   // Debounced search input state
   const [searchInput, setSearchInput] = useState(filters.searchQuery);
@@ -72,7 +99,13 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (secondaryPopoverRef.current && !secondaryPopoverRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        secondaryTriggerRef.current &&
+        !secondaryTriggerRef.current.contains(target) &&
+        secondaryPopoverRef.current &&
+        !secondaryPopoverRef.current.contains(target)
+      ) {
         setIsSecondaryPopoverOpen(false);
       }
     };
@@ -136,6 +169,20 @@ export const TopBar: React.FC<TopBarProps> = ({
       count: counts.get(u),
     }));
   }, [availableUnits, allQuestions]);
+
+  // Unit-filtered questions (NOT filtered by selectedSubtopics) for accurate SubtopicMultiSelect counts
+  const unitFilteredQuestions = useMemo(() => {
+    const base = allQuestions || [];
+    if (filters.selectedUnits.length === 0) return base;
+    return base.filter((q) =>
+      filters.selectedUnits.some((fu) => {
+        if (fu === q.unit || fu === q.unitCode) return true;
+        const fuPrefix = fu.split(':')[0].trim().toLowerCase();
+        const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
+        return Boolean(fuPrefix && qPrefix && fuPrefix === qPrefix);
+      })
+    );
+  }, [allQuestions, filters.selectedUnits]);
 
   const yearOptions: FilterOption[] = useMemo(() => {
     const counts = new Map<string, number>();
@@ -356,7 +403,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             hierarchy={subtopicHierarchy}
             selectedSubtopics={filters.selectedSubtopics}
             onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
-            questions={allQuestions}
+            questions={unitFilteredQuestions}
           />
 
           {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
@@ -404,8 +451,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
 
           {/* Consolidate Secondary Filters into "Filters" Popover */}
-          <div className="relative shrink-0" ref={secondaryPopoverRef}>
+          <div className="relative shrink-0">
             <button
+              ref={secondaryTriggerRef}
               type="button"
               onClick={() => setIsSecondaryPopoverOpen((prev) => !prev)}
               onPointerMove={handleSpotlightMove}
@@ -427,9 +475,20 @@ export const TopBar: React.FC<TopBarProps> = ({
               )}
             </button>
 
-            {/* Secondary Filters Popover Dropdown */}
-            {isSecondaryPopoverOpen && (
-              <div className="absolute top-full mt-2 right-0 xl:left-0 xl:right-auto w-80 max-w-[calc(100vw-1rem)] max-h-[calc(100vh-5rem)] overflow-y-auto surface-glass shadow-[0_16px_40px_rgba(0,0,0,0.65),inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3">
+            {/* Secondary Filters Popover Dropdown (Portaled to escape TopBar stacking context) */}
+            {isSecondaryPopoverOpen &&
+              secondaryPos &&
+              typeof document !== 'undefined' &&
+              createPortal(
+                <div
+                  ref={secondaryPopoverRef}
+                  style={{
+                    top: secondaryPos.top,
+                    left: secondaryPos.left,
+                    maxHeight: secondaryPos.maxHeight,
+                  }}
+                  className="fixed z-[9999] w-80 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain bg-white dark:bg-[#0f1420] border border-slate-200 dark:border-slate-700/80 shadow-2xl rounded-2xl p-3 space-y-3 select-none"
+                >
                 {/* Popover Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.07]">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
@@ -562,8 +621,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                     })}
                   </div>
                 </div>
-              </div>
-            )}
+                </div>,
+                document.body
+              )}
           </div>
 
           {/* Stats Pill */}
@@ -721,7 +781,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                   hierarchy={subtopicHierarchy}
                   selectedSubtopics={filters.selectedSubtopics}
                   onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
-                  questions={allQuestions}
+                  questions={unitFilteredQuestions}
+                  fullWidth
                 />
               </div>
 

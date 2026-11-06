@@ -159,6 +159,8 @@ class MSMatcherPhysics(MSMatcher):
             return next(((b0, b1) for b0, b1 in bands if b0 - 0.5 <= y <= b1 + 0.5), None)
 
         def normalize_label(compact: str) -> str:
+            # Missing open parenthesis: "19d)" -> "19(d)"
+            compact = re.sub(r"^(\d{1,2})([a-h])\)$", r"\1(\2)", compact)
             # Glyph quirk: "(c)" rendered as "I" in some rows, e.g. "18I(i)" -> "18(c)(i)"
             compact = re.sub(r"^(\d{1,2})I(?=\(|$)", r"\1(c)", compact)
             # Typo quirk: doubled roman numerals "18(c)(i)(ii)" -> "18(c)(ii)" (depth never exceeds letter+roman)

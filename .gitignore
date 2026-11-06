@@ -21,6 +21,7 @@ Thumbs.db
 tmp_test/
 temp_crop*.png
 test_*.png
+*.backup.json
 
 # Large image assets hosted on Cloudflare R2 (excluded from Git and Vercel builds)
 frontend/public/crops/

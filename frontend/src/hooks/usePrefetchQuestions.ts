@@ -5,6 +5,18 @@ import { resolveQuestionImageUrl, resolveMarkSchemeImageUrl } from '../utils/ima
 // Global cache of prefetched image URLs to prevent duplicate network downloads
 const prefetchedUrlCache = new Set<string>();
 
+/** Clear the in-memory prefetch cache (e.g. on cache bust or test reload) */
+export function clearPrefetchCache(): void {
+  prefetchedUrlCache.clear();
+}
+
+// In Vite development, clear cache on HMR dispose
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    prefetchedUrlCache.clear();
+  });
+}
+
 export interface PrefetchOptions {
   backward?: number; // default: 2
   forward?: number;  // default: 5

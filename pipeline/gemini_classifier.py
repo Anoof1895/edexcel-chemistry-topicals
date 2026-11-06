@@ -107,6 +107,83 @@ UNIT_QUANTITY_RE = re.compile(
     re.I,
 )
 
+MATH_UNIT_ALIASES: Dict[str, str] = {
+    "P1": "WMA11",
+    "P2": "WMA12",
+    "P3": "WMA13",
+    "P4": "WMA14",
+    "M1": "WME01",
+    "M2": "WME02",
+    "M3": "WME03",
+    "S1": "WST01",
+    "S2": "WST02",
+    "S3": "WST03",
+    "WMA11": "WMA11",
+    "WMA12": "WMA12",
+    "WMA13": "WMA13",
+    "WMA14": "WMA14",
+    "WME01": "WME01",
+    "WST01": "WST01",
+}
+
+PHYSICS_UNIT_ALIASES: Dict[str, str] = {
+    "U1": "WPH11",
+    "U2": "WPH12",
+    "U3": "WPH13",
+    "U4": "WPH14",
+    "U5": "WPH15",
+    "U6": "WPH16",
+    "WPH11": "WPH11",
+    "WPH12": "WPH12",
+    "WPH13": "WPH13",
+    "WPH14": "WPH14",
+    "WPH15": "WPH15",
+    "WPH16": "WPH16",
+}
+
+CHEMISTRY_UNIT_ALIASES: Dict[str, str] = {
+    "U1": "WCH11",
+    "U2": "WCH12",
+    "U3": "WCH13",
+    "U4": "WCH14",
+    "U5": "WCH15",
+    "U6": "WCH16",
+    "WCH11": "WCH11",
+    "WCH12": "WCH12",
+    "WCH13": "WCH13",
+    "WCH14": "WCH14",
+    "WCH15": "WCH15",
+    "WCH16": "WCH16",
+}
+
+SYNOPTIC_ALLOWED_UNITS: Dict[str, Dict[str, List[str]]] = {
+    "chemistry": {
+        "WCH11": ["WCH11"],
+        "WCH12": ["WCH12", "WCH11"],
+        "WCH13": ["WCH13", "WCH11", "WCH12"],
+        "WCH14": ["WCH14", "WCH11", "WCH12"],
+        "WCH15": ["WCH15", "WCH11", "WCH12", "WCH14"],
+        "WCH16": ["WCH16", "WCH11", "WCH12", "WCH14", "WCH15"],
+    },
+    "physics": {
+        "WPH11": ["WPH11"],
+        "WPH12": ["WPH12", "WPH11"],
+        "WPH13": ["WPH13", "WPH11", "WPH12"],
+        "WPH14": ["WPH14", "WPH11", "WPH12"],
+        "WPH15": ["WPH15", "WPH11", "WPH12", "WPH14"],
+        "WPH16": ["WPH16", "WPH11", "WPH12", "WPH14", "WPH15"],
+    },
+    "mathematics": {
+        "WMA11": ["WMA11"],
+        "WMA12": ["WMA12", "WMA11"],
+        "WMA13": ["WMA13", "WMA11", "WMA12"],
+        "WMA14": ["WMA14", "WMA11", "WMA12", "WMA13"],
+        "WME01": ["WME01", "WMA11"],
+        "WST01": ["WST01"],
+    },
+}
+
+
 
 def normalize_span(text: str) -> str:
     """Normalizes font shift (-29 codepoints) and control characters from legacy exam PDFs."""
@@ -483,89 +560,262 @@ class UnitTaxonomyResolver:
                     prefix = s.split(":")[0].strip()
                     code_map[prefix.upper()] = s
                     code_map[s.upper()] = s
-                    # Also index individual sub-numbers in ranges like "2.3-2.5" -> "2.3", "2.4", "2.5"
-                    m_rng = re.match(r"^(\d+)\.(\d+)\s*-\s*\1\.(\d+)$", prefix)
-                    if m_rng:
-                        maj = m_rng.group(1)
-                        lo, hi = int(m_rng.group(2)), int(m_rng.group(3))
-                        for sub_n in range(lo, hi + 1):
-                            code_map[f"{maj}.{sub_n}".upper()] = s
+
+                    # Index exact leading token e.g. "P1 1.1-1.2", "P1 5.2a", "M1 3.1a", "1.3.1", "1.4.3"
+                    m_lead = re.match(
+                        r"^([A-Z0-9]+(?:\s+[0-9]+(?:\.[0-9]+)+[a-z]?|[0-9]+(?:\.[0-9]+)+[a-z]?))",
+                        prefix,
+                        re.I,
+                    )
+                    if m_lead:
+                        lead = m_lead.group(1).upper()
+                        code_map[lead] = s
+                        parts = lead.split()
+                        if len(parts) > 1:
+                            code_map[parts[1]] = s
+
+                    # Index 3-part dotted numbers (e.g. 1.3.1, 1.4.2, 2.3.5, 4.3.1, 5.6.3)
+                    for num3 in re.findall(r"\b\d+\.\d+\.\d+[a-z]?\b", prefix, re.I):
+                        code_map[num3.upper()] = s
+
+                    # Index 2-part dotted numbers with optional letters (e.g. 1.1, 1.12, 1.5, 5.2a, 7.1b, 3.3, 6.5)
+                    for num2 in re.findall(r"\b\d+\.\d+[a-z]?\b", prefix, re.I):
+                        code_map.setdefault(num2.upper(), s)
+
+                    # Index ranges like "1.1-1.4", "2.1-2.5", "3.1-3.7", "11.1-11.5", "17.1-17.6"
+                    for m in re.finditer(r"(\d+)\.(\d+)\s*-\s*(?:\1\.)?(\d+)", prefix):
+                        maj = m.group(1)
+                        lo, hi = int(m.group(2)), int(m.group(3))
+                        for n in range(lo, hi + 1):
+                            code_map.setdefault(f"{maj}.{n}".upper(), s)
+
+                    # Index letter codes like 3A, 3B, 4A, 4B, 8A, 8B, 8C, 9A, 9B, 10A, 12A, 15A
+                    m_let = re.match(r"^([0-9]+[A-Za-z])\b", prefix)
+                    if m_let:
+                        code_map.setdefault(m_let.group(1).upper(), s)
+
+                    # Index Practical codes U3.1, U6.2
+                    m_u = re.match(r"^(U\d+\.\d+)", prefix)
+                    if m_u:
+                        code_map[m_u.group(1).upper()] = s
+                        code_map[m_u.group(1)[1:].upper()] = s
+
+                    # Index Spec ranges and single spec numbers (e.g. Spec 1-3, Spec 27, 29, 32)
+                    m_spec = re.search(r"Spec\s+(\d+)\s*-\s*(\d+)", prefix, re.I)
+                    if m_spec:
+                        s_lo, s_hi = int(m_spec.group(1)), int(m_spec.group(2))
+                        for sn in range(s_lo, s_hi + 1):
+                            code_map.setdefault(f"SPEC {sn}", s)
+                            code_map.setdefault(f"SPEC{sn}", s)
+                    for sn in re.findall(r"Spec\s+(\d+)", prefix, re.I):
+                        code_map.setdefault(f"SPEC {sn}", s)
+                        code_map.setdefault(f"SPEC{sn}", s)
+
             self.unit_subtopics[ucode] = subs
             self.unit_code_to_subtopic[ucode] = code_map
             self.unit_subtopic_to_topic[ucode] = topic_map
 
     def normalize_unit_code(self, raw_unit_code: str, paper_id: str = "") -> str:
-        for candidate in (raw_unit_code, paper_id):
+        candidates = [raw_unit_code, paper_id]
+        aliases = (
+            MATH_UNIT_ALIASES
+            if self.subject == "mathematics"
+            else PHYSICS_UNIT_ALIASES
+            if self.subject == "physics"
+            else CHEMISTRY_UNIT_ALIASES
+        )
+        for candidate in candidates:
             if not candidate:
                 continue
-            token = candidate.split("/")[0].split("_")[0].strip().upper()
-            if token in self.syllabus:
-                return token
-            if len(token) >= 5 and token[:5] in self.syllabus:
-                return token[:5]
-            m = re.match(r"^(WCH\d\d|WPH\d\d|WMA\d\d|WME\d\d|WST\d\d)", token)
-            if m and m.group(1) in self.syllabus:
-                return m.group(1)
+            cleaned = str(candidate).strip().upper()
+            cleaned = re.sub(r"(_UNUSED|_OLD)$", "", cleaned)
+            if cleaned in self.syllabus:
+                return cleaned
+            if cleaned in aliases and aliases[cleaned] in self.syllabus:
+                return aliases[cleaned]
+            m_code = re.match(r"^(W[CPE][HMAEST]\d\d)", cleaned)
+            if m_code and m_code.group(1) in self.syllabus:
+                return m_code.group(1)
+            for token in re.split(r"[/_]", cleaned):
+                token = token.strip()
+                if token in self.syllabus:
+                    return token
+                if token in aliases and aliases[token] in self.syllabus:
+                    return aliases[token]
+                m_sub = re.match(r"^(W[CPE][HMAEST]\d\d)", token)
+                if m_sub and m_sub.group(1) in self.syllabus:
+                    return m_sub.group(1)
+                m_alias = re.match(r"^([PMSU][1-6])\b", token)
+                if m_alias and m_alias.group(1) in aliases and aliases[m_alias.group(1)] in self.syllabus:
+                    return aliases[m_alias.group(1)]
         return next(iter(self.syllabus.keys()))
+
+    def get_allowed_synoptic_units(self, unit_code: str) -> List[str]:
+        subject_map = SYNOPTIC_ALLOWED_UNITS.get(self.subject, {})
+        return subject_map.get(unit_code, [unit_code])
 
     def format_unit_taxonomy_prompt(self, unit_code: str) -> str:
         udata = self.syllabus[unit_code]
         uname = udata.get("unit") or udata.get("unit_name") or unit_code
         utitle = udata.get("title") or ""
         lines = [
-            f"UNIT: {uname} — {utitle} ({unit_code})",
-            "ALLOWED SUBTOPICS FOR THIS UNIT (return 1 or 2 code prefixes per question, e.g. [\"3A\"] or [\"1.1\", \"1.4\"]):",
+            f"PRIMARY UNIT: {uname} — {utitle} ({unit_code})",
+            "ALLOWED PRIMARY SUBTOPICS (mainSubtopic MUST come from this unit):",
         ]
         for topic_name, subs in udata["topics"].items():
             lines.append(f"  {topic_name}:")
             for s in subs:
                 code = s.split(":")[0].strip()
-                lines.append(f'    - "{code}" => {s}')
+                lines.append(f'    - Code: "{code}" => Subtopic: {s}')
+
+        synoptic_units = [u for u in self.get_allowed_synoptic_units(unit_code) if u != unit_code]
+        if synoptic_units:
+            lines.append("\nALLOWED SYNOPTIC UNITS (for optional relatedSubtopics ONLY):")
+            for s_ucode in synoptic_units:
+                s_data = self.syllabus.get(s_ucode)
+                if not s_data:
+                    continue
+                s_name = s_data.get("unit") or s_ucode
+                lines.append(f"  {s_name} ({s_ucode}):")
+                for s_topic, s_subs in s_data["topics"].items():
+                    sub_codes = [sub.split(":")[0].strip() for sub in s_subs]
+                    lines.append(f'    * {s_topic}: {", ".join(sub_codes)}')
         return "\n".join(lines)
+
+    def _match_single(self, unit_code: str, raw: Any) -> Optional[str]:
+        if not raw or not isinstance(raw, str):
+            return None
+        c_clean = raw.strip()
+        c_upper = c_clean.upper()
+        code_map = self.unit_code_to_subtopic.get(unit_code, {})
+        allowed_subs = self.unit_subtopics.get(unit_code, [])
+
+        if c_upper in code_map:
+            return code_map[c_upper]
+
+        if ":" in c_clean:
+            prefix = c_clean.split(":")[0].strip().upper()
+            if prefix in code_map:
+                return code_map[prefix]
+
+        # 1. 3-part dotted numbers (e.g. 1.3.1, 2.3.5, 4.3.1)
+        m_num3 = re.search(r"\b\d+\.\d+\.\d+[a-z]?\b", c_clean, re.I)
+        if m_num3 and m_num3.group(0).upper() in code_map:
+            return code_map[m_num3.group(0).upper()]
+
+        # 2. Unit prefix + dotted number e.g. "P1 5.2a", "M1 3.1a"
+        m_unit_num = re.search(
+            r"\b(?:P[1-4]|M[1-3]|S[1-3]|WPH\d\d|WCH\d\d)\s+\d+\.\d+[a-z]?\b",
+            c_clean,
+            re.I,
+        )
+        if m_unit_num and m_unit_num.group(0).upper() in code_map:
+            return code_map[m_unit_num.group(0).upper()]
+
+        # 3. 2-part dotted numbers (e.g. 1.5, 5.2a, 7.1b, 3.3, 6.5)
+        m_num2 = re.search(r"\b\d+\.\d+[a-z]?\b", c_clean, re.I)
+        if m_num2 and m_num2.group(0).upper() in code_map:
+            return code_map[m_num2.group(0).upper()]
+
+        # 4. Letter code inside string e.g. "3A", "8C", "15D"
+        m_let = re.search(r"\b(\d+[A-Za-z])\b", c_clean)
+        if m_let and m_let.group(1).upper() in code_map:
+            return code_map[m_let.group(1).upper()]
+
+        # 5. Spec numbers e.g. "Spec 35"
+        m_spec = re.search(r"\bSpec(?:ification)?\s*(\d+)\b", c_clean, re.I)
+        if m_spec and f"SPEC {m_spec.group(1)}" in code_map:
+            return code_map[f"SPEC {m_spec.group(1)}"]
+
+        # 6. Substring / keyword match
+        c_low = c_clean.lower()
+        for s in allowed_subs:
+            if c_low in s.lower() or s.lower() in c_low:
+                return s
+
+        return None
+
+    def _match_single_in_units(self, unit_codes: List[str], raw: Any) -> Optional[str]:
+        for u in unit_codes:
+            m = self._match_single(u, raw)
+            if m:
+                return m
+        return None
+
+    def resolve_classification(
+        self, unit_code: str, cand: Any
+    ) -> Optional[Tuple[str, str, List[str], List[str]]]:
+        """
+        Resolves candidate classification (dict, list, str) into:
+        (mainTopic, mainSubtopic, relatedSubtopics, topics).
+
+        Rules:
+        - mainSubtopic MUST belong strictly to the paper's own unit_code.
+        - mainTopic is automatically derived via self.parent_fn(main_subtopic) so mismatch is impossible.
+        - relatedSubtopics must be valid canonical subtopics from allowed synoptic units (max 3),
+          excluding mainSubtopic.
+        - topics is the deduplicated list of parent topics tested, with mainTopic always at index 0.
+        """
+        main_raw = None
+        rel_raw = []
+
+        if isinstance(cand, dict):
+            main_raw = cand.get("mainSubtopic") or cand.get("main_subtopic") or cand.get("subtopic")
+            rel_raw = cand.get("relatedSubtopics") or cand.get("related_subtopics") or cand.get("subtopics") or []
+            if main_raw is None and isinstance(cand.get("subtopics"), list) and cand["subtopics"]:
+                main_raw = cand["subtopics"][0]
+                rel_raw = cand["subtopics"][1:]
+        elif isinstance(cand, list):
+            main_raw = cand[0] if cand else None
+            rel_raw = cand[1:] if len(cand) > 1 else []
+        elif isinstance(cand, str):
+            main_raw = cand
+            rel_raw = []
+
+        main_sub = self._match_single(unit_code, main_raw)
+        if not main_sub:
+            return None
+
+        # Derive mainTopic automatically
+        main_top = self.parent_fn(main_sub)
+
+        # Match relatedSubtopics strictly across allowed synoptic units
+        allowed_units = self.get_allowed_synoptic_units(unit_code)
+        related_subs: List[str] = []
+
+        if not isinstance(rel_raw, list):
+            rel_raw = [rel_raw]
+
+        for r in rel_raw:
+            r_match = self._match_single_in_units(allowed_units, r)
+            if r_match and r_match != main_sub and r_match not in related_subs:
+                related_subs.append(r_match)
+
+        # Enforce max 3 relatedSubtopics
+        related_subs = related_subs[:3]
+
+        # Derive topics list with mainTopic always at index 0
+        topics: List[str] = [main_top]
+        for r in related_subs:
+            p_top = self.parent_fn(r)
+            if p_top and p_top not in topics:
+                topics.append(p_top)
+
+        return main_top, main_sub, related_subs, topics
 
     def resolve(
         self, unit_code: str, raw_candidates: List[str]
     ) -> Optional[Tuple[str, str, List[str]]]:
         """
-        Maps a list of code prefixes or full subtopic strings to
+        Backward-compatible mapping: maps raw candidates to
         (canonical_topic, primary_subtopic, canonical_subtopics_list).
         """
-        code_map = self.unit_code_to_subtopic.get(unit_code, {})
-        topic_map = self.unit_subtopic_to_topic.get(unit_code, {})
-        allowed_subs = self.unit_subtopics.get(unit_code, [])
-
-        resolved_subs: List[str] = []
-        for cand in raw_candidates:
-            if not cand or not isinstance(cand, str):
-                continue
-            c_clean = cand.strip()
-            c_upper = c_clean.upper()
-
-            matched: Optional[str] = None
-            if c_upper in code_map:
-                matched = code_map[c_upper]
-            elif ":" in c_clean:
-                prefix = c_clean.split(":")[0].strip().upper()
-                if prefix in code_map:
-                    matched = code_map[prefix]
-
-            if not matched:
-                # Substring / keyword match within this unit's allowed subtopics
-                for s in allowed_subs:
-                    if c_clean.lower() in s.lower() or s.lower() in c_clean.lower():
-                        matched = s
-                        break
-
-            if matched and matched not in resolved_subs:
-                resolved_subs.append(matched)
-
-        if not resolved_subs:
+        res = self.resolve_classification(unit_code, raw_candidates)
+        if not res:
             return None
-
-        resolved_subs = resolved_subs[:2]
-        primary_sub = resolved_subs[0]
-        parent_topic = topic_map.get(primary_sub) or self.parent_fn(primary_sub)
-        return parent_topic, primary_sub, resolved_subs
+        m_top, m_sub, rel_subs, _ = res
+        all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
+        return m_top, m_sub, all_subs
 
 
 class GeminiClassifierPool:
@@ -663,10 +913,10 @@ def classify_unit_batch(
     resolver: UnitTaxonomyResolver,
     pool: GeminiClassifierPool,
     worker_id: int = 0,
-) -> Dict[str, Tuple[str, str, List[str]]]:
+) -> Dict[str, Tuple[str, str, List[str], List[str]]]:
     """
     Classifies a batch of questions belonging to the same `unit_code`.
-    Returns a dict mapping `question_id -> (topic, primary_subtopic, subtopics_list)`.
+    Returns a dict mapping `question_id -> (mainTopic, mainSubtopic, relatedSubtopics, topics)`.
     """
     taxonomy_block = resolver.format_unit_taxonomy_prompt(unit_code)
     q_lines: List[str] = []
@@ -689,21 +939,44 @@ def classify_unit_batch(
         if len(batch_items) > 1
         else sample_key_0
     )
+    sample_code_0 = resolver.unit_subtopics[unit_code][0].split(':')[0].strip()
+    sample_code_1 = resolver.unit_subtopics[unit_code][-1].split(':')[0].strip()
+
+    allowed_syn_units = [u for u in resolver.get_allowed_synoptic_units(unit_code) if u != unit_code]
+    if allowed_syn_units:
+        synoptic_scope_text = f"relatedSubtopics may come from the paper's own unit ({unit_code}) or allowed synoptic units ({', '.join(allowed_syn_units)})."
+    else:
+        synoptic_scope_text = f"all relatedSubtopics MUST come strictly from the paper's own unit ({unit_code})."
+
+    if subject == "physics":
+        subject_advice = "3. For practical papers (WPH13, WPH16), carefully distinguish between experimental planning/apparatus selection, uncertainty and error analysis, graph linearisation (log/power law), and specific core practical investigations."
+    elif subject == "mathematics":
+        subject_advice = "3. For Pure Mathematics (P1–P4), Mechanics (M1), and Statistics (S1), ensure questions testing multiple techniques identify the primary objective as mainSubtopic and supplementary techniques in relatedSubtopics."
+    else:
+        subject_advice = "3. For practical papers (e.g. WCH13, WCH16), carefully distinguish between quantitative/volumetric analysis, thermochemistry/kinetics, qualitative inorganic tests, qualitative organic tests, organic preparation/techniques, spectroscopies, experimental errors/uncertainties, and graph analysis/planning."
 
     prompt = f"""You are a senior Pearson Edexcel International Advanced Level (IAL) {subject.capitalize()} examiner.
-Classify each examination question below into the MOST ACCURATE subtopic(s) from the official unit specification.
+Classify each examination question below into its primary mainSubtopic and any secondary relatedSubtopics strictly from the official specification.
 
 {taxonomy_block}
 
-CLASSIFICATION INSTRUCTIONS:
-1. Analyze the question prompt (Q), any shared stem/context (Context/Stem), and the Mark Scheme (MS) points.
-2. Assign the single most specific primary subtopic code for the question. You may optionally include a second subtopic code ONLY if the question genuinely tests two distinct subtopics.
-3. Do NOT default to the first subtopic of the unit unless the question genuinely tests that exact subtopic.
-4. For practical papers (e.g. WCH13, WCH16, WPH13, WPH16), carefully distinguish between volumetric/titration analysis, enthalpy/calorimetry, qualitative inorganic tests, qualitative organic functional group tests, organic synthesis/purification (reflux/distillation/melting point), spectroscopies (IR, NMR, Mass Spec), uncertainties/errors, and graph linearisation/planning.
-5. Return ONLY a valid JSON object mapping each exact item key (e.g. "{sample_key_0}") to an array of 1 or 2 subtopic codes:
+STRICT UNIT-BOUNDARY AND CLASSIFICATION RULES:
+1. "mainSubtopic" MUST come from the PRIMARY UNIT ({unit_code}). It represents the primary theme and core concept tested by the question (majority of marks).
+2. "relatedSubtopics" is an optional array of 0 to 3 secondary subtopics tested in other sub-parts of the question.
+   - It MUST NOT include "mainSubtopic" (no duplicates).
+   - Synoptic rule: {synoptic_scope_text}
+   - If the question tests only one concept, use [] for relatedSubtopics.
+{subject_advice}
+4. Return ONLY a valid JSON object mapping each exact item key to:
 {{
-  "{sample_key_0}": ["{resolver.unit_subtopics[unit_code][0].split(':')[0].strip()}"],
-  "{sample_key_1}": ["{resolver.unit_subtopics[unit_code][-1].split(':')[0].strip()}"]
+  "{sample_key_0}": {{
+    "mainSubtopic": "{sample_code_0}",
+    "relatedSubtopics": []
+  }},
+  "{sample_key_1}": {{
+    "mainSubtopic": "{sample_code_1}",
+    "relatedSubtopics": ["{sample_code_0}"]
+  }}
 }}
 
 QUESTIONS TO CLASSIFY ({len(batch_items)} items):
@@ -711,7 +984,7 @@ QUESTIONS TO CLASSIFY ({len(batch_items)} items):
 """
 
     raw_res = pool.generate_json(prompt, preferred_key_idx=worker_id % len(pool.clients))
-    results: Dict[str, Tuple[str, str, List[str]]] = {}
+    results: Dict[str, Tuple[str, str, List[str], List[str]]] = {}
     if not raw_res:
         return results
 
@@ -725,14 +998,9 @@ QUESTIONS TO CLASSIFY ({len(batch_items)} items):
         if not qid:
             continue
 
-        if isinstance(cand, str):
-            cand = [cand]
-        elif isinstance(cand, dict):
-            cand = cand.get("subtopics") or [cand.get("subtopic", "")]
-        if isinstance(cand, list):
-            resolved = resolver.resolve(unit_code, [str(x) for x in cand if x])
-            if resolved:
-                results[qid] = resolved
+        resolved = resolver.resolve_classification(unit_code, cand)
+        if resolved:
+            results[qid] = resolved
 
     return results
 
@@ -810,12 +1078,22 @@ def process_subject(
         if not force_reclassify and qid in cache:
             c_entry = cache[qid]
             if c_entry.get("unitCode") == ucode:
-                c_subs = c_entry.get("subtopics") or [c_entry.get("subtopic", "")]
-                resolved = resolver.resolve(ucode, c_subs)
-                if resolved:
-                    q["topic"], q["subtopic"], q["subtopics"] = resolved
-                    cached_applied += 1
-                    continue
+                c_main = c_entry.get("mainSubtopic") or c_entry.get("subtopic")
+                c_rel = c_entry.get("relatedSubtopics") or (c_entry.get("subtopics")[1:] if len(c_entry.get("subtopics", [])) > 1 else [])
+                if c_main in resolver.unit_subtopics.get(ucode, []):
+                    resolved = resolver.resolve_classification(ucode, {"mainSubtopic": c_main, "relatedSubtopics": c_rel})
+                    if resolved:
+                        m_top, m_sub, rel_subs, topics = resolved
+                        all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
+                        q["mainTopic"] = m_top
+                        q["mainSubtopic"] = m_sub
+                        q["relatedSubtopics"] = rel_subs
+                        q["topic"] = m_top
+                        q["subtopic"] = m_sub
+                        q["subtopics"] = all_subs
+                        q["topics"] = topics
+                        cached_applied += 1
+                        continue
 
         rich_txt = pdf_cache.build_rich_context_for_question(q)
         pending_by_unit.setdefault(ucode, []).append((idx, q, rich_txt))
@@ -890,14 +1168,23 @@ def process_subject(
                         q_idx, q_obj, _ = item_tuple
                         qid = q_obj["id"]
                         if qid in batch_res:
-                            top, sub, subs = batch_res[qid]
-                            dataset[q_idx]["topic"] = top
-                            dataset[q_idx]["subtopic"] = sub
-                            dataset[q_idx]["subtopics"] = subs
+                            m_top, m_sub, rel_subs, topics = batch_res[qid]
+                            all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
+                            dataset[q_idx]["mainTopic"] = m_top
+                            dataset[q_idx]["mainSubtopic"] = m_sub
+                            dataset[q_idx]["relatedSubtopics"] = rel_subs
+                            dataset[q_idx]["topic"] = m_top
+                            dataset[q_idx]["subtopic"] = m_sub
+                            dataset[q_idx]["subtopics"] = all_subs
+                            dataset[q_idx]["topics"] = topics
                             cache[qid] = {
-                                "topic": top,
-                                "subtopic": sub,
-                                "subtopics": subs,
+                                "mainTopic": m_top,
+                                "mainSubtopic": m_sub,
+                                "relatedSubtopics": rel_subs,
+                                "topic": m_top,
+                                "subtopic": m_sub,
+                                "subtopics": all_subs,
+                                "topics": topics,
                                 "unitCode": ucode,
                             }
                             classified_count += 1
@@ -934,14 +1221,23 @@ def process_subject(
                     for q_idx, q_obj, _ in sub_batch:
                         qid = q_obj["id"]
                         if qid in res:
-                            top, sub, subs = res[qid]
-                            dataset[q_idx]["topic"] = top
-                            dataset[q_idx]["subtopic"] = sub
-                            dataset[q_idx]["subtopics"] = subs
+                            m_top, m_sub, rel_subs, topics = res[qid]
+                            all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
+                            dataset[q_idx]["mainTopic"] = m_top
+                            dataset[q_idx]["mainSubtopic"] = m_sub
+                            dataset[q_idx]["relatedSubtopics"] = rel_subs
+                            dataset[q_idx]["topic"] = m_top
+                            dataset[q_idx]["subtopic"] = m_sub
+                            dataset[q_idx]["subtopics"] = all_subs
+                            dataset[q_idx]["topics"] = topics
                             cache[qid] = {
-                                "topic": top,
-                                "subtopic": sub,
-                                "subtopics": subs,
+                                "mainTopic": m_top,
+                                "mainSubtopic": m_sub,
+                                "relatedSubtopics": rel_subs,
+                                "topic": m_top,
+                                "subtopic": m_sub,
+                                "subtopics": all_subs,
+                                "topics": topics,
                                 "unitCode": ucode,
                             }
                             classified_count += 1
@@ -951,17 +1247,37 @@ def process_subject(
     for q in dataset:
         pid = q.get("paperId") or q.get("paper_id") or ""
         ucode = resolver.normalize_unit_code(q.get("unitCode", ""), pid)
-        subs = q.get("subtopics") or ([q["subtopic"]] if q.get("subtopic") else [])
-        resolved = resolver.resolve(ucode, subs)
+        c_main = q.get("mainSubtopic") or q.get("subtopic")
+        c_rel = q.get("relatedSubtopics") or (q.get("subtopics")[1:] if len(q.get("subtopics", [])) > 1 else [])
+
+        resolved = None
+        if c_main in resolver.unit_subtopics.get(ucode, []):
+            resolved = resolver.resolve_classification(ucode, {"mainSubtopic": c_main, "relatedSubtopics": c_rel})
+
         if resolved:
-            q["topic"], q["subtopic"], q["subtopics"] = resolved
+            m_top, m_sub, rel_subs, topics = resolved
+            all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
+            q["mainTopic"] = m_top
+            q["mainSubtopic"] = m_sub
+            q["relatedSubtopics"] = rel_subs
+            q["topic"] = m_top
+            q["subtopic"] = m_sub
+            q["subtopics"] = all_subs
+            q["topics"] = topics
         else:
             default_sub = resolver.unit_subtopics[ucode][0]
             default_top = resolver.unit_subtopic_to_topic[ucode][default_sub]
+            q["mainTopic"] = default_top
+            q["mainSubtopic"] = default_sub
+            q["relatedSubtopics"] = []
             q["topic"] = default_top
             q["subtopic"] = default_sub
             q["subtopics"] = [default_sub]
+            q["topics"] = [default_top]
             invalid_fixed += 1
+
+        if q["id"] in cache:
+            cache[q["id"]]["topics"] = q["topics"]
 
     save_checkpoint(sync_datasets=True)
 

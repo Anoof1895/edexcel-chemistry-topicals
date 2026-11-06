@@ -15,7 +15,7 @@ import {
   Undo2
 } from 'lucide-react';
 import { Subject } from '../types';
-import { getFullImageUrl, getLocalImageUrl } from '../utils/imageUrl';
+import { getLocalImageUrl, getCdnImageUrl } from '../utils/imageUrl';
 import {
   handleSpotlightMove,
   handleSpotlightLeave,
@@ -141,10 +141,26 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxZoom, setLightboxZoom] = useState(1.2);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [useLocalFallback, setUseLocalFallback] = useState(false);
-  const cdnSrc = getFullImageUrl(src);
+  const cdnSrc = getCdnImageUrl(src);
   const localSrc = getLocalImageUrl(src);
-  const baseResolvedSrc = useLocalFallback ? localSrc : cdnSrc;
+
+  // In development, prefer local static assets from Vite's /public for local folders (/extracted/, /crops_math/);
+  // in production, prefer the fast Cloudflare R2 CDN.
+  const preferLocal = Boolean(
+    import.meta.env.DEV &&
+    (localSrc.startsWith('/extracted/') || localSrc.startsWith('/crops_math/')) &&
+    import.meta.env.VITE_FORCE_R2 !== 'true'
+  );
+
+  const primarySrc = preferLocal ? localSrc : cdnSrc;
+  const fallbackSrc = preferLocal ? cdnSrc : localSrc;
+  const [useFallback, setUseFallback] = useState(false);
+  const baseResolvedSrc = useFallback ? fallbackSrc : primarySrc;
+
+  // Reset fallback state when src changes
+  useEffect(() => {
+    setUseFallback(false);
+  }, [src]);
   const resolvedSrc = useMemo(() => {
     if (!baseResolvedSrc) return '';
     if (retryCount === 0) return baseResolvedSrc;
@@ -159,7 +175,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   const handleRetryImage = useCallback(() => {
     setHasError(false);
-    setUseLocalFallback(false);
+    setUseFallback(false);
     setIsImageLoading(true);
     setRetryCount((prev) => prev + 1);
   }, []);
@@ -205,8 +221,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
 
   const handleImageError = () => {
     setIsImageLoading(false);
-    if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
-      setUseLocalFallback(true);
+    if (!useFallback && fallbackSrc && fallbackSrc !== primarySrc) {
+      setUseFallback(true);
     } else {
       setHasError(true);
     }
@@ -520,7 +536,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
   // Reset per-image view state when the raw src or questionId prop changes
   useEffect(() => {
     setHasError(false);
-    setUseLocalFallback(false);
+    setUseFallback(false);
     setRetryCount(0);
     setZoom(1);
     strokeHistoryRef.current = [];
@@ -554,11 +570,12 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
     };
     probe.onerror = () => {
       if (cancelled) return;
-      if (!useLocalFallback && localSrc && localSrc !== cdnSrc) {
-        setUseLocalFallback(true);
+      if (!useFallback && fallbackSrc && fallbackSrc !== primarySrc) {
+        setUseFallback(true);
         return;
       }
       setIsImageLoading(false);
+      setHasError(true);
     };
     probe.src = resolvedSrc;
 

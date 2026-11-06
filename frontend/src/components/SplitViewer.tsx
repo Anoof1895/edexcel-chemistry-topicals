@@ -327,10 +327,21 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           </span>
 
           {/* Cleanly Truncated Topic & Subtopic */}
-          <span className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate hidden sm:inline max-w-xs xl:max-w-sm">
+          <span 
+            className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate hidden sm:inline max-w-xs xl:max-w-sm"
+            title={question.relatedSubtopics && question.relatedSubtopics.length > 0 ? `${question.subtopic || question.topic}\nRelated: ${question.relatedSubtopics.join('; ')}` : (question.subtopic || question.topic)}
+          >
             <span className={`${subjectUnitTextClass} font-semibold`}>{question.unit}:</span>{' '}
             {question.subtopic || question.topic}
           </span>
+          {question.relatedSubtopics && question.relatedSubtopics.length > 0 && (
+            <span 
+              className="hidden lg:inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 shrink-0 cursor-help"
+              title={`Related subtopics:\n${question.relatedSubtopics.join('\n')}`}
+            >
+              +{question.relatedSubtopics.length} related
+            </span>
+          )}
 
           {/* Stitched Stem Indicator */}
           {question.hasStem && (

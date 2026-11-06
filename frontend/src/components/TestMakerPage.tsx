@@ -382,10 +382,23 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     return seriesList.map((s) => ({ value: s, label: s }));
   }, []);
 
+  // Unit-filtered questions (excluding subtopic filter) for accurate subtopic counts
+  const unitFilteredQuestions = useMemo(() => {
+    if (filters.selectedUnits.length === 0) return questions;
+    return questions.filter((q) =>
+      filters.selectedUnits.some((fu) => {
+        if (fu === q.unit || fu === q.unitCode) return true;
+        const fuPrefix = fu.split(':')[0].trim().toLowerCase();
+        const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
+        return Boolean(fuPrefix && qPrefix && fuPrefix === qPrefix);
+      })
+    );
+  }, [questions, filters.selectedUnits]);
+
   // Canonical Subtopic Hierarchy
   const subtopicHierarchy: SubtopicGroup[] = useMemo(() => {
-    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions, activeSubject);
-  }, [questions, filters.selectedUnits, activeSubject]);
+    return buildStaticSubtopicHierarchy(filters.selectedUnits, unitFilteredQuestions, activeSubject);
+  }, [unitFilteredQuestions, filters.selectedUnits, activeSubject]);
 
   // Filter the question pool
   const filteredPool = useMemo(() => {
@@ -1024,7 +1037,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   setFilters((prev) => ({ ...prev, selectedSubtopics: subs }));
                   setCurrentPage(1);
                 }}
-                questions={questions}
+                questions={unitFilteredQuestions}
                 fullWidth
                 align="right"
               />
@@ -1238,7 +1251,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   </div>
 
                   <p className="relative z-10 text-[11px] text-slate-800 dark:text-slate-300 truncate font-medium">
-                    {q.subtopic || q.topic}
+                    {q.mainSubtopic || q.subtopic || q.topic}
                   </p>
                   <p className="relative z-10 text-[10px] text-slate-500 mt-0.5 truncate tabular-nums">
                     {q.series && q.year && q.series.includes(String(q.year))
@@ -1332,7 +1345,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                 </span>
                 <span className="text-slate-700 dark:text-slate-300 font-medium truncate hidden sm:inline">
                   {activePreviewQuestion.unit} /{' '}
-                  {activePreviewQuestion.subtopic || activePreviewQuestion.topic}
+                  {activePreviewQuestion.mainSubtopic || activePreviewQuestion.subtopic || activePreviewQuestion.topic}
                 </span>
               </div>
             </div>
@@ -1899,7 +1912,7 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        {q.unit} • {q.subtopic || q.topic}
+                        {q.unit} • {q.mainSubtopic || q.subtopic || q.topic}
                       </p>
                     </div>
                   </div>

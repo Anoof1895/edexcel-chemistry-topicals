@@ -26,6 +26,41 @@ export const IMAGE_CDN_PREFIXES: string[] = (
   .filter(Boolean)
   .map((p: string) => (p.startsWith('/') ? p : `/${p}`));
 
+/**
+ * Explicit cache-busting version query parameter map for re-cropped or updated images.
+ * Keyed by question ID, image filename, or relative image path.
+ */
+export const IMAGE_VERSIONS: Record<string, string> = {
+  wch11_2025_june_q14_b: '20261106_recrop',
+  'wch11_2025_june_q14_b.png': '20261106_recrop',
+  '/extracted/questions/wch11_2025_june_q14_b.png': '20261106_recrop',
+};
+
+/**
+ * Applies a cache-busting version query string (?v=...) if known in IMAGE_VERSIONS
+ * and not already present on the URL.
+ */
+export function applyImageVersion(rawPath: string | null | undefined, keyOrId?: string): string {
+  if (!rawPath) return '';
+  if (rawPath.includes('?v=') || rawPath.includes('&v=')) {
+    return rawPath;
+  }
+  let version: string | undefined;
+  if (keyOrId && IMAGE_VERSIONS[keyOrId]) {
+    version = IMAGE_VERSIONS[keyOrId];
+  } else {
+    const clean = rawPath.split('?')[0];
+    const filename = clean.substring(clean.lastIndexOf('/') + 1);
+    const baseWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    version = IMAGE_VERSIONS[clean] || IMAGE_VERSIONS[filename] || IMAGE_VERSIONS[baseWithoutExt];
+  }
+  if (version) {
+    const sep = rawPath.includes('?') ? '&' : '?';
+    return `${rawPath}${sep}v=${version}`;
+  }
+  return rawPath;
+}
+
 /** Safely URI-encodes each path segment without double-encoding. */
 function encodePathSegments(rawPath: string): string {
   const [pathname, query] = rawPath.split('?');
@@ -43,19 +78,36 @@ function encodePathSegments(rawPath: string): string {
   return query ? `${encodedPathname}?${query}` : encodedPathname;
 }
 
-/** Normalizes a dataset image path to a root-relative local URL. */
+/** Normalizes a dataset image path to a root-relative local URL, preserving query parameters. */
 export function getLocalImageUrl(path: string | null | undefined): string {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const versioned = applyImageVersion(path);
+  if (versioned.startsWith('http://') || versioned.startsWith('https://')) return versioned;
+  const normalized = versioned.startsWith('/') ? versioned : `/${versioned}`;
   return encodePathSegments(normalized);
 }
 
 /**
- * Returns the full image URL.
- * - If path is already an absolute URL (http:// or https://), returns it unchanged.
- * - If IMAGE_BASE_URL is set AND the path lives under a CDN-hosted prefix, prepends the base URL.
- * - Otherwise returns the clean local relative path (served by Vite / static hosting from /public).
+ * Returns the Cloudflare R2 CDN URL for a path if hosted on CDN, otherwise returns local URL.
+ */
+export function getCdnImageUrl(path: string | null | undefined): string {
+  const cleanPath = getLocalImageUrl(path);
+  if (!cleanPath || cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+    return cleanPath;
+  }
+  if (!IMAGE_BASE_URL) return cleanPath;
+  const pathname = cleanPath.split('?')[0];
+  const onCdn = IMAGE_CDN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return onCdn ? `${IMAGE_BASE_URL}${cleanPath}` : cleanPath;
+}
+
+/**
+ * Returns the default full image URL.
+ * - In local development (import.meta.env.DEV), prefers local static assets served from
+ *   /public (e.g. /extracted/ Chemistry crops or /crops_math/) so newly generated or
+ *   re-cropped files are instantly viewable on localhost without Cloudflare CDN staleness.
+ *   (Can be overridden with VITE_FORCE_R2=true).
+ * - In production, returns the Cloudflare R2 CDN URL.
  */
 export function getFullImageUrl(path: string | null | undefined): string {
   const cleanPath = getLocalImageUrl(path);
@@ -63,21 +115,22 @@ export function getFullImageUrl(path: string | null | undefined): string {
     return cleanPath;
   }
 
-  // When running in local dev, allow loading newly extracted crops directly from local server
-  if (import.meta.env.DEV) {
-    if (cleanPath.startsWith('/crops_math/')) {
+  // When running in local development, prefer local static assets from Vite's /public directory
+  const forceR2 = import.meta.env.VITE_FORCE_R2 === 'true';
+  if (import.meta.env.DEV && !forceR2) {
+    const pathname = cleanPath.split('?')[0];
+    if (pathname.startsWith('/extracted/') || pathname.startsWith('/crops_math/')) {
       return cleanPath;
     }
   }
 
-  if (!IMAGE_BASE_URL) return cleanPath;
-  const onCdn = IMAGE_CDN_PREFIXES.some((prefix) => cleanPath.startsWith(prefix));
-  return onCdn ? `${IMAGE_BASE_URL}${cleanPath}` : cleanPath;
+  return getCdnImageUrl(cleanPath);
 }
 
 /**
  * Universal image resolver supporting both path strings and QuestionItem objects.
- * Safely extracts question image or mark scheme image paths across all naming conventions.
+ * Safely extracts question image or mark scheme image paths across all naming conventions,
+ * and attaches cache-busting version parameters when applicable.
  */
 export function resolveImageUrl(
   pathOrQuestion: string | Partial<QuestionItem> | null | undefined,
@@ -89,9 +142,11 @@ export function resolveImageUrl(
   }
 
   let rawPath: string = '';
+  let questionId: string = '';
 
   if (typeof pathOrQuestion === 'object') {
     const q = pathOrQuestion;
+    questionId = q.id || '';
     if (isMarkScheme) {
       rawPath =
         q.markSchemeImagePath ||
@@ -125,11 +180,13 @@ export function resolveImageUrl(
     return '';
   }
 
-  if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
-    return rawPath;
+  const versionedPath = applyImageVersion(rawPath, questionId);
+
+  if (versionedPath.startsWith('http://') || versionedPath.startsWith('https://')) {
+    return versionedPath;
   }
 
-  return getFullImageUrl(rawPath);
+  return getFullImageUrl(versionedPath);
 }
 
 /** Convenience helper for question image resolution */

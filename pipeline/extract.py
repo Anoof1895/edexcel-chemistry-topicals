@@ -267,7 +267,7 @@ def is_blank_or_continuation_page(page_doc: pymupdf.Page) -> Optional[str]:
         return "blank"
 
     headers = detect_page_top_level_questions(page_doc)
-    has_subparts = bool(re.search(r"\([a-z]\)", txt, re.I)) or bool(re.search(r"\([ivx]+\)", txt, re.I))
+    has_subparts = bool(re.search(r"\([a-z]\)", txt)) or bool(re.search(r"\([ivx]+\)", txt))
     has_standalone_mark = bool(re.search(r"(?<!Total for Question )\(\d+\)", txt))
     has_mcq_options = bool(re.search(r"^\s*[A-D]\b", txt, re.M))
 
@@ -326,7 +326,7 @@ def find_question_level_stems_on_page(page_doc: pymupdf.Page, questions: List[Di
                 })
     lines.sort(key=lambda x: x["y0"])
 
-    subpart_pat = re.compile(r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)|\(([a-z])\)|(?:\([a-z]\)\s*)?\(([ivx]{1,4})\))\s*\*?(?:\s+|$)", re.I)
+    subpart_pat = re.compile(r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)|\(([a-z])\)|(?:\([a-z]\)\s*)?\(([ivx]{1,4})\))\s*\*?(?:\s+|$)")
     headers = detect_page_top_level_questions(page_doc)
 
     parents_with_subs = set()
@@ -398,7 +398,7 @@ def find_question_level_stems_on_page(page_doc: pymupdf.Page, questions: List[Di
         for l in lines:
             if l["y0"] < header_line_y0 - 2 or l["y0"] >= next_header_y0:
                 continue
-            if subpart_pat.match(l["text"]) or re.match(rf"^\s*(?:question|q)?\s*{pq}\s*\*?\s*\([a-z]\)\s*\*?(?:\s+|$)", l["text"], re.I):
+            if subpart_pat.match(l["text"]) or re.match(rf"^\s*(?:(?i:question|q))?\s*{pq}\s*\*?\s*\([a-z]\)\s*\*?(?:\s+|$)", l["text"]):
                 first_sub_y0 = l["y0"]
                 break
 
@@ -411,7 +411,7 @@ def find_question_level_stems_on_page(page_doc: pymupdf.Page, questions: List[Di
                 if any(rp.match(txt) for rp in rubric_pats):
                     continue
                 if b[3] > start_y - 2 and b[3] <= first_sub_y0:
-                    if not re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*\([a-z]\)", txt, re.I):
+                    if not re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*\([a-z]\)", txt):
                         if not re.search(r"(?:\(\s*\d{1,2}\s*\)|\[\s*\d{1,2}\s*\])\s*$", txt) and "total for" not in txt.lower():
                             stem_blocks.append(b)
 
@@ -529,12 +529,12 @@ def find_part_stems_on_page(page_doc: pymupdf.Page, parent_q: Optional[str]) -> 
     for b_idx, b in enumerate(blocks):
         txt = b[4].strip()
         # Reject inline subparts like (a) (i) or 16 (b) (i) - these are question prompts, never stems!
-        if re.match(r"^\s*(?:\d{1,2}\s*)?\(([a-z])\)\s*\(([ivx]+)\)", txt, re.I):
+        if re.match(r"^\s*(?:\d{1,2}\s*)?\(([a-z])\)\s*\(([ivx]+)\)", txt):
             continue
-        m = re.match(r"^\s*(?:(?:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\(([a-h|j-z])\)\s+([^\n]+)", txt, re.I)
+        m = re.match(r"^\s*(?:(?i:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\(([a-h|j-z])\)\s+([^\n]+)", txt)
         if not m:
             continue
-        if re.match(r"^\s*\([ivx]+\)", m.group(3).strip(), re.I):
+        if re.match(r"^\s*\([ivx]+\)", m.group(3).strip()):
             continue
         if mark_pat.search(txt):
             continue
@@ -552,7 +552,7 @@ def find_part_stems_on_page(page_doc: pymupdf.Page, parent_q: Optional[str]) -> 
         mark_hit = False
         for b2 in blocks[b_idx + 1:]:
             txt2 = b2[4].strip()
-            if re.match(r"^\s*(?:\d{1,2}\s*)?(?:\([a-z]\)\s*)?\([ivx]+\)", txt2, re.I):
+            if re.match(r"^\s*(?:\d{1,2}\s*)?(?:\([a-z]\)\s*)?\([ivx]+\)", txt2):
                 has_subpart = True
                 first_sub_y0 = b2[1]
                 break
@@ -712,13 +712,13 @@ def trim_prompt_box(
                     line_x0 = l["bbox"][0]
                     if line_y0 >= y0_pts + 15 and line_x0 < 120:
                         if cur_alpha is not None:
-                            m_sub = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s+|$)", line_txt, re.I)
+                            m_sub = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s+|$)", line_txt)
                             if m_sub:
                                 found_alpha = m_sub.group(1).lower()
                                 if ord(found_alpha) > ord(cur_alpha):
                                     cur_y1_pts = min(cur_y1_pts, line_y0 - 4)
                         if cur_roman is not None:
-                            m_rom = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*(?:\([a-z]\)\s*)?\*?\s*\(([ivx]+)\)\s*\*?(?:\s+|$)", line_txt, re.I)
+                            m_rom = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*(?:\([a-z]\)\s*)?\*?\s*\(([ivx]+)\)\s*\*?(?:\s+|$)", line_txt)
                             if m_rom:
                                 found_rom = m_rom.group(1).lower()
                                 if found_rom in ROMAN_NUMS and cur_roman in ROMAN_NUMS:
@@ -749,7 +749,7 @@ def trim_prompt_box(
         # Safety net: Guarantee ymax never terminates early before Option D of the current question
         opt_d_blocks = [
             b for b in blocks
-            if b[1] >= y0_pts + 10 and re.match(r"^\s*D\b", b[4].strip(), re.I)
+            if b[1] >= y0_pts + 10 and re.match(r"^\s*[\uf0a2\u2610\[\]]*\s*D(?:\s+|\t|$)", b[4].strip())
         ]
         if opt_d_blocks:
             b_d = min(opt_d_blocks, key=lambda b: b[1])
@@ -771,8 +771,7 @@ def trim_prompt_box(
 
     # Scan page for ANY subsequent marker ((a)-(g), (i)-(vi), Question X) or totals banner starting below current item:
     marker_pat = re.compile(
-        r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\*?\s*\(([ivx]{1,4})\)|(?:question\s+|\*+\s*|q\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}(?-i:[A-Z])|\s+(?-i:[A-Z][a-z]+)))",
-        re.IGNORECASE
+        r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\*?\s*\(([ivx]{1,4})\)|(?:(?i:question)\s+|\*+\s*|(?i:q)\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}[A-Z]|\s+[A-Z][a-z]+))"
     )
     totals_banner_pat = re.compile(
         r"^\s*(?:total\s+for\s+section\b|total\s+for\s+paper\b|\(total\s+(?:for\s+question\s+\d+\s*=\s*)?\d+\s*marks?\))",
@@ -1343,8 +1342,8 @@ def run_extraction(
 
                 # Fix 1 & 2: Stems can NEVER contain scored subparts, marks, or subpart markers
                 mark_pat_stem = re.compile(r"(?:\(\s*\d{1,2}\s*\)|\[\s*\d{1,2}\s*\])\s*$")
-                subpart_pat_stem = re.compile(r"^\s*(?:\([a-z]\)\s*)?\([ivx]{1,4}\)", re.I)
-                letter_subpart_pat = re.compile(r"^\s*(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)(?:\s+|$)", re.I)
+                subpart_pat_stem = re.compile(r"^\s*(?:\([a-z]\)\s*)?\([ivx]{1,4}\)")
+                letter_subpart_pat = re.compile(r"^\s*(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)(?:\s+|$)")
                 first_scored_or_sub_y0 = None
                 is_dedicated = stem_info.get("is_dedicated_page", False)
                 anchored_above_sub = stem_info.get("anchored_above_sub", False)
@@ -1534,9 +1533,9 @@ def run_extraction(
                     if m_sub_parts:
                         target_marker = m_sub_parts[-1]
                         if target_marker in "abcdefghijklmnopqrstuvwxyz":
-                            pat_sub = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?\*?\s*\({re.escape(target_marker)}\)\s*", re.I)
+                            pat_sub = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?\*?\s*\({re.escape(target_marker)}\)\s*")
                         else:
-                            pat_sub = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(target_marker)}\)\s*", re.I)
+                            pat_sub = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(target_marker)}\)\s*")
                         
                         best_block = None
                         best_dist = 999999.0
@@ -1616,7 +1615,7 @@ def run_extraction(
                             if is_subseq:
                                 is_final_subpart_of_parent = False
                                 next_target_marker = next_cand
-                                pat_next = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(next_target_marker)}\)\s*", re.I)
+                                pat_next = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(next_target_marker)}\)\s*")
                                 for b in page_blocks:
                                     if b[0] < 120 and pat_next.match(b[4].strip()) and b[1] > q_y0_pts + 15:
                                         clamp_y1_1000 = int(max(0, b[1] - 4) / ph * 1000)
@@ -1654,7 +1653,7 @@ def run_extraction(
                             q_y0_pts = min_y0_pts
                             q_y1_pts = max(q_y1_pts, min_y0_pts + 150)
 
-                        marker_pat = re.compile(rf"^\s*(?:\d{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(target_marker)}\)", re.I)
+                        marker_pat = re.compile(rf"^\s*(?:\d{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(target_marker)}\)")
                         best_block = None
                         best_dist = 999999.0
                         for b in page_blocks:
@@ -1714,7 +1713,7 @@ def run_extraction(
 
                             if is_subseq and next_target_marker:
                                 is_final_subpart_of_parent = False
-                                pat_next = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(next_target_marker)}\)\s*", re.I)
+                                pat_next = re.compile(rf"^\s*(?:{re.escape(raw_parent)}[:.]?\s*|[0-9]{{1,2}}[:.]?\s*)?(?:\([a-z]\)\s*)?\*?\s*\({re.escape(next_target_marker)}\)\s*")
                                 for b in page_blocks:
                                     if b[0] < 120 and pat_next.match(b[4].strip()) and b[1] > q_y0_pts + 15:
                                         clamp_y1_1000 = int(max(0, b[1] - 10) / ph * 1000)
@@ -1751,8 +1750,7 @@ def run_extraction(
 
                     next_marker_pts = None
                     theory_marker_pat = re.compile(
-                        r"^\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\(([ivx]{1,4})\)|(?:question\s+|\*+\s*|q\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|(?:\t|\.\s+|\s{2,}(?-i:[A-Z])|\s+(?-i:[A-Z])[a-z])))",
-                        re.IGNORECASE
+                        r"^\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\(([ivx]{1,4})\)|(?:(?i:question)\s+|\*+\s*|(?i:q)\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|(?:\t|\.\s+|\s{2,}[A-Z]|\s+[A-Z][a-z])))"
                     )
                     for b in page_doc.get_text("blocks"):
                         if b[1] >= start_pts + 15:
@@ -2536,6 +2534,10 @@ def run_extraction(
                     "topic": topic,
                     "subtopic": subtopic,
                     "subtopics": subtopics,
+                    "topics": [topic] + [get_parent_topic_for_subtopic(s) for s in (subtopics[1:] if len(subtopics) > 1 else []) if get_parent_topic_for_subtopic(s) and get_parent_topic_for_subtopic(s) != topic],
+                    "mainTopic": topic,
+                    "mainSubtopic": subtopic,
+                    "relatedSubtopics": subtopics[1:] if len(subtopics) > 1 else [],
                     "section": section,
                     "question_type": question_type,
                     "questionType": question_type,

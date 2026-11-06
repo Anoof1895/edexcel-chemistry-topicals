@@ -307,6 +307,8 @@ CRITICAL RULES:
 
 3. MCQ BOUNDARY CLIPPING PREVENTION:
    For Section A multiple-choice questions, the bounding box [ymin, xmin, ymax, xmax] MUST encompass all four choices (A, B, C, and D) down to the bottom boundary before the next question begins. NEVER truncate after B or C. Ensure option D and its complete description are enclosed within the box.
+   CRITICAL NOTE ON STATEMENT LISTS VS SUB-QUESTIONS:
+   In MCQs, numbered statements or uppercase Roman numerals (e.g. (I), (II), (III)) are statements inside the question prompt (e.g. 'which of these statements is correct?'), NEVER sub-questions. An MCQ that introduces statements (I), (II), (III) followed by choices A, B, C, D MUST have its bounding box enclose the introductory question stem, all statements (I), (II), (III), and all choices A, B, C, D down to the Total line or next question. NEVER crop out or truncate above the statements or options!
 
 4. SUBTOPIC ASSIGNMENT:
    For each question, select 1 or 2 matching subtopics STRICTLY from the allowed subtopics list above.
@@ -344,13 +346,35 @@ Return strictly a JSON object:
         if gemini_res and "questions" in gemini_res:
             # Sanitize subtopics and ensure hierarchical question_number
             for q in gemini_res["questions"]:
-                subs = q.get("subtopics", [])
-                cleaned_subs = [s for s in subs if s in official_subtopics]
-                if not cleaned_subs and official_subtopics:
-                    cleaned_subs = [official_subtopics[0]]
-                q["subtopics"] = cleaned_subs[:2]
-                q["subtopic"] = cleaned_subs[0] if cleaned_subs else (q.get("subtopic") or official_subtopics[0])
-                q["topic"] = get_parent_topic_for_subtopic(q["subtopic"])
+                raw_main = q.get("mainSubtopic") or q.get("subtopic")
+                raw_rel = q.get("relatedSubtopics") or (q.get("subtopics")[1:] if len(q.get("subtopics", [])) > 1 else [])
+                if isinstance(raw_rel, str):
+                    raw_rel = [raw_rel]
+
+                main_sub = raw_main if raw_main in official_subtopics else None
+                rel_subs = [s for s in raw_rel if s in official_subtopics and s != main_sub]
+
+                if not main_sub:
+                    subs = q.get("subtopics", [])
+                    cleaned_subs = [s for s in subs if s in official_subtopics]
+                    if cleaned_subs:
+                        main_sub = cleaned_subs[0]
+                        rel_subs = [s for s in cleaned_subs[1:] if s != main_sub]
+                    elif official_subtopics:
+                        main_sub = official_subtopics[0]
+                        rel_subs = []
+                    else:
+                        main_sub = "General"
+                        rel_subs = []
+
+                all_subs = [main_sub] + rel_subs[:1]
+                parent_topic = get_parent_topic_for_subtopic(main_sub)
+                q["mainTopic"] = parent_topic
+                q["mainSubtopic"] = main_sub
+                q["relatedSubtopics"] = rel_subs[:1]
+                q["topic"] = parent_topic
+                q["subtopic"] = main_sub
+                q["subtopics"] = all_subs
 
             gemini_res = self._sanitize_analysis(gemini_res, page_doc, unit_name=unit_name)
             with open(cache_file, "w", encoding="utf-8") as f:
@@ -457,7 +481,7 @@ Return strictly a JSON object:
                 scale = 1000.0 if max(q_box) > 1.0 else 1.0
                 clip_rect = pymupdf.Rect(q_box[1]/scale*pw, q_box[0]/scale*ph, q_box[3]/scale*pw, q_box[2]/scale*ph)
                 curr_txt = page_doc.get_text("text", clip=clip_rect)
-                marker_pat = re.compile(rf"^\s*(?:\([a-z]\)\s*)?\({re.escape(target_marker)}\)", re.I)
+                marker_pat = re.compile(rf"^\s*(?:\([a-z]\)\s*)?\({re.escape(target_marker)}\)")
 
                 # If current box does not contain the marker, search page blocks
                 if not marker_pat.search(curr_txt):
@@ -495,7 +519,7 @@ Return strictly a JSON object:
             for b in blocks:
                 if b[1] >= clip_rect.y0 + 20:
                     b_txt = b[4].strip()
-                    if re.match(r"^\s*(?:\d{1,2}\s*)?(?:\([a-z]\)\s*)?\([ivx]{1,4}\)", b_txt, re.I) or re.match(r"^\s*(?:\d{1,2}\s*)?\([a-z]\)", b_txt, re.I):
+                    if re.match(r"^\s*(?:\d{1,2}\s*)?(?:\([a-z]\)\s*)?\([ivx]{1,4}\)", b_txt) or re.match(r"^\s*(?:\d{1,2}\s*)?\([a-z]\)", b_txt):
                         if subseq_marker_y0 is None or b[1] < subseq_marker_y0:
                             subseq_marker_y0 = b[1]
 
@@ -651,6 +675,9 @@ Return strictly a JSON object:
                     "parent_question": p_num,
                     "sub_part": sub_part,
                     "marks": 1,
+                    "mainTopic": default_topic,
+                    "mainSubtopic": default_subtopic,
+                    "relatedSubtopics": [],
                     "topic": default_topic,
                     "subtopic": default_subtopic,
                     "subtopics": [default_subtopic],
@@ -675,6 +702,9 @@ Return strictly a JSON object:
                     "parent_question": qnum,
                     "sub_part": "",
                     "marks": 1,
+                    "mainTopic": default_topic,
+                    "mainSubtopic": default_subtopic,
+                    "relatedSubtopics": [],
                     "topic": default_topic,
                     "subtopic": default_subtopic,
                     "subtopics": [default_subtopic],

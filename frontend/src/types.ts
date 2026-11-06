@@ -15,6 +15,10 @@ export interface QuestionItem {
   topic: string;
   subtopic: string;
   subtopics?: string[];
+  topics?: string[];
+  mainTopic?: string;
+  mainSubtopic?: string;
+  relatedSubtopics?: string[];
   section?: string;
   question_type?: 'mcq' | 'theory';
   questionType?: 'mcq' | 'theory';
@@ -422,3 +426,5 @@ export interface TestPaperConfig {
   title: string;
   questionIds: string[];
 }
+
+export type Question = QuestionItem;

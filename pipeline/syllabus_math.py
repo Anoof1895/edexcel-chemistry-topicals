@@ -1,5 +1,5 @@
 """
-Pearson Edexcel International Advanced Level (IAL) Mathematics Specification Topics & Subtopics.
+Pearson Edexcel International Advanced Level (IAL) Mathematics (Issue 3) Specification Topics & Subtopics.
 Covers:
 - WMA11: Unit 1: Pure Mathematics 1 (P1)
 - WMA12: Unit 2: Pure Mathematics 2 (P2)
@@ -7,6 +7,9 @@ Covers:
 - WMA14: Unit 4: Pure Mathematics 4 (P4)
 - WME01: Unit 5: Mechanics 1 (M1)
 - WST01: Unit 6: Statistics 1 (S1)
+
+Note: Every Topic and Subtopic is prefixed with its unit identifier (P1, P2, P3, P4, M1, S1)
+so that getParentTopicForSubtopic and getUnitForSubtopic are 100% collision-free across units.
 """
 
 import re
@@ -14,173 +17,191 @@ from typing import Dict, List, Any
 
 OFFICIAL_MATH_SYLLABUS: Dict[str, Dict[str, Any]] = {
     "WMA11": {
-        "unit": "Unit 1",
+        "unit": "Unit 1: Pure Mathematics 1 (P1)",
         "title": "Pure Mathematics 1 (P1)",
         "code": "WMA11",
         "topics": {
-            "Topic 1: Algebra and Functions": [
-                "1.1: Laws of Indices & Surds",
-                "1.2: Quadratic Functions, Discriminant & Completing the Square",
-                "1.3: Simultaneous Equations & Inequalities",
-                "1.4: Polynomials, Curve Sketching & Transformations",
+            "P1 Topic 1: Algebra and Functions": [
+                "P1 1.1-1.2: Laws of Indices & Manipulation/Rationalisation of Surds",
+                "P1 1.3-1.5: Quadratic Functions, Graphs, Discriminant (b²-4ac) & Completing the Square",
+                "P1 1.6-1.9: Simultaneous Equations (Linear/Quadratic) & Linear/Quadratic Inequalities (Algebraic & Graphical Shading)",
+                "P1 1.10-1.11: Polynomial Manipulation/Factorisation & Sketching Cubic and Reciprocal Curves (y=k/x, y=k/x², Asymptotes)",
+                "P1 1.12: Single Graph Transformations (y=af(x), y=f(x)+a, y=f(x+a), y=f(ax))",
             ],
-            "Topic 2: Coordinate Geometry in the (x, y) Plane": [
-                "2.1: Straight Lines, Gradients, Parallel & Perpendicular Lines",
+            "P1 Topic 2: Coordinate Geometry in the (x, y) Plane": [
+                "P1 2.1: Equations of Straight Lines (y-y1=m(x-x1), ax+by+c=0), Gradients & Intercepts",
+                "P1 2.2: Parallel & Perpendicular Straight Lines and Geometric Line Intersection Problems",
             ],
-            "Topic 3: Trigonometry": [
-                "3.1: Sine & Cosine Rules, Area of a Triangle",
-                "3.2: Radian Measure, Arc Length & Sector Area",
-                "3.3: Trigonometric Graphs & Periodicity",
+            "P1 Topic 3: Trigonometry": [
+                "P1 3.1: Sine Rule (including Ambiguous Case), Cosine Rule & Area of a Triangle (½ab sinC)",
+                "P1 3.2: Radian Measure, Arc Length (s=rθ) & Area of a Sector (A=½r²θ)",
+                "P1 3.3: Sine, Cosine & Tangent Graphs, Symmetries, Periodicity & Transformed Trig Sketching",
             ],
-            "Topic 4: Differentiation": [
-                "4.1: Derivatives of x^n, First & Second Order Derivatives",
-                "4.2: Gradients, Tangents, Normals & Rates of Change",
+            "P1 Topic 4: Differentiation": [
+                "P1 4.1-4.2: Differentiating x^n (Sums, Differences, Multiples), First/Second Derivatives (f'(x), f''(x)) & Rates of Change",
+                "P1 4.3: Gradients, Equations of Tangents and Normals to Curves",
             ],
-            "Topic 5: Integration": [
-                "5.1: Indefinite Integration of x^n & Finding Equations of Curves",
+            "P1 Topic 5: Integration": [
+                "P1 5.1-5.2a: Indefinite Integration of x^n (n ≠ -1) & Simplifying Expressions Before Integrating",
+                "P1 5.2b: Finding the Equation of a Curve y=f(x) Given f'(x) and a Point on the Curve",
             ],
         },
     },
     "WMA12": {
-        "unit": "Unit 2",
+        "unit": "Unit 2: Pure Mathematics 2 (P2)",
         "title": "Pure Mathematics 2 (P2)",
         "code": "WMA12",
         "topics": {
-            "Topic 1: Proof": [
-                "1.1: Structure of Proof, Proof by Exhaustion & Counter-Example",
+            "P2 Topic 1: Proof": [
+                "P2 1.1-1.3: Structure of Mathematical Proof, Proof by Exhaustion & Disproof by Counter-Example",
             ],
-            "Topic 2: Algebra and Functions": [
-                "2.1: Algebraic Division, Factor & Remainder Theorems",
+            "P2 Topic 2: Algebra and Functions": [
+                "P2 2.1: Algebraic Division by (ax±b), Factor Theorem, Remainder Theorem & Factorising Cubics",
             ],
-            "Topic 3: Coordinate Geometry in the (x, y) Plane": [
-                "3.1: Coordinate Geometry of the Circle",
+            "P2 Topic 3: Coordinate Geometry in the (x, y) Plane": [
+                "P2 3.1: Coordinate Geometry of the Circle ((x-a)²+(y-b)²=r²) & Circle Theorems (Semicircle, Chord Bisector, Radius-Tangent)",
             ],
-            "Topic 4: Sequences and Series": [
-                "4.1: Nth Term & Recurrence Relations",
-                "4.2: Arithmetic Sequences & Series",
-                "4.3: Geometric Sequences, Series & Sum to Infinity",
-                "4.4: Binomial Expansion for Positive Integer n",
+            "P2 Topic 4: Sequences and Series": [
+                "P2 4.1 & 4.3: Nth Term Formulae, Recurrence Relations x_{n+1}=f(x_n) & Increasing, Decreasing and Periodic Sequences",
+                "P2 4.2: Arithmetic Sequences & Series (Nth Term, Sum of n Terms, Sum Proof & Sigma Σ Notation)",
+                "P2 4.4: Geometric Sequences & Series (Nth Term, Finite Sum, Sum Proof & Sum to Infinity for |r|<1)",
+                "P2 4.5: Binomial Expansion of (a+bx)^n for Positive Integer n",
             ],
-            "Topic 5: Exponentials and Logarithms": [
-                "5.1: Exponential Functions, Laws of Logarithms & Equations a^x = b",
+            "P2 Topic 5: Exponentials and Logarithms": [
+                "P2 5.1-5.2: Exponential Functions/Graphs (y=a^x) & Laws of Logarithms",
+                "P2 5.3: Solving Exponential & Logarithmic Equations (a^x=b) and Change of Base",
             ],
-            "Topic 6: Trigonometry": [
-                "6.1: Trigonometric Identities & Equations in a Given Interval",
+            "P2 Topic 6: Trigonometry": [
+                "P2 6.1: Trigonometric Identities (tanθ ≡ sinθ/cosθ and sin²θ + cos²θ ≡ 1) & Proofs",
+                "P2 6.2: Solving Trigonometric Equations in a Given Interval (Linear, Multiple-Angle & Quadratic Trig Equations)",
             ],
-            "Topic 7: Differentiation": [
-                "7.1: Stationary Points, Maxima/Minima & Increasing/Decreasing Functions",
+            "P2 Topic 7: Differentiation": [
+                "P2 7.1a: Increasing & Decreasing Functions, Stationary Points & Nature of Turning Points (Maxima/Minima)",
+                "P2 7.1b: Practical Optimisation & Modelling Problems Using Maxima and Minima",
             ],
-            "Topic 8: Integration": [
-                "8.1: Definite Integrals & Area Under/Between Curves",
-                "8.2: Trapezium Rule",
+            "P2 Topic 8: Integration": [
+                "P2 8.1-8.2: Definite Integration & Area Bounded by Curves and Straight Lines",
+                "P2 8.3: Numerical Integration Using the Trapezium Rule & Overestimate/Underestimate Analysis",
             ],
         },
     },
     "WMA13": {
-        "unit": "Unit 3",
+        "unit": "Unit 3: Pure Mathematics 3 (P3)",
         "title": "Pure Mathematics 3 (P3)",
         "code": "WMA13",
         "topics": {
-            "Topic 1: Algebra and Functions": [
-                "1.1: Rational Expressions & Algebraic Division",
-                "1.2: Functions, Domain/Range, Composite & Inverse Functions",
-                "1.3: Modulus Function & Combinations of Transformations",
+            "P3 Topic 1: Algebra and Functions": [
+                "P3 1.1: Simplifying Rational Expressions, Factorising/Cancelling & Algebraic Division",
+                "P3 1.2: Functions: Domain & Range, One-to-One/Many-to-One Mappings, Composite (fg) & Inverse Functions (f^-1)",
+                "P3 1.3-1.4: Modulus Function (y=|f(x)|, y=f(|x|), |ax+b| Equations/Inequalities) & Combined Transformations",
             ],
-            "Topic 2: Trigonometry": [
-                "2.1: Secant, Cosecant, Cotangent & Inverse Trig Functions",
-                "2.2: Compound Angle, Double Angle & R sin/cos(θ ± α) Formulae",
+            "P3 Topic 2: Trigonometry": [
+                "P3 2.1-2.2: Secant, Cosecant, Cotangent, Inverse Trig (arcsin, arccos, arctan) & Pythagorean Identities (sec²θ, cosec²θ)",
+                "P3 2.3a: Compound Angle (sin(A±B), cos(A±B), tan(A±B)) & Double/Half Angle Formulae",
+                "P3 2.3b: Harmonic Form Expressions (a cosθ + b sinθ ≡ R cos(θ±α) or R sin(θ±α)), Maxima/Minima & Equations",
             ],
-            "Topic 3: Exponentials and Logarithms": [
-                "3.1: e^x, ln x & Logarithmic Graphs (Linear Reduction)",
+            "P3 Topic 3: Exponentials and Logarithms": [
+                "P3 3.1-3.2: Functions e^x and ln x, Graphs of y=e^(ax+b)+c, Inverse Relationship & Exact Equations",
+                "P3 3.3: Logarithmic Graphs & Linear Reduction for Power Laws (y=ax^n) and Exponential Models (y=kb^x)",
             ],
-            "Topic 4: Differentiation": [
-                "4.1: Differentiating e^kx, ln x, Trig Functions",
-                "4.2: Product, Quotient, Chain Rules & dx/dy",
-                "4.3: Exponential Growth & Decay Modelling",
+            "P3 Topic 4: Differentiation": [
+                "P3 4.1 & 4.3: Differentiating e^(kx), ln(kx), a^x, sin(kx), cos(kx), tan(kx) & Using dy/dx = 1/(dx/dy)",
+                "P3 4.2: Product Rule, Quotient Rule, Chain Rule & Differentiating sec x, cosec x, cot x",
+                "P3 4.4: Exponential Growth and Decay Modelling, Rates of Change & Model Limitations",
             ],
-            "Topic 5: Integration": [
-                "5.1: Integrating e^kx, 1/x, Trig Functions & Reverse Chain Rule",
+            "P3 Topic 5: Integration": [
+                "P3 5.1: Integrating Standard Functions (e^(kx), 1/x, sin(kx), cos(kx), sec²(kx), a^x)",
+                "P3 5.2: Reverse Chain Rule (∫f'(x)/f(x) dx = ln|f(x)|, ∫f'(x)[f(x)]^n dx) & Trig Identity Integration (sin²x, cos²x, tan²x)",
             ],
-            "Topic 6: Numerical Methods": [
-                "6.1: Change of Sign & Fixed-Point Iteration x_{n+1} = f(x_n)",
+            "P3 Topic 6: Numerical Methods": [
+                "P3 6.1-6.2: Locating Roots by Change of Sign, Fixed-Point Iteration x_{n+1}=f(x_n) & Cobweb/Staircase Diagrams",
             ],
         },
     },
     "WMA14": {
-        "unit": "Unit 4",
+        "unit": "Unit 4: Pure Mathematics 4 (P4)",
         "title": "Pure Mathematics 4 (P4)",
         "code": "WMA14",
         "topics": {
-            "Topic 1: Proof": [
-                "1.1: Proof by Contradiction",
+            "P4 Topic 1: Proof": [
+                "P4 1.1: Proof by Contradiction (Irrationality of √2, Infinity of Primes & Unfamiliar Proofs)",
             ],
-            "Topic 2: Algebra and Functions": [
-                "2.1: Partial Fractions",
+            "P4 Topic 2: Algebra and Functions": [
+                "P4 2.1: Partial Fractions (Distinct Linear Factors, Repeated Linear Factors & Improper Rational Functions)",
             ],
-            "Topic 3: Coordinate Geometry in the (x, y) Plane": [
-                "3.1: Parametric Equations & Cartesian Conversion",
+            "P4 Topic 3: Coordinate Geometry in the (x, y) Plane": [
+                "P4 3.1: Parametric Equations of Curves, Parametric-to-Cartesian Conversion & Curve Intersections",
             ],
-            "Topic 4: Binomial Expansion": [
-                "4.1: Binomial Series for Rational n & Partial Fraction Expansions",
+            "P4 Topic 4: Binomial Expansion": [
+                "P4 4.1: Binomial Series Expansion of (ax+b)^n for Rational n, Validity (|x|<b/a) & Partial Fraction Expansions",
             ],
-            "Topic 5: Differentiation": [
-                "5.1: Implicit & Parametric Differentiation",
-                "5.2: Connected Rates of Change & Differential Equations",
+            "P4 Topic 5: Differentiation": [
+                "P4 5.1: Implicit Differentiation & Parametric Differentiation (including Tangents, Normals & Stationary Points)",
+                "P4 5.2: Connected Rates of Change & Forming Differential Equations",
             ],
-            "Topic 6: Integration": [
-                "6.1: Volumes of Revolution & Parametric Area",
-                "6.2: Integration by Substitution, Parts & Partial Fractions",
-                "6.3: First-Order Separable Differential Equations",
+            "P4 Topic 6: Integration": [
+                "P4 6.1 & 6.5: Area Under Parametric Curves & Volumes of Revolution (π∫y² dx, Cartesian & Parametric)",
+                "P4 6.2a: Integration by Substitution",
+                "P4 6.2b: Integration by Parts (Single & Repeated Applications, including ∫ln x dx)",
+                "P4 6.3: Integration Using Partial Fractions",
+                "P4 6.4: Analytical Solution of First-Order Separable Differential Equations (General & Particular Solutions)",
             ],
-            "Topic 7: Vectors": [
-                "7.1: 2D/3D Vectors, Magnitude, Position Vectors & Distance",
-                "7.2: Vector Equations of Lines, Intersecting/Skew Lines & Scalar Product",
+            "P4 Topic 7: Vectors": [
+                "P4 7.1-7.5: 2D & 3D Vectors, Magnitude, Unit Vectors, Position Vectors & Distance Between Points",
+                "P4 7.6: Vector Equations of Straight Lines (r=a+tb) & Parallel, Intersecting or Skew Lines",
+                "P4 7.7: Scalar (Dot) Product, Angle Between Two Vectors/Lines, Perpendicularity & Shortest Distance",
             ],
         },
     },
     "WME01": {
-        "unit": "Unit 5",
+        "unit": "Unit 5: Mechanics 1 (M1)",
         "title": "Mechanics 1 (M1)",
         "code": "WME01",
         "topics": {
-            "Topic 1: Mathematical Models & Vectors in Mechanics": [
-                "1.1: Modelling Assumptions & 2D Vectors (Velocity, Acceleration, Force)",
+            "M1 Topic 1 & 2: Mathematical Models and Vectors in Mechanics": [
+                "M1 1.1 & 2.1-2.2: Modelling Assumptions & 2D Vectors (Magnitude, Direction, i/j Components, Velocity/Force Resultants)",
             ],
-            "Topic 2: Kinematics of a Particle Moving in a Straight Line": [
-                "2.1: Constant Acceleration Formulae (SUVAT) & Motion Graphs",
+            "M1 Topic 3: Kinematics of a Particle Moving in a Straight Line": [
+                "M1 3.1a: Constant Acceleration Formulae (SUVAT) in Horizontal & Vertical Free-Fall Motion",
+                "M1 3.1b: Kinematics Graphs (Displacement-Time, Velocity-Time, Speed-Time & Acceleration-Time Graphs)",
             ],
-            "Topic 3: Dynamics of a Particle": [
-                "3.1: Newton's Laws, Inclined Planes, Friction & Connected Particles/Pulleys",
-                "3.2: Momentum, Impulse & Conservation of Linear Momentum",
+            "M1 Topic 4: Dynamics of a Particle Moving in a Straight Line or Plane": [
+                "M1 4.1 & 4.4: Newton's Laws of Motion (F=ma), Resolving Forces, Inclined Planes & Dynamic Friction (F=μR)",
+                "M1 4.2: Connected Particles: Tow-Bars, Lift Problems & Smooth Fixed Pulleys/Pegs",
+                "M1 4.3: Momentum, Impulse (I=mv-mu) & Direct Collisions (Conservation of Linear Momentum)",
             ],
-            "Topic 4: Statics of a Particle": [
-                "4.1: Equilibrium of Coplanar Forces, Tension, Thrust & Limiting Friction",
+            "M1 Topic 5: Statics of a Particle": [
+                "M1 5.1-5.3: Equilibrium of a Particle Under Coplanar Forces, Tension, Thrust & Limiting Friction (F ≤ μR)",
             ],
-            "Topic 5: Moments": [
-                "5.1: Moments of Coplanar Parallel Forces & Equilibrium of Rigid Rods",
+            "M1 Topic 6: Moments": [
+                "M1 6.1: Moments of Coplanar Parallel Forces, Uniform/Non-Uniform Rigid Rods in Equilibrium & Tilting/Point of Slipping",
             ],
         },
     },
     "WST01": {
-        "unit": "Unit 6",
+        "unit": "Unit 6: Statistics 1 (S1)",
         "title": "Statistics 1 (S1)",
         "code": "WST01",
         "topics": {
-            "Topic 1: Representation and Summary of Data": [
-                "1.1: Histograms, Stem & Leaf Diagrams, Box Plots & Outliers",
-                "1.2: Measures of Location & Dispersion, Coding & Skewness",
+            "S1 Topic 1 & 2: Mathematical Models and Representation & Summary of Data": [
+                "S1 1.1 & 2.1: Statistical Modelling, Histograms, Stem & Leaf Diagrams (including Back-to-Back) & Box Plots",
+                "S1 2.2-2.4: Mean, Median, Quartiles (Interpolation), Variance, Standard Deviation, Linear Coding, Outliers & Skewness",
             ],
-            "Topic 2: Probability": [
-                "2.1: Elementary & Conditional Probability, Tree & Venn Diagrams, Independence",
+            "S1 Topic 3: Probability": [
+                "S1 3.1-3.3: Sample Spaces, Venn Diagrams, Mutually Exclusive & Independent Events, Addition & Conditional Probability Laws",
+                "S1 3.4: Tree Diagrams & Sampling With and Without Replacement",
             ],
-            "Topic 3: Correlation and Regression": [
-                "3.1: Scatter Diagrams, Least Squares Linear Regression & PMCC",
+            "S1 Topic 4: Correlation and Regression": [
+                "S1 4.1-4.2: Scatter Diagrams, Explanatory/Response Variables, Least Squares Linear Regression (y on x, Coding) & Interpolation/Extrapolation",
+                "S1 4.3: Product Moment Correlation Coefficient (PMCC r), Calculation, Interpretation & Limitations",
             ],
-            "Topic 4: Discrete Random Variables": [
-                "4.1: Probability & Cumulative Distribution Functions, E(X), Var(X) & Discrete Uniform",
+            "S1 Topic 5: Discrete Random Variables": [
+                "S1 5.1-5.2: Probability Distribution Function p(x) & Cumulative Distribution Function F(x0)",
+                "S1 5.3-5.4: Expectation E(X), E(X²), Variance Var(X), Linear Transformations E(aX+b)/Var(aX+b) & Discrete Uniform Distribution",
             ],
-            "Topic 5: The Normal Distribution": [
-                "5.1: Standardisation Z = (X - μ)/σ & Cumulative Normal Tables",
+            "S1 Topic 6: The Normal Distribution": [
+                "S1 6.1a: Normal Distribution N(μ, σ²), Standardisation Z=(X-μ)/σ & Finding Probabilities/Values Using Normal Tables",
+                "S1 6.1b: Finding Unknown Mean (μ), Standard Deviation (σ), or Both Using Simultaneous Equations from Percentage Points",
             ],
         },
     },
@@ -224,33 +245,30 @@ def normalize_math_unit_code(code: str) -> str:
 
     m = re.search(r"\b(?:UNIT\s*|U)?([1-6])\b", raw)
     if m:
-        u_map = {"1": "WMA11", "2": "WMA12", "3": "WMA13", "4": "WMA14", "5": "WME01", "6": "WST01"}
-        return u_map.get(m.group(1), "WMA11")
+        num = m.group(1)
+        mapping = {"1": "WMA11", "2": "WMA12", "3": "WMA13", "4": "WMA14", "5": "WME01", "6": "WST01"}
+        return mapping.get(num, "WMA11")
 
     return "WMA11"
 
 
 def get_math_unit_from_code(code: str) -> str:
-    """Returns 'Unit 1', 'Unit 2', etc. for a given code/identifier."""
     canon = normalize_math_unit_code(code)
-    return OFFICIAL_MATH_SYLLABUS.get(canon, OFFICIAL_MATH_SYLLABUS["WMA11"])["unit"]
+    return OFFICIAL_MATH_SYLLABUS.get(canon, {}).get("unit", "Unit 1: Pure Mathematics 1 (P1)")
 
 
 def get_math_unit_full_title(code_or_identifier: str) -> str:
-    """Returns full title e.g. 'Unit 1: Pure Mathematics 1 (P1)'."""
     canon = normalize_math_unit_code(code_or_identifier)
     info = OFFICIAL_MATH_SYLLABUS.get(canon, OFFICIAL_MATH_SYLLABUS["WMA11"])
-    return f"{info['unit']}: {info['title']}"
+    return f"{info['unit']}"
 
 
 def get_math_syllabus_for_unit(identifier: str) -> Dict[str, List[str]]:
-    """Returns the dictionary of Topics -> Subtopics for the given unit."""
     canon = normalize_math_unit_code(identifier)
     return OFFICIAL_MATH_SYLLABUS.get(canon, OFFICIAL_MATH_SYLLABUS["WMA11"])["topics"]
 
 
 def get_all_math_subtopics_for_unit(identifier: str) -> List[str]:
-    """Returns a flat list of all official subtopics for the given unit."""
     topics = get_math_syllabus_for_unit(identifier)
     subtopics = []
     for subs in topics.values():
@@ -259,7 +277,6 @@ def get_all_math_subtopics_for_unit(identifier: str) -> List[str]:
 
 
 def get_math_parent_topic_for_subtopic(subtopic: str) -> str:
-    """Given an official subtopic string, finds its parent Topic title."""
     for _, unit_data in OFFICIAL_MATH_SYLLABUS.items():
         for top, subs in unit_data["topics"].items():
             if subtopic in subs:
@@ -268,14 +285,18 @@ def get_math_parent_topic_for_subtopic(subtopic: str) -> str:
 
 
 def get_math_unit_for_subtopic(subtopic: str) -> str:
-    """Given an official subtopic string, finds its Unit ('Unit 1', etc.)."""
     for _, unit_data in OFFICIAL_MATH_SYLLABUS.items():
         for _, subs in unit_data["topics"].items():
             if subtopic in subs:
                 return unit_data["unit"]
-    return "Unit 1"
+    return "Unit 1: Pure Mathematics 1 (P1)"
+
+
+EXPECTED_MATH_PAPER_MARKS: Dict[str, int] = {
+    "WMA11": 75, "WMA12": 75, "WMA13": 75, "WMA14": 75, "WME01": 75, "WST01": 75,
+}
 
 
 def get_expected_paper_marks(unit_code: str = "") -> int:
-    """Every IAL Mathematics unit has 75 expected marks."""
-    return 75
+    canon = normalize_math_unit_code(unit_code)
+    return EXPECTED_MATH_PAPER_MARKS.get(canon, 75)

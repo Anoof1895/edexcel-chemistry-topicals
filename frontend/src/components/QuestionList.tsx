@@ -389,8 +389,11 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               const isMath = qSubject === 'mathematics';
               const isPhysics = qSubject === 'physics';
               const paperInfo = formatPaperSeriesYear(q);
-              const rawSubtopic = q.subtopic || q.topic || '';
-              const cleanedSubtopic = cleanSubtopic(rawSubtopic);
+              const primarySubtopic = q.mainSubtopic || q.subtopic || q.topic || '';
+              const cleanedPrimary = cleanSubtopic(primarySubtopic);
+              const relatedList = (q.relatedSubtopics && q.relatedSubtopics.length > 0)
+                ? q.relatedSubtopics
+                : ((q.subtopics && q.subtopics.length > 1) ? q.subtopics.filter((s) => s !== primarySubtopic) : []);
 
               const selectedCardAccent = isMath
                 ? 'bg-amber-50/70 dark:bg-[#16130D] border-y-amber-300/80 dark:border-y-white/10 border-r-amber-300/80 dark:border-r-white/10 border-l-amber-500 dark:border-l-amber-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] ring-1 ring-amber-500/20 dark:ring-amber-400/20'
@@ -484,16 +487,39 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                     <span>{paperInfo}</span>
                   </div>
 
-                  {/* Subtopic Title: Cleanly truncated / uncluttered on unselected, expanded on selected */}
-                  <div 
-                    className={`relative z-10 mt-1 transition-colors ${
-                      isSelected 
-                        ? selectedSubtopicText
-                        : 'text-[11px] text-slate-600 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 truncate'
-                    }`}
-                    title={rawSubtopic}
-                  >
-                    {isSelected ? rawSubtopic : (cleanedSubtopic || rawSubtopic)}
+                  {/* Subtopic Badges: Primary Main Subtopic Badge + Secondary Related Badges */}
+                  <div className="relative z-10 mt-1.5 flex flex-col gap-1">
+                    <div
+                      className={`transition-colors ${
+                        isSelected
+                          ? selectedSubtopicText
+                          : 'text-[11px] text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 font-medium truncate'
+                      }}`}
+                      title={relatedList.length > 0 ? `Primary: ${primarySubtopic}\nRelated: ${relatedList.join('; ')}` : primarySubtopic}
+                    >
+                      <span className="inline-flex items-center gap-1 font-medium">
+                        {isSelected ? primarySubtopic : (cleanedPrimary || primarySubtopic)}
+                      </span>
+                    </div>
+
+                    {relatedList.length > 0 && (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {relatedList.slice(0, isSelected ? 3 : 2).map((s, sIdx) => (
+                          <span
+                            key={sIdx}
+                            title={`Related concept: ${s}`}
+                            className="inline-flex items-center text-[9px] font-normal px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/10"
+                          >
+                            +{cleanSubtopic(s)}
+                          </span>
+                        ))}
+                        {!isSelected && relatedList.length > 2 && (
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
+                            +{relatedList.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom Row: Status Pill */}

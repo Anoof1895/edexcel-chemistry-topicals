@@ -151,11 +151,20 @@ const normalizeQuestions = (data: unknown[]): QuestionItem[] => {
       q.ms_crop_path ||
       null;
     const totalMarks = Number(q.marks ?? q.total_marks ?? 1) || 1;
-    const subtopics = Array.isArray(q.subtopics) && q.subtopics.length > 0
+    const rawSubs = Array.isArray(q.subtopics) && q.subtopics.length > 0
       ? q.subtopics
       : q.subtopic
       ? [q.subtopic]
       : [];
+    const mainSubtopic = q.mainSubtopic || q.subtopic || rawSubs[0] || 'General';
+    const mainTopic = q.mainTopic || q.topic || 'General';
+    const relatedSubtopics = Array.isArray(q.relatedSubtopics)
+      ? q.relatedSubtopics
+      : rawSubs.slice(1);
+    const subtopics = Array.from(new Set([mainSubtopic, ...relatedSubtopics])).filter(Boolean);
+    const topics = Array.isArray(q.topics) && q.topics.length > 0
+      ? q.topics
+      : [mainTopic];
 
     return {
       ...q,
@@ -169,9 +178,13 @@ const normalizeQuestions = (data: unknown[]): QuestionItem[] => {
       parentQuestion: q.parentQuestion || String(qNum).replace(/\([a-z0-9]+\).*$/i, '') || String(qNum),
       subPart: q.subPart || q.subpart || '',
       marks: totalMarks,
-      topic: q.topic || 'General',
-      subtopic: q.subtopic || subtopics[0] || q.topic || 'General',
+      topic: mainTopic,
+      subtopic: mainSubtopic,
       subtopics,
+      topics,
+      mainTopic,
+      mainSubtopic,
+      relatedSubtopics,
       hasStem: Boolean(q.hasStem),
       stemSummary: q.stemSummary ?? null,
       questionImagePath: qImg,
@@ -753,9 +766,9 @@ export const App: React.FC = () => {
       if (filters.searchQuery.trim()) {
         const query = filters.searchQuery.toLowerCase();
         const matchQNum = q.questionNumber.toLowerCase().includes(query);
-        const matchTopic = (q.topic || '').toLowerCase().includes(query);
-        const matchSubtopic = (q.subtopic || '').toLowerCase().includes(query);
-        const matchSubs = (q.subtopics || []).some((s) => s.toLowerCase().includes(query));
+        const matchTopic = (q.topic || '').toLowerCase().includes(query) || (q.mainTopic || '').toLowerCase().includes(query);
+        const matchSubtopic = (q.subtopic || '').toLowerCase().includes(query) || (q.mainSubtopic || '').toLowerCase().includes(query);
+        const matchSubs = (q.subtopics || []).some((s) => s.toLowerCase().includes(query)) || (q.relatedSubtopics || []).some((s) => s.toLowerCase().includes(query));
         const matchStem = (q.stemSummary || '').toLowerCase().includes(query);
         const matchSeries = (q.series || '').toLowerCase().includes(query);
         const matchSession = (q.session || '').toLowerCase().includes(query);

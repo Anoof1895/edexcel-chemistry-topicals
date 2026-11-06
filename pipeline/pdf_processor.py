@@ -47,33 +47,45 @@ def is_subsequent_marker(line_txt: str, current_qnum: Optional[str]) -> bool:
 
     cur_alpha = None
     cur_roman = None
-    # Check for two parenthesized groups first e.g. 10(b)(i) or 1(a)(ii)
-    m_two = re.search(r"\(([a-z])\)\s*\(([ivx]+)\)", clean_cur_q, re.I)
+    # Check for two parenthesized groups first e.g. 10(b)(i) or 1(a)(ii) (strictly lowercase)
+    m_two = re.search(r"\(([a-z])\)\s*\(([ivx]+)\)", clean_cur_q)
     if m_two:
-        cur_alpha = m_two.group(1).lower()
-        cur_roman = m_two.group(2).lower()
+        cur_alpha = m_two.group(1)
+        cur_roman = m_two.group(2)
     else:
-        # Check single group
-        m_single_r = re.search(r"\(([ivx]+)\)", clean_cur_q, re.I)
-        m_single_a = re.search(r"\(([a-z])\)", clean_cur_q, re.I)
-        if m_single_r and m_single_r.group(1).lower() in ("ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"):
-            cur_roman = m_single_r.group(1).lower()
-        elif m_single_a and m_single_a.group(1).lower() != "i":
-            cur_alpha = m_single_a.group(1).lower()
-        elif m_single_a and m_single_a.group(1).lower() == "i":
+        # Check single group (strictly lowercase)
+        m_single_r = re.search(r"\(([ivx]+)\)", clean_cur_q)
+        m_single_a = re.search(r"\(([a-z])\)", clean_cur_q)
+        if m_single_r and m_single_r.group(1) in ("ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"):
+            cur_roman = m_single_r.group(1)
+        elif m_single_a and m_single_a.group(1) != "i":
+            cur_alpha = m_single_a.group(1)
+        elif m_single_a and m_single_a.group(1) == "i":
             cur_alpha = "i"
             cur_roman = "i"
 
-    # Candidate components from line
-    m_inline = re.match(r"^\s*\*?\s*(?:(?:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*(?:\(([a-z])\)\s*\*?\s*\(([ivx]{1,4})\)|([a-z])\s*\(([ivx]{1,4})\))\s*\*?", line_clean, re.I)
-    m_roman_multi = re.match(r"^\s*\*?\s*(?:(?:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*\((ii|iii|iv|v|vi|vii|viii|ix|x)\)\s*\*?", line_clean, re.I)
-    m_single = re.match(r"^\s*\*?\s*(?:(?:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*\(([a-z])\)\s*\*?", line_clean, re.I)
-    m_qnum = re.match(r"^\s*\*?\s*(?:(?:question\s+|q\.?\s*)(\d{1,2})\b|(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}(?-i:[A-Z])|\s+(?-i:[A-Z][a-z]+)))", line_clean, re.I)
+    # Candidate components from line (sub-part letters & Roman numerals strictly lowercase; never match (I), (II), (III))
+    m_inline = re.match(
+        r"^\s*\*?\s*(?:(?i:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*(?:\(([a-z])\)\s*\*?\s*\(([ivx]{1,4})\)|([a-z])\s*\(([ivx]{1,4})\))\s*\*?",
+        line_clean,
+    )
+    m_roman_multi = re.match(
+        r"^\s*\*?\s*(?:(?i:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*\((ii|iii|iv|v|vi|vii|viii|ix|x)\)\s*\*?",
+        line_clean,
+    )
+    m_single = re.match(
+        r"^\s*\*?\s*(?:(?i:question|q\.?)\s*)?(?:(\d{1,2})\s*)?\*?\s*\(([a-z])\)\s*\*?",
+        line_clean,
+    )
+    m_qnum = re.match(
+        r"^\s*\*?\s*(?:(?i:question\s+|q\.?\s*)(\d{1,2})\b|(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}[A-Z]|\s+[A-Z][a-z]+))",
+        line_clean,
+    )
 
     if m_inline:
         cand_p = int(m_inline.group(1)) if m_inline.group(1) else None
-        cand_a = m_inline.group(2).lower()
-        cand_r = m_inline.group(3).lower()
+        cand_a = m_inline.group(2) or m_inline.group(4)
+        cand_r = m_inline.group(3) or m_inline.group(5)
         if cand_p and cur_parent and cand_p != cur_parent:
             return cand_p > cur_parent
         if cur_alpha:
@@ -271,12 +283,12 @@ class PDFProcessor:
                 cur_alpha = None
                 cur_roman = None
                 if current_qnum:
-                    m_a = re.search(r"(?:\(([a-z])\)|(?:^|\b\d{1,2})([a-z])\b)", current_qnum, re.I)
+                    m_a = re.search(r"(?:\(([a-z])\)|(?:^|\b\d{1,2})([a-z])\b)", current_qnum)
                     if m_a:
-                        cur_alpha = (m_a.group(1) or m_a.group(2)).lower()
-                    m_r = re.search(r"\(([ivx]+)\)", current_qnum, re.I)
+                        cur_alpha = m_a.group(1) or m_a.group(2)
+                    m_r = re.search(r"\(([ivx]+)\)", current_qnum)
                     if m_r:
-                        cur_roman = m_r.group(1).lower()
+                        cur_roman = m_r.group(1)
 
                 mcq_footer_pat = re.compile(
                     r"^\s*(?:total\s+for\s+section\s+a|use\s+this\s+space\s+for\s+any\s+rough\s+working|anything\s+you\s+write\s+in\s+this\s+space|blank\s+page)",
@@ -287,8 +299,7 @@ class PDFProcessor:
                     re.IGNORECASE
                 )
                 mcq_next_q_pat = re.compile(
-                    r"^\s*(?:question\s+|q\.?\s*)?(\d{1,2})\s*(?:\t|\.\s+|\s{2,}|\s+[A-Z])",
-                    re.IGNORECASE
+                    r"^\s*(?:(?i:question\s+|q\.?\s*))?(\d{1,2})\s*(?:\t|\.\s+|\s{2,}|\s+[A-Z])"
                 )
                 total_mark_pat = re.compile(
                     r"^\s*\(Total\s+(?:for\s+Question\s+(\d+)\s*=\s*)?\d+\s*marks?\)",
@@ -302,8 +313,57 @@ class PDFProcessor:
                     r"^\s*(?:\*P\d+.*\*|Turn\s+over|\d{1,2})\s*$",
                     re.IGNORECASE
                 )
+                opt_d_line_pat = re.compile(r"^\s*[\uf0a2\u2610\[\]]*\s*D(?:\s+|\t|$)")
 
                 page_dict = page.get_text("dict")
+
+                # Pre-pass: find any genuine lowercase subsequent sub-part (e.g. (b) after (a), NEVER uppercase (I)-(IV))
+                # and locate this MCQ's own uppercase Option D floor so numbered statement lists (1, 2, 3) above A-D
+                # can never be mistaken for the next top-level question.
+                subseq_subpart_y0_pts = None
+                own_opt_d_y0 = None
+                own_opt_d_y1 = None
+
+                for b in page_dict.get("blocks", []):
+                    if b.get("type") != 0:
+                        continue
+                    for l in b.get("lines", []):
+                        line_txt = "".join(s.get("text", "") for s in l.get("spans", [])).strip()
+                        line_y0 = l["bbox"][1]
+                        line_x0 = l["bbox"][0]
+                        if line_y0 >= start_y_pts + 15 and line_x0 < 120:
+                            if cur_alpha is not None:
+                                m_sub = re.match(r"^\s*\*?\s*(?:\d{1,2}[:.]?\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s+|$)", line_txt)
+                                if m_sub and ord(m_sub.group(1)) > ord(cur_alpha):
+                                    if subseq_subpart_y0_pts is None or line_y0 < subseq_subpart_y0_pts:
+                                        subseq_subpart_y0_pts = line_y0
+                            if cur_roman is not None:
+                                m_rom = re.match(r"^\s*\*?\s*(?:\d{1,2}[:.]?\s*)?\*?\s*(?:\([a-z]\)\s*)?\*?\s*\(([ivx]+)\)\s*\*?(?:\s+|$)", line_txt)
+                                if m_rom:
+                                    found_rom = m_rom.group(1)
+                                    if found_rom in ROMAN_NUMS and cur_roman in ROMAN_NUMS:
+                                        if ROMAN_NUMS.index(found_rom) > ROMAN_NUMS.index(cur_roman):
+                                            if subseq_subpart_y0_pts is None or line_y0 < subseq_subpart_y0_pts:
+                                                subseq_subpart_y0_pts = line_y0
+
+                for b in page_dict.get("blocks", []):
+                    if b.get("type") != 0:
+                        continue
+                    for l in b.get("lines", []):
+                        line_txt = "".join(s.get("text", "") for s in l.get("spans", [])).strip()
+                        line_y0 = l["bbox"][1]
+                        line_y1 = l["bbox"][3]
+                        if line_y0 >= start_y_pts + 10:
+                            if subseq_subpart_y0_pts is not None and line_y0 >= subseq_subpart_y0_pts:
+                                continue
+                            if opt_d_line_pat.match(line_txt):
+                                if own_opt_d_y0 is None or line_y0 < own_opt_d_y0:
+                                    own_opt_d_y0 = line_y0
+                                    own_opt_d_y1 = line_y1
+
+                if subseq_subpart_y0_pts is not None:
+                    next_marker_y0_pts = subseq_subpart_y0_pts
+
                 for b in page_dict.get("blocks", []):
                     if b.get("type") != 0:
                         continue
@@ -326,11 +386,12 @@ class PDFProcessor:
                             if m_tot:
                                 q_in_tot = m_tot.group(1)
                                 if q_in_tot and cur_parent is not None and int(q_in_tot) == cur_parent:
-                                    # Total line belongs to THIS question: clamp immediately below it
-                                    clamp_tot_pts = line_y1 + 4
-                                    cur_ymax_pts = ymax / scale * ph
-                                    if clamp_tot_pts < cur_ymax_pts:
-                                        ymax = clamp_tot_pts / ph * scale
+                                    # Total line belongs to THIS question: clamp immediately below it (if final subpart)
+                                    if subseq_subpart_y0_pts is None:
+                                        clamp_tot_pts = line_y1 + 4
+                                        cur_ymax_pts = ymax / scale * ph
+                                        if clamp_tot_pts < cur_ymax_pts:
+                                            ymax = clamp_tot_pts / ph * scale
                                 else:
                                     # Total line belongs to subsequent question or section
                                     cur_ymax_pts = ymax / scale * ph
@@ -358,10 +419,10 @@ class PDFProcessor:
                                     if next_marker_y0_pts is None or line_y0 < next_marker_y0_pts:
                                         next_marker_y0_pts = line_y0
 
-                            # 5. Check next sequential integer question
+                            # 5. Check next sequential integer question (ONLY strictly below this MCQ's own Option D!)
                             line_x0 = l["bbox"][0]
-                            if line_x0 < 60:
-                                m_q = mcq_next_q_pat.match(line_txt) or re.match(r"^\s*(?:question\s+|q\.?\s*)?(\d{1,2})[:.]?(?:\s+|\t)+(?:\([a-z]\)|[A-Za-z])", line_txt, re.I)
+                            if line_x0 < 60 and (own_opt_d_y0 is None or line_y0 > own_opt_d_y0 + 8):
+                                m_q = mcq_next_q_pat.match(line_txt) or re.match(r"^\s*(?:(?i:question\s+|q\.?\s*))?(\d{1,2})[:.]?(?:\s+|\t)+(?:\([a-z]\)|[A-Za-z])", line_txt)
                                 if m_q and not re.search(r"^\s*(?:question\s+|q\.?\s*)?\d{1,3}[:.]?\s+(?:cm|dm|g|mol|°|%|k?j|k?pa|v|s|m|h|min)[0-9\-–−]*\b", line_txt, re.I):
                                     if cur_parent is not None:
                                         try:
@@ -376,49 +437,53 @@ class PDFProcessor:
                                         except ValueError:
                                             pass
 
-                            # 6. Check next sequential subpart letter (e.g. (b) following (a))
-                            if cur_alpha is not None and line_x0 < 120:
-                                m_sub = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s+|$)", line_txt, re.I)
-                                if m_sub:
-                                    found_alpha = m_sub.group(1).lower()
-                                    if ord(found_alpha) > ord(cur_alpha):
-                                        if next_marker_y0_pts is None or line_y0 < next_marker_y0_pts:
-                                            next_marker_y0_pts = line_y0
-
-                            # 7. Check next sequential roman numeral (e.g. (ii) following (i))
-                            if cur_roman is not None and line_x0 < 120:
-                                m_rom = re.match(r"^\s*\*?\s*(?:\d{1,2}\s*)?\*?\s*(?:\([a-z]\)\s*)?\*?\s*\(([ivx]+)\)\s*\*?(?:\s+|$)", line_txt, re.I)
-                                if m_rom:
-                                    found_rom = m_rom.group(1).lower()
-                                    if found_rom in ROMAN_NUMS and cur_roman in ROMAN_NUMS:
-                                        if ROMAN_NUMS.index(found_rom) > ROMAN_NUMS.index(cur_roman):
-                                            if next_marker_y0_pts is None or line_y0 < next_marker_y0_pts:
-                                                next_marker_y0_pts = line_y0
-
-                # Option D & Total Line Safety Net for MCQs:
-                # Under NO circumstance may an MCQ crop terminate before its Option D block.
-                # However, if a subsequent subpart exists (next_marker_y0_pts is set),
-                # Option D must never extend past that next subpart!
+                # Option D & Total Line Bottom-Boundary Guarantee for MCQs:
+                # Under NO circumstance may an MCQ crop terminate above its Option D (including multi-line Option D text or images).
+                mcq_ceiling_pts = (next_marker_y0_pts - 4) if next_marker_y0_pts is not None else (ph * 0.90)
                 opt_d_blocks = [
                     b for b in page_blocks
-                    if b[1] >= start_y_pts + 10 and re.match(r"^\s*D\b", b[4].strip(), re.I)
+                    if b[1] >= start_y_pts + 10
+                    and (next_marker_y0_pts is None or b[1] < next_marker_y0_pts)
+                    and opt_d_line_pat.match(b[4].strip())
                 ]
+                min_opt_d_bottom = (own_opt_d_y1 + 4) if own_opt_d_y1 is not None else None
                 if opt_d_blocks:
-                    # Filter out any Option D that belongs to a subsequent subpart!
-                    if next_marker_y0_pts is not None:
-                        opt_d_blocks = [b for b in opt_d_blocks if b[1] < next_marker_y0_pts]
-                    if opt_d_blocks:
-                        b_d = min(opt_d_blocks, key=lambda b: b[1])
-                        opt_d_y1 = b_d[3] + 4
-                        cur_ymax_pts = ymax / scale * ph
-                        if cur_ymax_pts < opt_d_y1:
-                            ymax = opt_d_y1 / ph * scale
+                    b_d = min(opt_d_blocks, key=lambda b: b[1])
+                    min_opt_d_bottom = max(min_opt_d_bottom or 0.0, b_d[3] + 4)
+                    if own_opt_d_y0 is None:
+                        own_opt_d_y0 = b_d[1]
 
-                # Only expand to question Total line if this is the final subpart on the page (no next subpart marker below it)
-                if cur_parent is not None and next_marker_y0_pts is None:
+                # Include any multi-line continuation blocks or table cells of Option D above mcq_ceiling_pts
+                if own_opt_d_y0 is not None and min_opt_d_bottom is not None:
+                    for b in page_blocks:
+                        b_txt = b[4].strip()
+                        if b[1] >= own_opt_d_y0 - 2 and b[1] <= own_opt_d_y0 + 40 and b[3] <= mcq_ceiling_pts:
+                            if (
+                                "DO NOT WRITE" not in b_txt
+                                and not rough_working_pat.search(b_txt)
+                                and not sec_a_total_pat.search(b_txt)
+                                and not mcq_footer_pat.match(b_txt)
+                                and not footer_pat.match(b_txt)
+                            ):
+                                if total_mark_pat.match(b_txt):
+                                    continue
+                                min_opt_d_bottom = max(min_opt_d_bottom, b[3] + 4)
+                    # Also include any embedded raster images overlapping Option D (e.g. hazard symbols / structural formulae)
+                    for info in page.get_image_info():
+                        bbox = info.get("bbox")
+                        if bbox and bbox[1] >= start_y_pts - 5 and bbox[1] <= own_opt_d_y0 + 10 and bbox[3] <= mcq_ceiling_pts + 4 and bbox[3] < ph * 0.90:
+                            min_opt_d_bottom = max(min_opt_d_bottom, bbox[3] + 6)
+                    cur_ymax_pts = ymax / scale * ph
+                    if cur_ymax_pts < min_opt_d_bottom:
+                        ymax = min(mcq_ceiling_pts, min_opt_d_bottom) / ph * scale
+
+                # Expand to question Total line if this is the final subpart of cur_parent (no subsequent subpart below it)
+                if cur_parent is not None and subseq_subpart_y0_pts is None:
                     tot_blocks = [
                         b for b in page_blocks
-                        if b[1] >= start_y_pts + 10 and re.search(rf"\(Total\s+(?:for\s+Question\s+{cur_parent}\s*=\s*)?\d+\s*marks?\)", b[4], re.I)
+                        if b[1] >= start_y_pts + 10
+                        and (next_marker_y0_pts is None or b[3] <= next_marker_y0_pts + 4)
+                        and re.search(rf"\(Total\s+for\s+Question\s+{cur_parent}\s*=\s*\d+\s*marks?\)", b[4], re.I)
                     ]
                     if tot_blocks:
                         b_tot = min(tot_blocks, key=lambda b: b[1])
@@ -427,10 +492,9 @@ class PDFProcessor:
                         if cur_ymax_pts < tot_y1:
                             ymax = tot_y1 / ph * scale
             else:
-                # Theory / Section B Marker Scanning:
+                # Theory / Section B Marker Scanning (strictly lowercase sub-parts and Roman numerals; never match (I)-(IV)):
                 marker_pat = re.compile(
-                    r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\*?\s*\(([ivx]{1,4})\)|(?:question\s+|\*+\s*|q\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}(?-i:[A-Z])|\s+(?-i:[A-Z][a-z]+)))",
-                    re.IGNORECASE
+                    r"^\s*\*?\s*(?:(?:\d{1,2}\s*)?\*?\s*\(([a-z])\)\s*\*?(?:\s*\(([ivx]{1,4})\))?|(?:\d{1,2}\s*)?\*?\s*\(([ivx]{1,4})\)|(?i:question\s+|\*+\s*|q\.?\s*)(\d{1,2})\b|(?:\*+\s*)?(\d{1,2})\s*(?:\*?\s*\([a-z]\)|\.\s+|\t|\s{2,}[A-Z]|\s+[A-Z][a-z]+))"
                 )
                 totals_banner_pat = re.compile(
                     r"^\s*(?:total\s+for\s+section\b|total\s+for\s+paper\b|\(total\s+(?:for\s+question\s+\d+\s*=\s*)?\d+\s*marks?\))",

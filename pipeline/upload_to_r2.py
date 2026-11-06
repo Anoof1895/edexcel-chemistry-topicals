@@ -64,6 +64,21 @@ def parse_args():
         action="store_true",
         help="Preview files to upload without making network requests",
     )
+    parser.add_argument(
+        "--cache-control",
+        default="public, max-age=31536000, immutable",
+        help="Cache-Control header for new uploads (default: public, max-age=31536000, immutable)",
+    )
+    parser.add_argument(
+        "--overwrite-cache-control",
+        default="public, max-age=86400, stale-while-revalidate=604800",
+        help="Cache-Control header when overwriting existing modified files (default: public, max-age=86400, stale-while-revalidate=604800)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force upload all files even if already present in R2 with same size",
+    )
     return parser.parse_args()
 
 
@@ -190,7 +205,7 @@ def main():
 
     for local_path, s3_key in candidates:
         file_size = os.path.getsize(local_path)
-        if s3_key in existing_objects and existing_objects[s3_key] == file_size:
+        if not args.force and s3_key in existing_objects and existing_objects[s3_key] == file_size:
             skipped_count += 1
         else:
             upload_queue.append((local_path, s3_key, file_size))
@@ -217,9 +232,11 @@ def main():
     def upload_task(item):
         path, key, size = item
         content_type = get_content_type(path)
+        is_overwrite = key in existing_objects
+        cc = args.overwrite_cache_control if is_overwrite else args.cache_control
         extra_args = {
             "ContentType": content_type,
-            "CacheControl": "public, max-age=31536000, immutable",
+            "CacheControl": cc,
         }
         try:
             s3.upload_file(path, args.bucket, key, ExtraArgs=extra_args)

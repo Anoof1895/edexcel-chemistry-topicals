@@ -110,3 +110,47 @@ export function isMCQ(q: QuestionItem): boolean {
 export function getQuestionType(q: QuestionItem): 'mcq' | 'theory' {
   return isMCQ(q) ? 'mcq' : 'theory';
 }
+
+
+/**
+ * Resolves the primary canonical topic for a question.
+ */
+export function getQuestionMainTopic(q?: QuestionItem | null): string {
+  if (!q) return '';
+  return q.mainTopic || q.topic || '';
+}
+
+/**
+ * Resolves the primary canonical subtopic for a question.
+ */
+export function getQuestionMainSubtopic(q?: QuestionItem | null): string {
+  if (!q) return '';
+  return q.mainSubtopic || q.subtopic || (q.subtopics && q.subtopics[0]) || '';
+}
+
+/**
+ * Resolves secondary/related subtopics for a question (excluding the main subtopic).
+ */
+export function getQuestionRelatedSubtopics(q?: QuestionItem | null): string[] {
+  if (!q) return [];
+  if (Array.isArray(q.relatedSubtopics)) {
+    return q.relatedSubtopics;
+  }
+  if (Array.isArray(q.subtopics) && q.subtopics.length > 1) {
+    const main = getQuestionMainSubtopic(q);
+    return q.subtopics.filter(s => s !== main);
+  }
+  return [];
+}
+
+/**
+ * Resolves all parent topics tested by this question, with the main topic first.
+ */
+export function getQuestionTopics(q?: QuestionItem | null): string[] {
+  if (!q) return [];
+  if (Array.isArray(q.topics) && q.topics.length > 0) {
+    return q.topics;
+  }
+  const mainTop = getQuestionMainTopic(q);
+  return mainTop ? [mainTop] : [];
+}
