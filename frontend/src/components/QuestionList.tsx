@@ -9,7 +9,13 @@ import {
   X
 } from 'lucide-react';
 import { QuestionItem, MasteryStatus } from '../types';
-import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
+import {
+  getQuestionType,
+  getQuestionSubject,
+  getQuestionMainSubtopic,
+  getQuestionRelatedSubtopics,
+  isPrimarySubtopicMatch,
+} from '../utils/questionClassification';
 import {
   handleSpotlightMove,
   handleSpotlightLeave,
@@ -18,6 +24,7 @@ import {
 
 interface QuestionListProps {
   questions: QuestionItem[];
+  totalQuestionsCount?: number;
   selectedQuestionId: string | null;
   onSelectQuestion: (question: QuestionItem) => void;
   bookmarks: Set<string>;
@@ -29,6 +36,7 @@ interface QuestionListProps {
   onClearFilters: () => void;
   isDrawerOpen?: boolean;
   onCloseDrawer?: () => void;
+  selectedSubtopics?: string[];
 }
 
 export const cleanSubtopic = (title: string = ''): string => {
@@ -160,6 +168,7 @@ function getPaginationItems(current: number, total: number): (number | '...')[] 
 
 export const QuestionList: React.FC<QuestionListProps> = ({
   questions,
+  totalQuestionsCount,
   selectedQuestionId,
   onSelectQuestion,
   bookmarks,
@@ -170,11 +179,15 @@ export const QuestionList: React.FC<QuestionListProps> = ({
   onTabChange,
   onClearFilters,
   isDrawerOpen = false,
-  onCloseDrawer
+  onCloseDrawer,
+  selectedSubtopics = [],
 }) => {
-  const sortedQuestions = useMemo(() => {
-    return [...questions].sort(sortQuestionsLatestFirst);
-  }, [questions]);
+  const sortedQuestions = questions;
+
+
+
+
+
 
   const [currentPage, setCurrentPage] = useState<number>(() => {
     if (selectedQuestionId && sortedQuestions.length > 0) {
@@ -208,6 +221,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
         activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     });
+
     return () => cancelAnimationFrame(raf);
   }, [selectedQuestionId, currentPage, sortedQuestions.length, activeTab]);
 
@@ -226,38 +240,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
     }
   }, [activeTab]);
 
-  // Linear / Raycast keyboard shortcuts: 'j'/'Alt+ArrowDown' = next, 'k'/'Alt+ArrowUp' = prev
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
 
-      if (sortedQuestions.length === 0) return;
-
-      const currentIdx = sortedQuestions.findIndex((q) => q.id === selectedQuestionId);
-
-      if (e.key === 'j' || e.key === 'J' || (e.key === 'ArrowDown' && e.altKey)) {
-        e.preventDefault();
-        const nextIdx = currentIdx < sortedQuestions.length - 1 ? currentIdx + 1 : 0;
-        onSelectQuestion(sortedQuestions[nextIdx]);
-      } else if (e.key === 'k' || e.key === 'K' || (e.key === 'ArrowUp' && e.altKey)) {
-        e.preventDefault();
-        const prevIdx = currentIdx > 0 ? currentIdx - 1 : sortedQuestions.length - 1;
-        onSelectQuestion(sortedQuestions[prevIdx]);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [sortedQuestions, selectedQuestionId, onSelectQuestion]);
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
@@ -328,7 +311,7 @@ export const QuestionList: React.FC<QuestionListProps> = ({
           >
             <span className="relative z-10">All Questions</span>
             <span className="relative z-10 text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/[0.07] text-slate-700 dark:text-slate-300">
-              {activeTab === 'all' ? questions.length : 'All'}
+              {totalQuestionsCount !== undefined ? totalQuestionsCount : questions.length}
             </span>
           </button>
 
@@ -389,11 +372,11 @@ export const QuestionList: React.FC<QuestionListProps> = ({
               const isMath = qSubject === 'mathematics';
               const isPhysics = qSubject === 'physics';
               const paperInfo = formatPaperSeriesYear(q);
-              const primarySubtopic = q.mainSubtopic || q.subtopic || q.topic || '';
+              const primarySubtopic = getQuestionMainSubtopic(q) || q.topic || '';
               const cleanedPrimary = cleanSubtopic(primarySubtopic);
-              const relatedList = (q.relatedSubtopics && q.relatedSubtopics.length > 0)
-                ? q.relatedSubtopics
-                : ((q.subtopics && q.subtopics.length > 1) ? q.subtopics.filter((s) => s !== primarySubtopic) : []);
+              const relatedList = getQuestionRelatedSubtopics(q);
+              const isSecondaryFilterMatch =
+                selectedSubtopics.length > 0 && !isPrimarySubtopicMatch(q, selectedSubtopics);
 
               const selectedCardAccent = isMath
                 ? 'bg-amber-50/70 dark:bg-[#16130D] border-y-amber-300/80 dark:border-y-white/10 border-r-amber-300/80 dark:border-r-white/10 border-l-amber-500 dark:border-l-amber-400 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] ring-1 ring-amber-500/20 dark:ring-amber-400/20'
@@ -494,25 +477,33 @@ export const QuestionList: React.FC<QuestionListProps> = ({
                         isSelected
                           ? selectedSubtopicText
                           : 'text-[11px] text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-slate-100 font-medium truncate'
-                      }}`}
+                      }`}
                       title={relatedList.length > 0 ? `Primary: ${primarySubtopic}\nRelated: ${relatedList.join('; ')}` : primarySubtopic}
                     >
                       <span className="inline-flex items-center gap-1 font-medium">
-                        {isSelected ? primarySubtopic : (cleanedPrimary || primarySubtopic)}
+                        {cleanedPrimary || primarySubtopic}
                       </span>
                     </div>
 
                     {relatedList.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
-                        {relatedList.slice(0, isSelected ? 3 : 2).map((s, sIdx) => (
-                          <span
-                            key={sIdx}
-                            title={`Related concept: ${s}`}
-                            className="inline-flex items-center text-[9px] font-normal px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-white/10"
-                          >
-                            +{cleanSubtopic(s)}
-                          </span>
-                        ))}
+                        {relatedList.slice(0, isSelected ? 3 : 2).map((s, sIdx) => {
+                          const isMatchedSecondary =
+                            isSecondaryFilterMatch && selectedSubtopics.includes(s);
+                          return (
+                            <span
+                              key={sIdx}
+                              title={`Related concept: ${s}`}
+                              className={`inline-flex items-center text-[9px] font-normal px-1.5 py-0.5 rounded border truncate max-w-[200px] ${
+                                isMatchedSecondary
+                                  ? 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 font-medium'
+                                  : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-white/10'
+                              }`}
+                            >
+                              +{cleanSubtopic(s)}
+                            </span>
+                          );
+                        })}
                         {!isSelected && relatedList.length > 2 && (
                           <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
                             +{relatedList.length - 2} more

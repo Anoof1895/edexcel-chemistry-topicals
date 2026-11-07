@@ -57,17 +57,26 @@ from pipeline.batch_scanner_physics import scan_physics_papers_directory
 from pipeline.gemini_extractor import load_gemini_api_keys
 from pipeline.ms_matcher import canonical_id
 from pipeline.syllabus import (
+    EQUATIONS_SUBTOPIC,
+    EQUATIONS_SUBTOPIC_ALIAS,
+    HAZARD_BROAD_RE,
+    HAZARD_SUBTOPIC,
+    NOMENCLATURE_SUBTOPIC,
     OFFICIAL_SYLLABUS,
+    enforce_chemistry_subtopic_hierarchy,
     get_all_subtopics_for_unit,
     get_parent_topic_for_subtopic,
+    normalize_subtopic_name,
 )
 from pipeline.syllabus_math import (
     OFFICIAL_MATH_SYLLABUS,
+    enforce_math_subtopic_hierarchy,
     get_all_math_subtopics_for_unit,
     get_math_parent_topic_for_subtopic,
 )
 from pipeline.syllabus_physics import (
     OFFICIAL_PHYSICS_SYLLABUS,
+    enforce_physics_subtopic_hierarchy,
     get_all_physics_subtopics_for_unit,
     get_physics_parent_topic_for_subtopic,
 )
@@ -159,26 +168,26 @@ CHEMISTRY_UNIT_ALIASES: Dict[str, str] = {
 SYNOPTIC_ALLOWED_UNITS: Dict[str, Dict[str, List[str]]] = {
     "chemistry": {
         "WCH11": ["WCH11"],
-        "WCH12": ["WCH12", "WCH11"],
-        "WCH13": ["WCH13", "WCH11", "WCH12"],
-        "WCH14": ["WCH14", "WCH11", "WCH12"],
-        "WCH15": ["WCH15", "WCH11", "WCH12", "WCH14"],
-        "WCH16": ["WCH16", "WCH11", "WCH12", "WCH14", "WCH15"],
+        "WCH12": ["WCH12"],
+        "WCH13": ["WCH13"],
+        "WCH14": ["WCH14"],
+        "WCH15": ["WCH15"],
+        "WCH16": ["WCH16"],
     },
     "physics": {
         "WPH11": ["WPH11"],
-        "WPH12": ["WPH12", "WPH11"],
-        "WPH13": ["WPH13", "WPH11", "WPH12"],
-        "WPH14": ["WPH14", "WPH11", "WPH12"],
-        "WPH15": ["WPH15", "WPH11", "WPH12", "WPH14"],
-        "WPH16": ["WPH16", "WPH11", "WPH12", "WPH14", "WPH15"],
+        "WPH12": ["WPH12"],
+        "WPH13": ["WPH13"],
+        "WPH14": ["WPH14"],
+        "WPH15": ["WPH15"],
+        "WPH16": ["WPH16"],
     },
     "mathematics": {
         "WMA11": ["WMA11"],
-        "WMA12": ["WMA12", "WMA11"],
-        "WMA13": ["WMA13", "WMA11", "WMA12"],
-        "WMA14": ["WMA14", "WMA11", "WMA12", "WMA13"],
-        "WME01": ["WME01", "WMA11"],
+        "WMA12": ["WMA12"],
+        "WMA13": ["WMA13"],
+        "WMA14": ["WMA14"],
+        "WME01": ["WME01"],
         "WST01": ["WST01"],
     },
 }
@@ -207,7 +216,7 @@ def get_page_normalized_blocks(
 ) -> List[Tuple[float, float, float, float, str]]:
     """Extracts text blocks with per-span font normalization."""
     blocks = []
-    page_dict = page.get_text("dict")
+    page_dict = page.get_text("dict", flags=0)
     for b in page_dict.get("blocks", []):
         if b.get("type") != 0:
             continue
@@ -290,50 +299,51 @@ class EdexcelPDFTextCache:
                     lines = [l.strip() for l in text.split("\n") if l.strip()]
                     if not lines:
                         continue
-                    fl = lines[0]
                     if (
                         len(lines) > 1
-                        and re.fullmatch(r"\*?\s*(?:\d{1,2})?\s*\*?", fl)
+                        and re.fullmatch(r"\*?\s*(?:\d{1,2})?\s*\*?", lines[0])
                         and re.match(
                             r"^\*?\s*\(?[a-z]+\)", " ".join(lines[1:3]).lstrip("* ")
                         )
                     ):
-                        fl = re.sub(r"[\s\*]+", " ", " ".join(lines[:3])).strip()
+                        merged_first = re.sub(r"[\s\*]+", " ", " ".join(lines[:2])).strip()
+                        lines = [merged_first] + lines[2:]
 
-                    if x0 < 82:
-                        mq = Q_HDR_RE.match(fl)
-                        if (
-                            mq
-                            and 1 <= int(mq.group(1)) <= 35
-                            and not UNIT_QUANTITY_RE.match(fl)
-                            and not re.match(r"^[\s\d:.]*[\._\-]{2,}", fl)
-                        ):
-                            cur_q = mq.group(1)
-                            cur_let = None
-                            cur_key = cur_q
-                            ms = UNIVERSAL_SUB_RE.match(fl)
-                            if ms and ms.group(2).lower() not in ROMAN_SET:
-                                cur_let = ms.group(2).lower()
+                    for line_idx, ln in enumerate(lines):
+                        if line_idx == 0 and x0 < 82:
+                            mq = Q_HDR_RE.match(ln)
+                            if (
+                                mq
+                                and 1 <= int(mq.group(1)) <= 35
+                                and not UNIT_QUANTITY_RE.match(ln)
+                                and not re.match(r"^[\s\d:.]*[\._\-]{2,}", ln)
+                            ):
+                                cur_q = mq.group(1)
+                                cur_let = None
+                                cur_key = cur_q
+                                ms = UNIVERSAL_SUB_RE.match(ln)
+                                if ms and ms.group(2).lower() not in ROMAN_SET:
+                                    cur_let = ms.group(2).lower()
+                                    rom = ms.group(3).lower() if ms.group(3) else ""
+                                    cur_key = f"{cur_q}{cur_let}{rom}"
+
+                        if x0 < 135 and cur_q:
+                            ms = UNIVERSAL_SUB_RE.match(ln)
+                            if ms:
+                                let = ms.group(2).lower()
                                 rom = ms.group(3).lower() if ms.group(3) else ""
-                                cur_key = f"{cur_q}{cur_let}{rom}"
-
-                    if x0 < 135 and cur_q:
-                        ms = UNIVERSAL_SUB_RE.match(fl)
-                        if ms:
-                            let = ms.group(2).lower()
-                            rom = ms.group(3).lower() if ms.group(3) else ""
-                            if let in ROMAN_SET and cur_let:
-                                cur_key = f"{cur_q}{cur_let}{let}"
+                                if let in ROMAN_SET and cur_let:
+                                    cur_key = f"{cur_q}{cur_let}{let}"
+                                else:
+                                    cur_let = let
+                                    cur_key = f"{cur_q}{cur_let}{rom}"
                             else:
-                                cur_let = let
-                                cur_key = f"{cur_q}{cur_let}{rom}"
-                        else:
-                            mr = SUB_ROM_RE.match(fl)
-                            if mr and cur_let:
-                                cur_key = f"{cur_q}{cur_let}{mr.group(2).lower()}"
+                                mr = SUB_ROM_RE.match(ln)
+                                if mr and cur_let:
+                                    cur_key = f"{cur_q}{cur_let}{mr.group(2).lower()}"
 
-                    if cur_key:
-                        qp_texts[cur_key] = qp_texts.get(cur_key, "") + " " + text
+                        if cur_key:
+                            qp_texts[cur_key] = qp_texts.get(cur_key, "") + " " + ln
 
                 if hit_delimiter:
                     break
@@ -452,12 +462,40 @@ class EdexcelPDFTextCache:
             self._paper_cache[paper_id] = res
         return res
 
+    def get_subpart_own_texts(self, q: Dict[str, Any]) -> Tuple[str, str]:
+        """Returns `(own_qp_prompt, own_ms_text)` for a specific question sub-part."""
+        paper_id = q.get("paperId") or q.get("paper_id") or ""
+        qnum = str(q.get("questionNumber") or q.get("question_number") or "").strip()
+        parent_q = str(q.get("parentQuestion") or "").strip()
+        cid = canonical_id(qnum)
+        parent_cid = canonical_id(parent_q)
+
+        existing_txt = clean_extracted_text(str(q.get("text") or ""), max_len=450)
+        pdata = self.get_paper_data(paper_id)
+        qp_map = pdata["qp"]
+        ms_map = pdata["ms"]
+
+        q_txt = clean_extracted_text(qp_map.get(cid, ""), max_len=420)
+        if existing_txt and len(existing_txt) > len(q_txt):
+            q_txt = existing_txt
+        elif not q_txt and not q.get("subPart") and parent_cid in qp_map:
+            q_txt = clean_extracted_text(qp_map[parent_cid], max_len=420)
+
+        m_let = re.match(r"^(\d+[a-z])[ivx]+$", cid)
+        ms_txt = clean_extracted_text(ms_map.get(cid, ""), max_len=320)
+        if not ms_txt and m_let and m_let.group(1) in ms_map:
+            ms_txt = clean_extracted_text(ms_map[m_let.group(1)], max_len=260)
+        if not ms_txt and parent_cid in ms_map and not q.get("subPart"):
+            ms_txt = clean_extracted_text(ms_map[parent_cid], max_len=260)
+
+        return q_txt, ms_txt
+
     def build_rich_context_for_question(self, q: Dict[str, Any]) -> str:
         """
         Builds a rich, compact text representation of a question combining:
         - Existing `text` and `stemSummary` fields
-        - Parent question stem + branch stem + subpart prompt from QP PDF
-        - Mark scheme answer & guidance from MS PDF
+        - Parent question stem + branch stem (chemical identity context ONLY)
+        - Specific sub-part prompt from QP PDF and Mark Scheme answer from MS PDF
         """
         paper_id = q.get("paperId") or q.get("paper_id") or ""
         qnum = str(q.get("questionNumber") or q.get("question_number") or "").strip()
@@ -475,40 +513,40 @@ class EdexcelPDFTextCache:
             f"question {parent_q} setup and context",
             f"question {parent_q} context and setup",
         ):
-            parts.append(f"Stem: {stem_sum}")
+            parts.append(f"Parent Stem (chemical context only): {stem_sum}")
 
         pdata = self.get_paper_data(paper_id)
         qp_map = pdata["qp"]
         ms_map = pdata["ms"]
 
-        # 2. Parent & branch stem from QP if this is a sub-question
+        # 2. Parent & branch stem from QP if this is a sub-question (strictly for chemical context, never sibling sub-part topics)
         if parent_cid and parent_cid != cid and parent_cid in qp_map:
-            p_stem = clean_extracted_text(qp_map[parent_cid], max_len=260)
+            p_stem = clean_extracted_text(qp_map[parent_cid], max_len=220)
             if p_stem:
-                parts.append(f"Context: {p_stem}")
+                parts.append(f"Parent Stem (chemical identity only - ignore other sub-parts): {p_stem}")
 
         # Check intermediate letter branch stem e.g. 21(a)(i) -> check 21a
         m_let = re.match(r"^(\d+[a-z])[ivx]+$", cid)
         if m_let:
             branch_cid = m_let.group(1)
             if branch_cid in qp_map and branch_cid != cid:
-                b_stem = clean_extracted_text(qp_map[branch_cid], max_len=220)
+                b_stem = clean_extracted_text(qp_map[branch_cid], max_len=200)
                 if b_stem:
-                    parts.append(f"Part Setup: {b_stem}")
+                    parts.append(f"Branch Setup (chemical context only): {b_stem}")
 
-        # 3. Direct Question Text
+        # 3. Direct Sub-part Question Text
         q_txt = clean_extracted_text(qp_map.get(cid, ""), max_len=420)
         if existing_txt and len(existing_txt) > len(q_txt):
             q_txt = existing_txt
-        elif not q_txt and parent_cid in qp_map:
+        elif not q_txt and not q.get("subPart") and parent_cid in qp_map:
             q_txt = clean_extracted_text(qp_map[parent_cid], max_len=420)
 
         if q_txt:
-            parts.append(f"Q: {q_txt}")
+            parts.append(f"Sub-part Prompt to Classify: {q_txt}")
         elif existing_txt:
-            parts.append(f"Q: {existing_txt}")
+            parts.append(f"Sub-part Prompt to Classify: {existing_txt}")
 
-        # 4. Mark Scheme Answer / Guidance Text
+        # 4. Mark Scheme Answer / Guidance Text for THIS sub-part
         ms_txt = clean_extracted_text(ms_map.get(cid, ""), max_len=320)
         if not ms_txt and m_let and m_let.group(1) in ms_map:
             ms_txt = clean_extracted_text(ms_map[m_let.group(1)], max_len=260)
@@ -548,11 +586,14 @@ class UnitTaxonomyResolver:
         self.unit_subtopics: Dict[str, List[str]] = {}
         self.unit_code_to_subtopic: Dict[str, Dict[str, str]] = {}
         self.unit_subtopic_to_topic: Dict[str, Dict[str, str]] = {}
+        self.unit_letter_prefix_subs: Dict[str, Dict[str, List[str]]] = {}
 
         for ucode, udata in self.syllabus.items():
             subs: List[str] = []
             code_map: Dict[str, str] = {}
             topic_map: Dict[str, str] = {}
+            letter_prefix_groups: Dict[str, List[str]] = {}
+
             for topic_name, topic_subs in udata["topics"].items():
                 for s in topic_subs:
                     subs.append(s)
@@ -579,7 +620,8 @@ class UnitTaxonomyResolver:
                         code_map[num3.upper()] = s
 
                     # Index 2-part dotted numbers with optional letters (e.g. 1.1, 1.12, 1.5, 5.2a, 7.1b, 3.3, 6.5)
-                    for num2 in re.findall(r"\b\d+\.\d+[a-z]?\b", prefix, re.I):
+                    # Exclude numbers that are part of a 3-part dotted code (e.g. 1.3.1)
+                    for num2 in re.findall(r"(?<!\.)\b\d+\.\d+[a-z]?\b(?!\.)", prefix, re.I):
                         code_map.setdefault(num2.upper(), s)
 
                     # Index ranges like "1.1-1.4", "2.1-2.5", "3.1-3.7", "11.1-11.5", "17.1-17.6"
@@ -589,10 +631,12 @@ class UnitTaxonomyResolver:
                         for n in range(lo, hi + 1):
                             code_map.setdefault(f"{maj}.{n}".upper(), s)
 
-                    # Index letter codes like 3A, 3B, 4A, 4B, 8A, 8B, 8C, 9A, 9B, 10A, 12A, 15A
+                    # Track letter codes like 3A, 3B, 4A, 4B, 8A, 8B, 8C, 9A, 9B, 10A, 12A, 15A
+                    # Only index bare letter codes when they uniquely map to a single subtopic in the unit
                     m_let = re.match(r"^([0-9]+[A-Za-z])\b", prefix)
                     if m_let:
-                        code_map.setdefault(m_let.group(1).upper(), s)
+                        let_key = m_let.group(1).upper()
+                        letter_prefix_groups.setdefault(let_key, []).append(s)
 
                     # Index Practical codes U3.1, U6.2
                     m_u = re.match(r"^(U\d+\.\d+)", prefix)
@@ -611,9 +655,21 @@ class UnitTaxonomyResolver:
                         code_map.setdefault(f"SPEC {sn}", s)
                         code_map.setdefault(f"SPEC{sn}", s)
 
+            # Register bare letter code ONLY if it is unambiguous (exactly 1 subtopic in this unit)
+            for let_key, group_subs in letter_prefix_groups.items():
+                if len(group_subs) == 1:
+                    code_map.setdefault(let_key, group_subs[0])
+
+            # Register alias "1.3 & 1.10" for WCH11
+            if subject == "chemistry" and ucode == "WCH11":
+                code_map["1.3 & 1.10"] = EQUATIONS_SUBTOPIC
+                code_map[EQUATIONS_SUBTOPIC_ALIAS.upper()] = EQUATIONS_SUBTOPIC
+                code_map["1.10"] = EQUATIONS_SUBTOPIC
+
             self.unit_subtopics[ucode] = subs
             self.unit_code_to_subtopic[ucode] = code_map
             self.unit_subtopic_to_topic[ucode] = topic_map
+            self.unit_letter_prefix_subs[ucode] = letter_prefix_groups
 
     def normalize_unit_code(self, raw_unit_code: str, paper_id: str = "") -> str:
         candidates = [raw_unit_code, paper_id]
@@ -698,10 +754,33 @@ class UnitTaxonomyResolver:
             if prefix in code_map:
                 return code_map[prefix]
 
+        # Reject candidates carrying an explicit unit prefix belonging to a different unit
+        m_explicit_unit = re.match(
+            r"^\s*(P[1-4]|M[1-3]|S[1-3]|U[1-6]|W[CPE][HMAEST]\d\d)\b",
+            c_clean,
+            re.I,
+        )
+        if m_explicit_unit and not re.match(r"^\s*U[36]\.\d+\b", c_clean, re.I):
+            tok = m_explicit_unit.group(1).upper()
+            aliases = (
+                MATH_UNIT_ALIASES
+                if self.subject == "mathematics"
+                else PHYSICS_UNIT_ALIASES
+                if self.subject == "physics"
+                else CHEMISTRY_UNIT_ALIASES
+            )
+            mapped_u = aliases.get(tok, tok if tok in self.syllabus else None)
+            if mapped_u and mapped_u != unit_code:
+                return None
+
         # 1. 3-part dotted numbers (e.g. 1.3.1, 2.3.5, 4.3.1)
         m_num3 = re.search(r"\b\d+\.\d+\.\d+[a-z]?\b", c_clean, re.I)
-        if m_num3 and m_num3.group(0).upper() in code_map:
-            return code_map[m_num3.group(0).upper()]
+        if m_num3:
+            if m_num3.group(0).upper() in code_map:
+                return code_map[m_num3.group(0).upper()]
+            if self.subject == "physics":
+                # Do not allow a cross-unit 3-part Physics code (e.g. 1.3.1 in WPH12) to fall through to Spec/substring match
+                return None
 
         # 2. Unit prefix + dotted number e.g. "P1 5.2a", "M1 3.1a"
         m_unit_num = re.search(
@@ -709,18 +788,39 @@ class UnitTaxonomyResolver:
             c_clean,
             re.I,
         )
-        if m_unit_num and m_unit_num.group(0).upper() in code_map:
-            return code_map[m_unit_num.group(0).upper()]
+        if m_unit_num:
+            if m_unit_num.group(0).upper() in code_map:
+                return code_map[m_unit_num.group(0).upper()]
+            return None
 
         # 3. 2-part dotted numbers (e.g. 1.5, 5.2a, 7.1b, 3.3, 6.5)
-        m_num2 = re.search(r"\b\d+\.\d+[a-z]?\b", c_clean, re.I)
+        m_num2 = re.search(r"(?<!\.)\b\d+\.\d+[a-z]?\b(?!\.)", c_clean, re.I)
         if m_num2 and m_num2.group(0).upper() in code_map:
             return code_map[m_num2.group(0).upper()]
 
-        # 4. Letter code inside string e.g. "3A", "8C", "15D"
+        # 4. Letter code inside string e.g. "3A", "4A", "8C", "15D"
         m_let = re.search(r"\b(\d+[A-Za-z])\b", c_clean)
-        if m_let and m_let.group(1).upper() in code_map:
-            return code_map[m_let.group(1).upper()]
+        if m_let:
+            let_key = m_let.group(1).upper()
+            if let_key in code_map:
+                return code_map[let_key]
+            group_subs = self.unit_letter_prefix_subs.get(unit_code, {}).get(let_key, [])
+            if group_subs:
+                if let_key == "4A" and self.subject == "chemistry":
+                    if HAZARD_BROAD_RE.search(c_clean):
+                        return HAZARD_SUBTOPIC
+                    return NOMENCLATURE_SUBTOPIC
+                # Score keyword overlap across candidate subtopics sharing this letter prefix
+                c_words = set(re.findall(r"[a-z0-9]{3,}", c_clean.lower()))
+                best_sub = group_subs[0]
+                best_score = -1
+                for gs in group_subs:
+                    gs_words = set(re.findall(r"[a-z0-9]{3,}", gs.lower()))
+                    score = len(c_words & gs_words)
+                    if score > best_score:
+                        best_score = score
+                        best_sub = gs
+                return best_sub
 
         # 5. Spec numbers e.g. "Spec 35"
         m_spec = re.search(r"\bSpec(?:ification)?\s*(\d+)\b", c_clean, re.I)
@@ -743,17 +843,22 @@ class UnitTaxonomyResolver:
         return None
 
     def resolve_classification(
-        self, unit_code: str, cand: Any
+        self,
+        unit_code: str,
+        cand: Any,
+        own_prompt_text: str = "",
+        own_ms_text: str = "",
     ) -> Optional[Tuple[str, str, List[str], List[str]]]:
         """
         Resolves candidate classification (dict, list, str) into:
         (mainTopic, mainSubtopic, relatedSubtopics, topics).
 
         Rules:
-        - mainSubtopic MUST belong strictly to the paper's own unit_code.
+        - Strict Unit Scoping: both mainSubtopic and relatedSubtopics MUST belong strictly to unit_code.
         - mainTopic is automatically derived via self.parent_fn(main_subtopic) so mismatch is impossible.
-        - relatedSubtopics must be valid canonical subtopics from allowed synoptic units (max 3),
-          excluding mainSubtopic.
+        - Sub-part Isolation & Primary vs. Secondary Hierarchy enforced via subject-specific
+          enforce_*_subtopic_hierarchy helpers (Chemistry, Physics, Mathematics).
+        - Maximum 1 secondary subtopic (max 2 subtopics total per question sub-part).
         - topics is the deduplicated list of parent topics tested, with mainTopic always at index 0.
         """
         main_raw = None
@@ -779,7 +884,7 @@ class UnitTaxonomyResolver:
         # Derive mainTopic automatically
         main_top = self.parent_fn(main_sub)
 
-        # Match relatedSubtopics strictly across allowed synoptic units
+        # Match relatedSubtopics strictly across allowed synoptic units (strictly [unit_code] for all subjects)
         allowed_units = self.get_allowed_synoptic_units(unit_code)
         related_subs: List[str] = []
 
@@ -791,8 +896,32 @@ class UnitTaxonomyResolver:
             if r_match and r_match != main_sub and r_match not in related_subs:
                 related_subs.append(r_match)
 
-        # Enforce max 3 relatedSubtopics
-        related_subs = related_subs[:3]
+        if self.subject == "chemistry":
+            main_top, main_sub, related_subs = enforce_chemistry_subtopic_hierarchy(
+                unit_code,
+                main_sub,
+                related_subs,
+                own_prompt_text=own_prompt_text,
+                own_ms_text=own_ms_text,
+            )
+        elif self.subject == "physics":
+            main_top, main_sub, related_subs = enforce_physics_subtopic_hierarchy(
+                unit_code,
+                main_sub,
+                related_subs,
+                own_prompt_text=own_prompt_text,
+                own_ms_text=own_ms_text,
+            )
+        elif self.subject == "mathematics":
+            main_top, main_sub, related_subs = enforce_math_subtopic_hierarchy(
+                unit_code,
+                main_sub,
+                related_subs,
+                own_prompt_text=own_prompt_text,
+                own_ms_text=own_ms_text,
+            )
+        else:
+            related_subs = related_subs[:1]
 
         # Derive topics list with mainTopic always at index 0
         topics: List[str] = [main_top]
@@ -922,6 +1051,7 @@ def classify_unit_batch(
     q_lines: List[str] = []
     key_to_qid: Dict[str, str] = {}
     prefix_to_qid: Dict[str, str] = {}
+    qid_to_rich: Dict[str, str] = {}
 
     for local_idx, (_, q, rich_text) in enumerate(batch_items):
         qnum = str(q.get("questionNumber") or q.get("question_number") or "").strip()
@@ -930,6 +1060,7 @@ def classify_unit_batch(
         item_key = f"I{local_idx:02d}_Q{qnum}"
         key_to_qid[item_key] = q["id"]
         prefix_to_qid[f"I{local_idx:02d}"] = q["id"]
+        qid_to_rich[q["id"]] = rich_text
         q_lines.append(f'"{item_key}" ({marks}m, {qtype}): {rich_text}')
 
     questions_block = "\n".join(q_lines)
@@ -946,28 +1077,43 @@ def classify_unit_batch(
     if allowed_syn_units:
         synoptic_scope_text = f"relatedSubtopics may come from the paper's own unit ({unit_code}) or allowed synoptic units ({', '.join(allowed_syn_units)})."
     else:
-        synoptic_scope_text = f"all relatedSubtopics MUST come strictly from the paper's own unit ({unit_code})."
+        synoptic_scope_text = f"ALL subtopics (both mainSubtopic and relatedSubtopics) MUST come strictly from the paper's own unit ({unit_code}). Never assign a subtopic from another unit."
 
     if subject == "physics":
-        subject_advice = "3. For practical papers (WPH13, WPH16), carefully distinguish between experimental planning/apparatus selection, uncertainty and error analysis, graph linearisation (log/power law), and specific core practical investigations."
+        subject_advice = (
+            "5. PRIMARY vs. SECONDARY HIERARCHY & DISAMBIGUATION (PHYSICS):\n"
+            "   - Foundational skills like '1.3.2 (Spec 4-6)' (Scalars, Vectors, Resolution & Coplanar Vector Addition) or introductory subtopics ('2.3.1', '2.4.1', '4.3.1') must ONLY be mainSubtopic if the sub-part is purely testing vector/scalar definitions or basic definitions. When vector resolution is used inside Newton's Laws ('1.3.3'), Projectile Motion ('1.3.4'), Work/Power ('1.3.5'), Moments ('1.3.6'), Stokes' Law ('1.4.1'), or Young Modulus ('1.4.3'), that specific physical topic MUST be mainSubtopic.\n"
+            "   - In Unit 1 (WPH11), only assign '1.3.6 (Spec 22-24)' (Moments, Centre of Gravity & Principle of Moments in Equilibrium) when moments, torque, pivots, seesaws, or centre of gravity are explicitly tested. Coplanar rope/wire/pulley tension equilibrium at a point without moments belongs to '1.3.3 (Spec 10-16)'.\n"
+            "   - In Unit 4 (WPH14), distinguish '4.4.3 (Spec 105-107)' (Magnetic Flux Density & Force F = BIl sinθ, F = Bqv sinθ) from '4.4.4 (Spec 105, 108-110)' (Electromagnetic Induction, Faraday's & Lenz's Laws). Pure induction/flux-linkage questions should NOT include '4.4.3' unless magnetic force on a conductor/charge is also calculated.\n"
+            "   - For practical papers (WPH13, WPH16), carefully distinguish between experimental planning/apparatus selection, uncertainty and error analysis, graph linearisation (log/power law), and specific core practical investigations."
+        )
     elif subject == "mathematics":
-        subject_advice = "3. For Pure Mathematics (P1–P4), Mechanics (M1), and Statistics (S1), ensure questions testing multiple techniques identify the primary objective as mainSubtopic and supplementary techniques in relatedSubtopics."
+        subject_advice = (
+            "5. PRIMARY vs. SECONDARY HIERARCHY & DISAMBIGUATION (MATHEMATICS):\n"
+            "   - Foundational algebraic or vector setup subtopics ('P1 1.1-1.2', 'P1 1.3-1.5', 'P1 1.6-1.9', 'P2 2.1', 'P2 5.1-5.2', 'P2 6.1', 'P3 1.1', 'P3 3.1-3.2', 'P4 2.1', 'P4 7.1-7.5', 'M1 1.1 & 2.1-2.2') must ONLY be mainSubtopic if the question is purely testing that foundational skill. When used as a step inside Calculus (Differentiation/Integration), Coordinate Geometry, Trigonometry, Binomial Expansion, Sequences & Series, Kinematics, or Dynamics, the specific target topic MUST be mainSubtopic.\n"
+            "   - In Statistics 1 (WST01), only assign 'S1 1.1 & 2.1' when histograms, stem & leaf diagrams, or box plots/outliers are tested; pure mean/variance/coding/interpolation questions belong to 'S1 2.2-2.4'.\n"
+            "   - In Statistics 1 (WST01) Normal Distribution, distinguish 'S1 6.1a' (finding probabilities given μ and σ) from 'S1 6.1b' (finding unknown mean μ and/or standard deviation σ using inverse normal z-values)."
+        )
     else:
-        subject_advice = "3. For practical papers (e.g. WCH13, WCH16), carefully distinguish between quantitative/volumetric analysis, thermochemistry/kinetics, qualitative inorganic tests, qualitative organic tests, organic preparation/techniques, spectroscopies, experimental errors/uncertainties, and graph analysis/planning."
+        subject_advice = (
+            "5. PRIMARY vs. SECONDARY HIERARCHY (CHEMISTRY):\n"
+            "   - Foundational skills like '1.3 & 1.12' (Chemical & Ionic Equations, State Symbols & Test-Tube Observations) or '4A (4.4-4.8)' (Homologous Series, IUPAC Nomenclature, Reaction Types & Bond Fission) must ONLY be mainSubtopic if the sub-part is purely a standalone Topic 1 equation/observation or basic nomenclature question. If a sub-part asks for an equation or IUPAC name within a specific Topic 2-5 reaction (e.g. reforming alkanes in 4B (4.12-4.16) or alkene addition in 5.4-5.5), that specific topic MUST be mainSubtopic.\n"
+            "   - For Unit 1 (WCH11), any sub-part explicitly asking about a hazard, risk, risk assessment, or safety precaution (including environmental hazards of alkane pollutants like CO) MUST have '4A (4.1-4.3)' as mainSubtopic (with '4B (4.12-4.16)' as relatedSubtopics when involving alkane fuel pollutants). Never attach '4A (4.1-4.3)' to IUPAC naming or structure drawing sub-parts.\n"
+            "   - For practical papers (WCH13, WCH16), carefully distinguish between quantitative/volumetric analysis, thermochemistry/kinetics, qualitative inorganic tests, qualitative organic tests, and organic synthesis/preparation."
+        )
 
     prompt = f"""You are a senior Pearson Edexcel International Advanced Level (IAL) {subject.capitalize()} examiner.
-Classify each examination question below into its primary mainSubtopic and any secondary relatedSubtopics strictly from the official specification.
+Classify each examination question sub-part below into its primary mainSubtopic and optional secondary relatedSubtopics strictly from the official specification.
 
 {taxonomy_block}
 
-STRICT UNIT-BOUNDARY AND CLASSIFICATION RULES:
-1. "mainSubtopic" MUST come from the PRIMARY UNIT ({unit_code}). It represents the primary theme and core concept tested by the question (majority of marks).
-2. "relatedSubtopics" is an optional array of 0 to 3 secondary subtopics tested in other sub-parts of the question.
-   - It MUST NOT include "mainSubtopic" (no duplicates).
-   - Synoptic rule: {synoptic_scope_text}
-   - If the question tests only one concept, use [] for relatedSubtopics.
+STRICT UNIT-BOUNDARY, SUB-PART ISOLATION AND HIERARCHY RULES:
+1. STRICT UNIT SCOPING: "mainSubtopic" MUST come from the PRIMARY UNIT ({unit_code}). {synoptic_scope_text}
+2. SUB-PART ISOLATION (NO PARENT BLEED): Classify ONLY the specific sub-part being asked ("Sub-part Prompt to Classify" and its "MS"). Use "Parent Stem" or "Branch Setup" ONLY for chemical identity (e.g. identifying what compound X or polymer PAM is), NEVER for importing topics or hazards tested in other sub-parts of the same parent question.
+3. PRIMARY CONCEPT PRIORITY: "mainSubtopic" MUST represent the core chemical concept or reaction tested in this specific sub-part.
+4. CAP SECONDARY SUBTOPICS: "relatedSubtopics" is an optional array of AT MOST 1 secondary subtopic (0 or 1 item; maximum 2 subtopics total per sub-part) and ONLY when answering this specific sub-part genuinely requires knowledge from both subtopics. It MUST NOT duplicate "mainSubtopic". If the sub-part tests one concept, use [].
 {subject_advice}
-4. Return ONLY a valid JSON object mapping each exact item key to:
+6. Return ONLY a valid JSON object mapping each exact item key to:
 {{
   "{sample_key_0}": {{
     "mainSubtopic": "{sample_code_0}",
@@ -998,7 +1144,18 @@ QUESTIONS TO CLASSIFY ({len(batch_items)} items):
         if not qid:
             continue
 
-        resolved = resolver.resolve_classification(unit_code, cand)
+        rich_ctx = qid_to_rich.get(qid, "")
+        own_prompt_part = ""
+        own_ms_part = ""
+        m_sub_prompt = re.search(r"Sub-part Prompt to Classify:\s*([^|]+)", rich_ctx)
+        if m_sub_prompt:
+            own_prompt_part = m_sub_prompt.group(1).strip()
+        m_sub_ms = re.search(r"MS:\s*([^|]+)", rich_ctx)
+        if m_sub_ms:
+            own_ms_part = m_sub_ms.group(1).strip()
+        resolved = resolver.resolve_classification(
+            unit_code, cand, own_prompt_text=own_prompt_part, own_ms_text=own_ms_part
+        )
         if resolved:
             results[qid] = resolved
 
@@ -1081,7 +1238,13 @@ def process_subject(
                 c_main = c_entry.get("mainSubtopic") or c_entry.get("subtopic")
                 c_rel = c_entry.get("relatedSubtopics") or (c_entry.get("subtopics")[1:] if len(c_entry.get("subtopics", [])) > 1 else [])
                 if c_main in resolver.unit_subtopics.get(ucode, []):
-                    resolved = resolver.resolve_classification(ucode, {"mainSubtopic": c_main, "relatedSubtopics": c_rel})
+                    own_qp, own_ms = pdf_cache.get_subpart_own_texts(q)
+                    resolved = resolver.resolve_classification(
+                        ucode,
+                        {"mainSubtopic": c_main, "relatedSubtopics": c_rel},
+                        own_prompt_text=own_qp,
+                        own_ms_text=own_ms,
+                    )
                     if resolved:
                         m_top, m_sub, rel_subs, topics = resolved
                         all_subs = [m_sub] + [r for r in rel_subs if r != m_sub]
@@ -1252,7 +1415,13 @@ def process_subject(
 
         resolved = None
         if c_main in resolver.unit_subtopics.get(ucode, []):
-            resolved = resolver.resolve_classification(ucode, {"mainSubtopic": c_main, "relatedSubtopics": c_rel})
+            own_qp, own_ms = pdf_cache.get_subpart_own_texts(q)
+            resolved = resolver.resolve_classification(
+                ucode,
+                {"mainSubtopic": c_main, "relatedSubtopics": c_rel},
+                own_prompt_text=own_qp,
+                own_ms_text=own_ms,
+            )
 
         if resolved:
             m_top, m_sub, rel_subs, topics = resolved

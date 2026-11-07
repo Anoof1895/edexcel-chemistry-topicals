@@ -1,4 +1,5 @@
 import { QuestionItem, Subject } from '../types';
+import { isSubtopicValidForQuestionUnit } from '../constants/taxonomy';
 
 /**
  * Single source of truth for detecting a question's subject ('chemistry' | 'physics' | 'mathematics')
@@ -113,6 +114,58 @@ export function getQuestionType(q: QuestionItem): 'mcq' | 'theory' {
 
 
 /**
+ * Checks whether a question matches a selected unit filter string.
+ * Supports numeric unit digits ('1'-'6'), unit prefixes ('Unit 1'),
+ * paper codes ('WCH11', 'WPH11', 'WMA11', 'WME01', 'WST01'),
+ * and short Math paper labels ('P1', 'P2', 'P3', 'P4', 'M1', 'S1').
+ */
+export function doesQuestionMatchUnit(q: QuestionItem, filterUnit: string): boolean {
+  if (!filterUnit || !q) return false;
+  const fu = filterUnit.trim().toLowerCase();
+  const qu = (q.unit || '').trim().toLowerCase();
+  const qc = (q.unitCode || '').trim().toLowerCase();
+
+  // Exact match with unit or unitCode
+  if (fu === qu || fu === qc) return true;
+
+  // Code matches (e.g. 'wch11', 'wma11')
+  if (qc && (qc === fu || qc.replace(/\s+/g, '') === fu.replace(/\s+/g, ''))) return true;
+
+  // Mathematics short code mapping (e.g. 'P1' <-> 'WMA11')
+  const MATH_UNIT_MAP: Record<string, string> = {
+    p1: 'wma11',
+    p2: 'wma12',
+    p3: 'wma13',
+    p4: 'wma14',
+    m1: 'wme01',
+    s1: 'wst01',
+  };
+  if (MATH_UNIT_MAP[fu] && qc === MATH_UNIT_MAP[fu]) return true;
+
+  // Parenthetical short code in q.unit (e.g. "Unit 1: Pure Mathematics 1 (P1)" matching "p1")
+  const mathCodeMatch = qu.match(/\(([a-z0-9]+)\)/);
+  if (mathCodeMatch && mathCodeMatch[1].toLowerCase() === fu) {
+    return true;
+  }
+
+  // Prefix matching before colon, e.g. "unit 1"
+  const fuPrefix = fu.split(':')[0].trim();
+  const quPrefix = qu.split(':')[0].trim();
+  if (fuPrefix && quPrefix && fuPrefix === quPrefix) {
+    return true;
+  }
+
+  // Pure digit match (e.g. filter is "1" or "Unit 1" and question is "1" or "Unit 1: ...")
+  const fuDigits = fu.match(/\b([1-6])\b/)?.[1];
+  const quDigits = qu.match(/\b([1-6])\b/)?.[1];
+  if (fuDigits && quDigits && fuDigits === quDigits) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Resolves the primary canonical topic for a question.
  */
 export function getQuestionMainTopic(q?: QuestionItem | null): string {
@@ -129,18 +182,58 @@ export function getQuestionMainSubtopic(q?: QuestionItem | null): string {
 }
 
 /**
- * Resolves secondary/related subtopics for a question (excluding the main subtopic).
+ * Resolves secondary/related subtopics for a question (excluding the main subtopic),
+ * strictly filtering out any residual cross-unit secondary tags so a Unit X question
+ * can never match a Unit Y subtopic filter.
  */
 export function getQuestionRelatedSubtopics(q?: QuestionItem | null): string[] {
   if (!q) return [];
-  if (Array.isArray(q.relatedSubtopics)) {
-    return q.relatedSubtopics;
+  const main = getQuestionMainSubtopic(q);
+  const rawList = Array.isArray(q.relatedSubtopics)
+    ? q.relatedSubtopics
+    : Array.isArray(q.subtopics) && q.subtopics.length > 1
+    ? q.subtopics.filter((s) => s !== main)
+    : [];
+
+  const valid: string[] = [];
+  for (const s of rawList) {
+    if (!s || s === main || valid.includes(s)) continue;
+    if (isSubtopicValidForQuestionUnit(s, q.unit, q.unitCode)) {
+      valid.push(s);
+    }
   }
-  if (Array.isArray(q.subtopics) && q.subtopics.length > 1) {
-    const main = getQuestionMainSubtopic(q);
-    return q.subtopics.filter(s => s !== main);
+  return valid.slice(0, 1);
+}
+
+/**
+ * Resolves all valid unit-scoped subtopics for a question (`[mainSubtopic, ...relatedSubtopics]`),
+ * or only `[mainSubtopic]` when `includeSecondary` is false.
+ */
+export function getQuestionValidSubtopics(
+  q?: QuestionItem | null,
+  includeSecondary: boolean = true
+): string[] {
+  if (!q) return [];
+  const main = getQuestionMainSubtopic(q);
+  const validMain =
+    main && isSubtopicValidForQuestionUnit(main, q.unit, q.unitCode) ? [main] : main ? [main] : [];
+  if (!includeSecondary) {
+    return validMain;
   }
-  return [];
+  const rels = getQuestionRelatedSubtopics(q);
+  return Array.from(new Set([...validMain, ...rels]));
+}
+
+/**
+ * Returns true if any of the selectedSubtopics is the PRIMARY subtopic (`mainSubtopic`) of question `q`.
+ */
+export function isPrimarySubtopicMatch(
+  q?: QuestionItem | null,
+  selectedSubtopics?: string[]
+): boolean {
+  if (!q || !selectedSubtopics || selectedSubtopics.length === 0) return true;
+  const main = getQuestionMainSubtopic(q);
+  return Boolean(main && selectedSubtopics.includes(main));
 }
 
 /**

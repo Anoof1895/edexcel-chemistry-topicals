@@ -6,7 +6,7 @@ Covers:
 """
 
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 OFFICIAL_PHYSICS_SYLLABUS: Dict[str, Dict[str, Any]] = {
     "WPH11": {
@@ -143,6 +143,19 @@ def get_physics_unit_from_code(code: str) -> str:
     return "Unit 1"
 
 
+def normalize_physics_unit_code(code_or_identifier: str) -> str:
+    norm = (code_or_identifier or "").strip().upper()
+    for code, info in OFFICIAL_PHYSICS_SYLLABUS.items():
+        if code in norm or info["unit"].upper() in norm or info["title"].upper() in norm:
+            return code
+    m = re.search(r"\b(?:UNIT\s*|U)?([1-6])\b", norm)
+    if m:
+        c = f"WPH1{m.group(1)}"
+        if c in OFFICIAL_PHYSICS_SYLLABUS:
+            return c
+    return "WPH11"
+
+
 def get_physics_unit_full_title(code_or_identifier: str) -> str:
     norm = (code_or_identifier or "").strip().upper()
     for code, info in OFFICIAL_PHYSICS_SYLLABUS.items():
@@ -208,3 +221,223 @@ EXPECTED_PAPER_MARKS: Dict[str, int] = {
 def get_expected_paper_marks(unit_code: str) -> int:
     m = re.search(r"WPH1([1-6])", (unit_code or "").upper())
     return EXPECTED_PAPER_MARKS.get(f"WPH1{m.group(1)}", 80) if m else 80
+
+
+# Canonical Physics subtopic constants for hierarchy & disambiguation rules
+PHYS_KINEMATICS_SUBTOPIC = (
+    "1.3.1 (Spec 1-3): Kinematics, SUVAT Equations & Motion Graphs (s-t, v-t, a-t)"
+)
+PHYS_SCALARS_VECTORS_SUBTOPIC = (
+    "1.3.2 (Spec 4-6): Scalars, Vectors, Resolution & Coplanar Vector Addition"
+)
+PHYS_NEWTON_LAWS_SUBTOPIC = (
+    "1.3.4 (Spec 8-12): Free-Body Diagrams, Newton's Laws of Motion (ΣF=ma), Terminal Velocity & Core Practical 1"
+)
+PHYS_MOMENTS_SUBTOPIC = (
+    "1.3.6 (Spec 15-16): Moments, Centre of Gravity & Principle of Moments in Equilibrium"
+)
+PHYS_WAVE_BASICS_SUBTOPIC = (
+    "2.3.1 (Spec 33-38): Wave Properties, Wave Equation (v=fλ), Longitudinal vs Transverse Waves & Core Practical 4 (Speed of Sound)"
+)
+PHYS_CIRCUIT_BASICS_SUBTOPIC = (
+    "2.4.1 (Spec 64-66, 69): Electric Current (I=ΔQ/Δt), Potential Difference (V=W/Q), Resistance (R=V/I) & Electrical Power/Energy"
+)
+PHYS_IMPULSE_SUBTOPIC = (
+    "4.3.1 (Spec 81-82, 86): Impulse (FΔt=Δp), Non-Relativistic Kinetic Energy (E_k=p²/2m) & Core Practical 9"
+)
+PHYS_COLLISIONS_SUBTOPIC = (
+    "4.3.2 (Spec 83-85): 2D Conservation of Linear Momentum, Elastic vs Inelastic Collisions & Core Practical 10"
+)
+PHYS_MAG_FORCE_SUBTOPIC = (
+    "4.4.3 (Spec 105-107): Magnetic Flux Density (B), Fleming's Left-Hand Rule & Magnetic Forces on Charged Particles (F=Bqv sinθ) and Conductors (F=BIl sinθ)"
+)
+PHYS_INDUCTION_SUBTOPIC = (
+    "4.4.4 (Spec 105, 108-110): Magnetic Flux (Φ), Flux Linkage (NΦ) & Electromagnetic Induction (Faraday's & Lenz's Laws, ε=-d(NΦ)/dt)"
+)
+PHYS_HIGH_ENERGY_SUBTOPIC = (
+    "4.5.3 (Spec 117-120): High-Energy Probing, Mass-Energy Equivalence (ΔE=c²Δm), Matter-Antimatter Annihilation/Creation, MeV/GeV Units & Relativistic Lifetimes"
+)
+
+PHYSICS_PURE_SCALAR_VECTOR_PROMPT_RE = re.compile(
+    r"\b("
+    r"scalar|scalars|"
+    r"vector\s+quantity|vector\s+quantities|"
+    r"scaled\s+vector\s+diagram|vector\s+triangle|vector\s+diagram|"
+    r"speed\s+of\s+the\s+car\s+can\s+remain\s+constant|"
+    r"magnitude\s+of\s+the\s+displacement.*less\s+than\s+the\s+distance|"
+    r"horizontal\s+and\s+vertical\s+components\s+of\s+(?:its|the|their)\s+velocity"
+    r")\b",
+    re.I,
+)
+
+PHYSICS_VECTOR_COMPONENT_RE = re.compile(
+    r"\b("
+    r"vector|vectors|scalar|scalars|component|components|resolv\w*|"
+    r"sin\s*\d|cos\s*\d|tan\s*\d|sin\s*θ|cos\s*θ|tan\s*θ|sin\s*theta|cos\s*theta|"
+    r"trigonometr\w*|pythagoras|parallelogram|angle|horizontal|vertical|perpendicular|direction|east|north"
+    r")\b",
+    re.I,
+)
+
+PHYSICS_MOMENT_KEYWORD_RE = re.compile(
+    r"\b("
+    r"moment|moments|pivot|hinge|hinges|centre\s+of\s+gravity|center\s+of\s+gravity|centre\s+of\s+mass|"
+    r"clockwise|anticlockwise|turning\s+effect|plank|beam|ruler|see-saw|seesaw|lever|fulcrum|"
+    r"support|supports|topple|tilt|tipped|door|ladder|bar|shelf|barrier|crane|arm|forearm|"
+    r"stand\w*\s+on\s+the\s+wood|centre\s+of\s+the\s+car|screw\s+can\s+withstand"
+    r")\b",
+    re.I,
+)
+
+PHYSICS_MAG_FORCE_KEYWORD_RE = re.compile(
+    r"\b("
+    r"F\s*=\s*B\s*I\s*l|F\s*=\s*B\s*q\s*v|left[- ]hand\s+rule|motor\s+effect|magnetic\s+force|"
+    r"force\s+on\s+(?:the\s+)?(?:wire|rod|conductor|coil|plate|disc|magnet|particles?|electrons?|ions?)|"
+    r"experiences?\s+a\s+force|opposing\s+force|reading\s+on\s+the\s+balance|force\s+meter|"
+    r"braking|electromagnetic\s+brake|decelerat\w*|copper\s+tube"
+    r")\b",
+    re.I,
+)
+
+
+def is_physics_subtopic_valid_for_unit(subtopic: str, unit_or_code: str) -> bool:
+    """
+    Returns True if and only if `subtopic` belongs strictly to `unit_or_code`
+    (e.g., 'Unit 1' or 'WPH11'). Enforces zero cross-unit contamination.
+    """
+    if not subtopic:
+        return False
+    allowed = set(get_all_physics_subtopics_for_unit(unit_or_code))
+    return subtopic in allowed
+
+
+def enforce_physics_subtopic_hierarchy(
+    unit_or_code: str,
+    main_subtopic: str,
+    related_subtopics: List[str],
+    own_prompt_text: str = "",
+    own_ms_text: str = "",
+) -> Tuple[str, str, List[str]]:
+    """
+    Enforces strict unit scoping, sub-part isolation, and primary vs. secondary hierarchy
+    for a Physics question sub-part:
+    1. Strips any cross-unit subtopics that do not belong to `unit_or_code`.
+    2. Disambiguates `1.3.6 (Moments)` vs coplanar force equilibrium (`1.3.4` & `1.3.2`) when no moment/pivot is present.
+    3. Promotes specific Unit 1 mechanics/materials topics (`1.3.3`–`1.4.4`) over generic `1.3.2 (Scalars & Vectors)`
+       unless the prompt explicitly tests scalar/vector definitions or scaled vector diagrams, and strips bled `1.3.2`
+       secondary tags on purely 1D/scalar sub-parts.
+    4. Promotes specific Wave/Circuit/Collision/Nuclear concepts over introductory `.1` subtopics (`2.3.1`, `2.4.1`, `4.3.1`).
+    5. Strips `4.4.3` (`Spec 105-107` Magnetic Force) from pure `4.4.4` (`Spec 105, 108-110` Electromagnetic Induction) questions
+       that do not involve magnetic forces.
+    6. Caps `related_subtopics` at 1 item (maximum 2 subtopics total per sub-part).
+    """
+    allowed_list = get_all_physics_subtopics_for_unit(unit_or_code)
+    allowed_set = set(allowed_list)
+    unit_name = get_physics_unit_from_code(unit_or_code)
+
+    valid_rels: List[str] = []
+    for r in related_subtopics or []:
+        if r and r in allowed_set and r not in valid_rels:
+            valid_rels.append(r)
+
+    if main_subtopic not in allowed_set:
+        if valid_rels:
+            main_subtopic = valid_rels.pop(0)
+        elif allowed_list:
+            main_subtopic = allowed_list[0]
+
+    valid_rels = [r for r in valid_rels if r != main_subtopic]
+    own_combined = f"{own_prompt_text or ''} {own_ms_text or ''}".strip()
+
+    if unit_name == "Unit 1":
+        # 1. Disambiguate 1.3.6 (Moments) vs coplanar tension/rope/pulley equilibrium
+        if len(own_combined) >= 15 and not PHYSICS_MOMENT_KEYWORD_RE.search(own_combined):
+            if PHYS_MOMENTS_SUBTOPIC in valid_rels:
+                valid_rels.remove(PHYS_MOMENTS_SUBTOPIC)
+                if main_subtopic == PHYS_SCALARS_VECTORS_SUBTOPIC and PHYS_NEWTON_LAWS_SUBTOPIC not in valid_rels:
+                    valid_rels.insert(0, PHYS_NEWTON_LAWS_SUBTOPIC)
+            elif main_subtopic == PHYS_MOMENTS_SUBTOPIC:
+                if PHYS_SCALARS_VECTORS_SUBTOPIC in valid_rels:
+                    main_subtopic = PHYS_NEWTON_LAWS_SUBTOPIC
+                elif valid_rels:
+                    main_subtopic = valid_rels.pop(0)
+                else:
+                    main_subtopic = PHYS_NEWTON_LAWS_SUBTOPIC
+                    valid_rels.append(PHYS_SCALARS_VECTORS_SUBTOPIC)
+
+        # 2. Strip bled 1.3.2 (Scalars & Vectors) from related_subtopics when sub-part has no vector components/angles
+        if PHYS_SCALARS_VECTORS_SUBTOPIC in valid_rels and len(own_combined) >= 15:
+            if not PHYSICS_VECTOR_COMPONENT_RE.search(own_combined) or re.search(
+                r"\bdetermine\s+the\s+strain\s+in\s+the\s+rope\b", own_prompt_text or "", re.I
+            ):
+                valid_rels.remove(PHYS_SCALARS_VECTORS_SUBTOPIC)
+
+        # 3. Promote specific Unit 1 concept over generic 1.3.2 (Scalars & Vectors) as mainSubtopic
+        if main_subtopic == PHYS_SCALARS_VECTORS_SUBTOPIC and valid_rels:
+            specific_u1_rels = [
+                r for r in valid_rels if r not in (PHYS_SCALARS_VECTORS_SUBTOPIC, PHYS_KINEMATICS_SUBTOPIC)
+            ]
+            if specific_u1_rels and not PHYSICS_PURE_SCALAR_VECTOR_PROMPT_RE.search(own_prompt_text or ""):
+                promoted = specific_u1_rels[0]
+                valid_rels.remove(promoted)
+                if len(own_combined) < 15 or PHYSICS_VECTOR_COMPONENT_RE.search(own_combined):
+                    valid_rels.insert(0, main_subtopic)
+                main_subtopic = promoted
+
+    elif unit_name == "Unit 2":
+        # 1. Promote specific wave phenomenon over generic 2.3.1 (Wave Properties & v=fλ)
+        if main_subtopic == PHYS_WAVE_BASICS_SUBTOPIC and valid_rels:
+            specific_wave_rels = [
+                r for r in valid_rels
+                if r.startswith(("2.3.2", "2.3.3", "2.3.5", "2.3.6", "2.3.7", "2.3.8"))
+            ]
+            if specific_wave_rels and not re.search(
+                r"\b(longitudinal|transverse|graph.*frequency.*wavelength\s+of\s+photons)\b",
+                own_prompt_text or "",
+                re.I,
+            ):
+                promoted = specific_wave_rels[0]
+                valid_rels.remove(promoted)
+                valid_rels.insert(0, main_subtopic)
+                main_subtopic = promoted
+
+        # 2. Promote specific circuit / intensity topic over generic 2.4.1 (I=Q/t, V=IR, P=VI)
+        if main_subtopic == PHYS_CIRCUIT_BASICS_SUBTOPIC and valid_rels:
+            # Promote when the sub-part specifically tests series/parallel resistor networks, sensor/potential divider,
+            # I-V characteristics/graphs, conduction electrons/resistivity, battery chemical energy store, or solar intensity
+            if re.search(
+                r"\b("
+                r"security\s+lamp|switches\s+on|potential\s+divider|"
+                r"two\s+resistors|purpose\s+of\s+the\s+resistor|"
+                r"read\s+from\s+graph|best\s+fit\s+line|minimum\s+potential\s+difference|ohmic\s+conductor.*varies\s+with|"
+                r"conduction\s+electrons|nichrome\s+wire|resistivity|"
+                r"chemical\s+energy\s+store|"
+                r"solar\s+cell\s+array|I\s*=\s*P\s*/\s*A"
+                r")\b",
+                own_combined,
+                re.I,
+            ):
+                promoted = valid_rels.pop(0)
+                valid_rels.insert(0, main_subtopic)
+                main_subtopic = promoted
+
+    elif unit_name == "Unit 4":
+        # 1. Promote 4.3.2 (Collisions) or 4.5.3 (GeV units) over 4.3.1 (Impulse) when no impulse equation is used
+        if main_subtopic == PHYS_IMPULSE_SUBTOPIC and valid_rels:
+            if PHYS_HIGH_ENERGY_SUBTOPIC in valid_rels and re.search(r"\bGeV|MeV\b", own_combined):
+                valid_rels.remove(PHYS_HIGH_ENERGY_SUBTOPIC)
+                valid_rels.insert(0, main_subtopic)
+                main_subtopic = PHYS_HIGH_ENERGY_SUBTOPIC
+            elif PHYS_COLLISIONS_SUBTOPIC in valid_rels and not re.search(r"F\s*Δt|Δp|average\s+force", own_combined, re.I):
+                valid_rels.remove(PHYS_COLLISIONS_SUBTOPIC)
+                valid_rels.insert(0, main_subtopic)
+                main_subtopic = PHYS_COLLISIONS_SUBTOPIC
+
+        # 2. Strip Spec 105 collision (4.4.3 Magnetic Force attached to pure 4.4.4 Induction questions)
+        if main_subtopic == PHYS_INDUCTION_SUBTOPIC and PHYS_MAG_FORCE_SUBTOPIC in valid_rels:
+            if len(own_combined) >= 15 and not PHYSICS_MAG_FORCE_KEYWORD_RE.search(own_combined):
+                valid_rels.remove(PHYS_MAG_FORCE_SUBTOPIC)
+
+    valid_rels = [r for r in valid_rels if r != main_subtopic][:1]
+    main_topic = get_physics_parent_topic_for_subtopic(main_subtopic)
+    return main_topic, main_subtopic, valid_rels

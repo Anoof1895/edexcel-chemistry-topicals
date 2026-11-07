@@ -2,8 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { QuestionItem, FilterState, ViewMode, AppView, Subject } from './types';
 import { AppNavbar } from './components/AppNavbar';
 import { TopBar } from './components/TopBar';
-import { buildStaticSubtopicHierarchy } from './constants/taxonomy';
-import { getQuestionType } from './utils/questionClassification';
+import { buildStaticSubtopicHierarchy, isSubtopicValidForQuestionUnit } from './constants/taxonomy';
+import {
+  getQuestionType,
+  getQuestionValidSubtopics,
+  isPrimarySubtopicMatch,
+  doesQuestionMatchUnit,
+} from './utils/questionClassification';
 import { QuestionList, sortQuestionsLatestFirst } from './components/QuestionList';
 import { CanvasErrorBoundary } from './components/CanvasErrorBoundary';
 import { AmbientBackground } from './components/AmbientBackground';
@@ -110,6 +115,13 @@ const parseHashRoute = (): {
         urlFilters.bookmarkedOnly = true;
       }
 
+      const primaryParam = params.get('primary');
+      if (primaryParam === '1' || primaryParam === 'true') {
+        urlFilters.primarySubtopicsOnly = true;
+      } else if (primaryParam === '0' || primaryParam === 'false') {
+        urlFilters.primarySubtopicsOnly = false;
+      }
+
       const searchParam = params.get('search');
       if (searchParam) {
         urlFilters.searchQuery = searchParam;
@@ -158,9 +170,14 @@ const normalizeQuestions = (data: unknown[]): QuestionItem[] => {
       : [];
     const mainSubtopic = q.mainSubtopic || q.subtopic || rawSubs[0] || 'General';
     const mainTopic = q.mainTopic || q.topic || 'General';
-    const relatedSubtopics = Array.isArray(q.relatedSubtopics)
+    const qUnit = q.unit || q.topic || '';
+    const qUnitCode = q.unitCode || q.paperCode || q.paper_code || '';
+    const rawRels: string[] = Array.isArray(q.relatedSubtopics)
       ? q.relatedSubtopics
       : rawSubs.slice(1);
+    const relatedSubtopics = rawRels.filter(
+      (s) => Boolean(s) && s !== mainSubtopic && isSubtopicValidForQuestionUnit(s, qUnit, qUnitCode)
+    );
     const subtopics = Array.from(new Set([mainSubtopic, ...relatedSubtopics])).filter(Boolean);
     const topics = Array.isArray(q.topics) && q.topics.length > 0
       ? q.topics
@@ -206,7 +223,7 @@ export const App: React.FC = () => {
   // Global keyboard shortcut: 'D' to toggle Official Data Booklet Drawer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat || isCommandPaletteOpen) return;
+      if (e.repeat || isCommandPaletteOpen || document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -265,6 +282,18 @@ export const App: React.FC = () => {
     setCurrentView(view);
     if (!isSameSubject) {
       setSelectedQuestionId(null);
+      setActiveTab('all');
+      setFilters({
+        selectedUnits: [],
+        selectedSubtopics: [],
+        selectedYears: [],
+        selectedSeries: [],
+        searchQuery: '',
+        statusFilter: 'all',
+        questionType: 'all',
+        bookmarkedOnly: false,
+        primarySubtopicsOnly: false,
+      });
     }
 
     if (view === 'physics-topical') {
@@ -292,11 +321,24 @@ export const App: React.FC = () => {
       if (questionId) {
         setSelectedQuestionId(questionId);
       }
-      if (Object.keys(urlFilters).length > 0) {
-        setFilters((prev) => ({ ...prev, ...urlFilters }));
-        if (urlFilters.bookmarkedOnly !== undefined) {
-          setActiveTab(urlFilters.bookmarkedOnly ? 'bookmarked' : 'all');
-        }
+      if (
+        view === 'chemistry-topical' ||
+        view === 'physics-topical' ||
+        view === 'mathematics-topical'
+      ) {
+        setFilters({
+          selectedUnits: [],
+          selectedSubtopics: [],
+          selectedYears: [],
+          selectedSeries: [],
+          searchQuery: '',
+          statusFilter: 'all',
+          questionType: 'all',
+          bookmarkedOnly: false,
+          primarySubtopicsOnly: false,
+          ...urlFilters,
+        });
+        setActiveTab(urlFilters.bookmarkedOnly ? 'bookmarked' : 'all');
       }
     };
 
@@ -630,6 +672,9 @@ export const App: React.FC = () => {
     if (filters.bookmarkedOnly) {
       params.set('bookmarked', '1');
     }
+    if (filters.primarySubtopicsOnly) {
+      params.set('primary', '1');
+    }
     if (filters.searchQuery.trim()) {
       params.set('search', filters.searchQuery.trim());
     }
@@ -682,8 +727,13 @@ export const App: React.FC = () => {
 
   // Canonical Specification Hierarchy: subtopics are permanently locked to their official parent topic and unit
   const subtopicHierarchy = useMemo(() => {
-    return buildStaticSubtopicHierarchy(filters.selectedUnits, questions, activeSubject);
-  }, [questions, filters.selectedUnits, activeSubject]);
+    return buildStaticSubtopicHierarchy(
+      filters.selectedUnits,
+      questions,
+      activeSubject,
+      Boolean(filters.primarySubtopicsOnly)
+    );
+  }, [questions, filters.selectedUnits, activeSubject, filters.primarySubtopicsOnly]);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -693,92 +743,115 @@ export const App: React.FC = () => {
     return Array.from(years).sort((a, b) => b - a);
   }, [questions]);
 
-  // Filtered questions list
+  // Filtered questions list (unit-aware subtopic filtering + primary subtopic priority sorting)
+  const criteriaFilteredQuestions = useMemo(() => {
+    return questions
+      .filter((q) => {
+        // Unit multi-select filter: empty means all units match
+        if (filters.selectedUnits.length > 0) {
+          const matchesUnit = filters.selectedUnits.some((fu) => doesQuestionMatchUnit(q, fu));
+          if (!matchesUnit) return false;
+        }
+
+        // Unit-aware multi-select subtopic filter: match primary (and valid same-unit secondary unless primarySubtopicsOnly)
+        if (filters.selectedSubtopics.length > 0) {
+          const qSubs = getQuestionValidSubtopics(q, !filters.primarySubtopicsOnly);
+          const hasAnyMatch = qSubs.some((s) => s && filters.selectedSubtopics.includes(s));
+          if (!hasAnyMatch) return false;
+        }
+
+        // Year multi-select filter: empty means all years match
+        if (filters.selectedYears.length > 0 && !filters.selectedYears.includes(String(q.year))) {
+          return false;
+        }
+
+        // Series / Season multi-select filter: empty means all series match
+        if (filters.selectedSeries.length > 0) {
+          const qSession = (q.session || '').toLowerCase();
+          const qSeries = (q.series || '').toLowerCase();
+          const matchesSeries = filters.selectedSeries.some((s) => {
+            const target = s.toLowerCase();
+            if (target === 'january') {
+              return qSession.includes('jan') || qSeries.includes('jan');
+            }
+            if (target === 'may/june' || target === 'may' || target === 'june') {
+              return (
+                qSession.includes('june') ||
+                qSession.includes('may') ||
+                qSeries.includes('june') ||
+                qSeries.includes('may')
+              );
+            }
+            if (target === 'october' || target === 'oct' || target === 'nov') {
+              return (
+                qSession.includes('oct') ||
+                qSession.includes('nov') ||
+                qSeries.includes('oct') ||
+                qSeries.includes('nov')
+              );
+            }
+            return qSeries.includes(target) || qSession.includes(target);
+          });
+          if (!matchesSeries) return false;
+        }
+
+
+
+        // Question type filter: 'all' | 'mcq' | 'theory'
+        if (filters.questionType !== 'all') {
+          const qType = getQuestionType(q);
+          if (qType !== filters.questionType) return false;
+        }
+
+        // Search query
+        if (filters.searchQuery.trim()) {
+          const query = filters.searchQuery.toLowerCase();
+          const validSubs = getQuestionValidSubtopics(q, true);
+          const matchQNum = q.questionNumber.toLowerCase().includes(query);
+          const matchTopic = (q.topic || '').toLowerCase().includes(query) || (q.mainTopic || '').toLowerCase().includes(query);
+          const matchSubtopic = (q.subtopic || '').toLowerCase().includes(query) || (q.mainSubtopic || '').toLowerCase().includes(query);
+          const matchSubs = validSubs.some((s) => s.toLowerCase().includes(query));
+          const matchStem = (q.stemSummary || '').toLowerCase().includes(query);
+          const matchSeries = (q.series || '').toLowerCase().includes(query);
+          const matchSession = (q.session || '').toLowerCase().includes(query);
+          const matchPaper = (q.paperCode || q.paper_code || q.unitCode || '').toLowerCase().includes(query);
+          if (!matchQNum && !matchTopic && !matchSubtopic && !matchSubs && !matchStem && !matchSeries && !matchSession && !matchPaper) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (filters.selectedSubtopics.length > 0) {
+          const aPrimary = isPrimarySubtopicMatch(a, filters.selectedSubtopics) ? 1 : 0;
+          const bPrimary = isPrimarySubtopicMatch(b, filters.selectedSubtopics) ? 1 : 0;
+          if (bPrimary !== aPrimary) {
+            return bPrimary - aPrimary;
+          }
+        }
+        return sortQuestionsLatestFirst(a, b);
+      });
+  }, [
+    questions,
+    filters.selectedUnits,
+    filters.selectedSubtopics,
+    filters.primarySubtopicsOnly,
+    filters.selectedYears,
+    filters.selectedSeries,
+    filters.questionType,
+    filters.searchQuery,
+  ]);
+
   const filteredQuestions = useMemo(() => {
-    return questions.filter((q) => {
-      // Unit multi-select filter: empty means all units match
-      if (filters.selectedUnits.length > 0) {
-        const matchesUnit = filters.selectedUnits.some((fu) => {
-          if (fu === q.unit || fu === q.unitCode) return true;
-          const fuPrefix = fu.split(':')[0].trim().toLowerCase();
-          const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
-          return fuPrefix && qPrefix && fuPrefix === qPrefix;
-        });
-        if (!matchesUnit) return false;
-      }
-
-      // Multi-select subtopic filter: match ANY selected subtopic
-      if (filters.selectedSubtopics.length > 0) {
-        const qSubs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : [q.subtopic];
-        const hasAnyMatch = qSubs.some((s) => s && filters.selectedSubtopics.includes(s));
-        if (!hasAnyMatch) return false;
-      }
-
-      // Year multi-select filter: empty means all years match
-      if (filters.selectedYears.length > 0 && !filters.selectedYears.includes(String(q.year))) {
-        return false;
-      }
-
-      // Series / Season multi-select filter: empty means all series match
-      if (filters.selectedSeries.length > 0) {
-        const qSession = (q.session || '').toLowerCase();
-        const qSeries = (q.series || '').toLowerCase();
-        const matchesSeries = filters.selectedSeries.some((s) => {
-          const target = s.toLowerCase();
-          if (target === 'january') {
-            return qSession.includes('jan') || qSeries.includes('jan');
-          }
-          if (target === 'may/june' || target === 'may' || target === 'june') {
-            return (
-              qSession.includes('june') ||
-              qSession.includes('may') ||
-              qSeries.includes('june') ||
-              qSeries.includes('may')
-            );
-          }
-          if (target === 'october' || target === 'oct' || target === 'nov') {
-            return (
-              qSession.includes('oct') ||
-              qSession.includes('nov') ||
-              qSeries.includes('oct') ||
-              qSeries.includes('nov')
-            );
-          }
-          return qSeries.includes(target) || qSession.includes(target);
-        });
-        if (!matchesSeries) return false;
-      }
-
-      // Bookmarked filter
+    if (!filters.bookmarkedOnly && filters.statusFilter === 'all') {
+      return criteriaFilteredQuestions;
+    }
+    return criteriaFilteredQuestions.filter((q) => {
       if (filters.bookmarkedOnly && !bookmarks.has(q.id)) return false;
-
-      // Status filter: 'all' | 'unattempted' | 'review' | 'mastered'
       const qStatus = questionStatuses[q.id] || 'unattempted';
       if (filters.statusFilter !== 'all' && qStatus !== filters.statusFilter) return false;
-
-      // Question type filter: 'all' | 'mcq' | 'theory'
-      if (filters.questionType !== 'all') {
-        const qType = getQuestionType(q);
-        if (qType !== filters.questionType) return false;
-      }
-
-      // Search query
-      if (filters.searchQuery.trim()) {
-        const query = filters.searchQuery.toLowerCase();
-        const matchQNum = q.questionNumber.toLowerCase().includes(query);
-        const matchTopic = (q.topic || '').toLowerCase().includes(query) || (q.mainTopic || '').toLowerCase().includes(query);
-        const matchSubtopic = (q.subtopic || '').toLowerCase().includes(query) || (q.mainSubtopic || '').toLowerCase().includes(query);
-        const matchSubs = (q.subtopics || []).some((s) => s.toLowerCase().includes(query)) || (q.relatedSubtopics || []).some((s) => s.toLowerCase().includes(query));
-        const matchStem = (q.stemSummary || '').toLowerCase().includes(query);
-        const matchSeries = (q.series || '').toLowerCase().includes(query);
-        const matchSession = (q.session || '').toLowerCase().includes(query);
-        const matchPaper = (q.paperCode || q.paper_code || q.unitCode || '').toLowerCase().includes(query);
-        if (!matchQNum && !matchTopic && !matchSubtopic && !matchSubs && !matchStem && !matchSeries && !matchSession && !matchPaper) return false;
-      }
-
       return true;
-    }).sort(sortQuestionsLatestFirst);
-  }, [questions, filters, bookmarks, questionStatuses]);
+    });
+  }, [criteriaFilteredQuestions, filters.bookmarkedOnly, filters.statusFilter, bookmarks, questionStatuses]);
 
   // Active question item
   const activeQuestion = useMemo(() => {
@@ -929,11 +1002,12 @@ export const App: React.FC = () => {
       ? 'mathematics-topical'
       : 'chemistry-topical';
     setCurrentView(targetView);
-    window.location.hash = subject === 'physics'
+    const basePath = subject === 'physics'
       ? '#/physics/topical'
       : subject === 'mathematics'
       ? '#/mathematics/topical'
       : '#/topical';
+    window.location.hash = `${basePath}?unit=${encodeURIComponent(unitLabel)}`;
   }, []);
 
   const handleSelectQuestionFromPalette = useCallback((subject: Subject, questionId: string) => {
@@ -1088,6 +1162,7 @@ export const App: React.FC = () => {
               <div className="flex-1 min-h-0 w-full flex overflow-hidden relative">
                 <QuestionList
                   questions={filteredQuestions}
+                  totalQuestionsCount={criteriaFilteredQuestions.length}
                   selectedQuestionId={activeQuestion?.id || null}
                   onSelectQuestion={(q) => setSelectedQuestionId(q.id)}
                   bookmarks={bookmarks}
@@ -1099,6 +1174,7 @@ export const App: React.FC = () => {
                   onClearFilters={handleResetFilters}
                   isDrawerOpen={isQuestionDrawerOpen}
                   onCloseDrawer={() => setIsQuestionDrawerOpen(false)}
+                  selectedSubtopics={filters.selectedSubtopics}
                 />
 
                 <CanvasErrorBoundary onResetFilters={handleResetFilters}>

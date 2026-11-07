@@ -90,12 +90,25 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
     return () => clearInterval(interval);
   }, [isOpen, isTimerRunning, isExamSubmitted]);
 
+  // Sync fullscreen state with browser events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   // Escape Key Confirmation Protection
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (document.fullscreenElement) {
+          // Handled by browser fullscreen exit
+          return;
+        }
         e.preventDefault();
         if (showSubmitConfirm) {
           setShowSubmitConfirm(false);
@@ -124,7 +137,7 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
     (activeQuestion.id ? activeQuestion.id.split('_').pop()?.replace(/^q/i, '') : '') ??
     String(currentIndex + 1);
   const isActiveMcq = Boolean(activeQuestion.is_mcq || getQuestionType(activeQuestion) === 'mcq');
-  const officialAnswer = activeQuestion.correctAnswer || activeQuestion.correct_answer || null;
+  const officialAnswer = activeQuestion.correctAnswer || activeQuestion.correct_answer || (activeQuestion as any).answer || null;
 
   const totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
   const earnedMarks = Object.values(studentScores).reduce((sum, val) => sum + val, 0);
@@ -166,12 +179,13 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
     setMcqAnswer(activeQuestion.id, choice);
 
     if (officialAnswer) {
-      if (officialAnswer === choice) {
-        setQuestionStatus(activeQuestion.id, 'mastered');
-        setStudentScores((prev) => ({ ...prev, [activeQuestion.id]: activeQuestion.marks || 1 }));
+      const isCorrect = officialAnswer === choice;
+      if (sittingMode === 'practice') {
+        setQuestionStatus(activeQuestion.id, isCorrect ? 'mastered' : 'review');
+        setStudentScores((prev) => ({ ...prev, [activeQuestion.id]: isCorrect ? (activeQuestion.marks || 1) : 0 }));
       } else {
-        setQuestionStatus(activeQuestion.id, 'review');
-        setStudentScores((prev) => ({ ...prev, [activeQuestion.id]: 0 }));
+        // In test mode: record score for submission, defer status updates until submit
+        setStudentScores((prev) => ({ ...prev, [activeQuestion.id]: isCorrect ? (activeQuestion.marks || 1) : 0 }));
       }
     }
   };
@@ -184,7 +198,7 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
     const newScores: Record<string, number> = { ...studentScores };
     questions.forEach((q) => {
       const isMcq = Boolean(q.is_mcq || getQuestionType(q) === 'mcq');
-      const ans = q.correctAnswer || q.correct_answer;
+      const ans = q.correctAnswer || q.correct_answer || (q as any).answer;
       if (isMcq && ans) {
         const studentAns = localAnswers[q.id];
         if (studentAns === ans) {
@@ -214,6 +228,9 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
   return (
     <div
       ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mock Exam Room"
       className="fixed inset-0 z-50 flex flex-col bg-[#07090D] text-slate-100 select-none overflow-hidden"
     >
       {/* Top Examination HUD Header */}
@@ -339,8 +356,9 @@ export const MockSittingModal: React.FC<MockSittingModalProps> = ({
           const isFlagged = flaggedQuestions.has(q.id);
           const hasAnswer = Boolean(localAnswers[q.id]);
           const status = questionStatuses[q.id];
-          const isGradedMaster = status === 'mastered';
-          const isGradedReview = status === 'review';
+          const showGrading = isExamSubmitted || sittingMode === 'practice';
+          const isGradedMaster = showGrading && status === 'mastered';
+          const isGradedReview = showGrading && status === 'review';
 
           let indicatorColor = 'bg-white/20';
           if (isGradedMaster) indicatorColor = 'bg-emerald-400';

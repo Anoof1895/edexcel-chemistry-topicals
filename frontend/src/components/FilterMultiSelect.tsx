@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check, X } from 'lucide-react';
+import { Subject } from '../types';
 
 export interface FilterOption {
   value: string;
@@ -20,6 +21,7 @@ interface FilterMultiSelectProps {
   align?: 'left' | 'right';
   badgeFontMono?: boolean;
   fullWidth?: boolean;
+  activeSubject?: Subject;
 }
 
 interface PopoverPosition {
@@ -41,9 +43,34 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
   align = 'left',
   badgeFontMono = false,
   fullWidth = false,
+  activeSubject = 'chemistry',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isMath = activeSubject === 'mathematics';
+  const isPhysics = activeSubject === 'physics';
+
+  const accent = isMath
+    ? {
+        actionLink: 'text-amber-600 dark:text-amber-400 hover:underline font-semibold',
+        rowSelected: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 font-semibold',
+        checkbox: 'bg-amber-600 border-amber-600 text-white shadow-sm shadow-amber-500/30',
+        activeTrigger: 'bg-amber-50 dark:bg-amber-500/15 border-amber-400/70 dark:border-amber-500/40 text-amber-800 dark:text-amber-200 shadow-sm',
+      }
+    : isPhysics
+    ? {
+        actionLink: 'text-indigo-600 dark:text-indigo-400 hover:underline font-semibold',
+        rowSelected: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-100 font-semibold',
+        checkbox: 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-500/30',
+        activeTrigger: 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-400/70 dark:border-indigo-500/40 text-indigo-800 dark:text-indigo-200 shadow-sm',
+      }
+    : {
+        actionLink: 'text-cyan-600 dark:text-cyan-400 hover:underline font-semibold',
+        rowSelected: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-100 font-semibold',
+        checkbox: 'bg-cyan-600 border-cyan-600 text-white shadow-sm shadow-cyan-500/30',
+        activeTrigger: 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400/70 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm',
+      };
   const [popoverPos, setPopoverPos] = useState<PopoverPosition | null>(null);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -226,7 +253,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSelectAll}
-                className="text-cyan-600 dark:text-cyan-400 hover:underline font-semibold"
+                className={accent.actionLink}
               >
                 All
               </button>
@@ -263,7 +290,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
                   onClick={() => handleToggle(opt.value)}
                   className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors text-xs ${
                     isChecked
-                      ? 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-100 font-semibold'
+                      ? accent.rowSelected
                       : 'hover:bg-slate-50 dark:hover:bg-[#161f31] text-slate-700 dark:text-slate-200 font-medium'
                   }`}
                 >
@@ -271,7 +298,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
                     <div
                       className={`w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0 ${
                         isChecked
-                          ? 'bg-cyan-600 border-cyan-600 text-white shadow-sm shadow-cyan-500/30'
+                          ? accent.checkbox
                           : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0b0f19]'
                       }`}
                     >
@@ -306,7 +333,7 @@ export const FilterMultiSelect: React.FC<FilterMultiSelectProps> = ({
           fullWidth ? 'w-full' : 'min-w-[105px] max-w-[180px]'
         } ${
           selectedCount > 0
-            ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400/70 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm'
+            ? accent.activeTrigger
             : 'bg-slate-100 dark:bg-dark-850 border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-dark-600'
         }`}
       >

@@ -16,10 +16,7 @@ import {
 } from 'lucide-react';
 import { AppView, QuestionItem } from '../types';
 import { useProgress } from '../context/ProgressContext';
-import {
-  registerSpotlightTarget,
-  unregisterSpotlightTarget,
-} from '../utils/spotlight';
+import { SpotlightCard } from './SpotlightCard';
 
 interface HomePageProps {
   onNavigate: (view: AppView) => void;
@@ -27,112 +24,6 @@ interface HomePageProps {
   physicsQuestions?: QuestionItem[];
   mathematicsQuestions?: QuestionItem[];
 }
-
-interface SpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  enableTilt?: boolean;
-  spotlightColor?: string;
-  borderGlowColor?: string;
-  children: React.ReactNode;
-}
-
-/**
- * GPU-accelerated cursor-tracking spotlight & 3D micro-tilt container.
- * Mutates CSS variables directly on the DOM node (zero React state re-renders)
- * and stays synchronized during scroll via passive scroll-sync tracking.
- */
-const SpotlightCard: React.FC<SpotlightCardProps> = ({
-  enableTilt = false,
-  spotlightColor = 'rgba(255, 255, 255, 0.06)',
-  borderGlowColor = 'rgba(255, 255, 255, 0.35)',
-  className = '',
-  style,
-  children,
-  ...rest
-}) => {
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      if (e.pointerType && e.pointerType !== 'mouse') return;
-      const el = e.currentTarget;
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      el.style.setProperty('--mouse-x', `${x}px`);
-      el.style.setProperty('--mouse-y', `${y}px`);
-      registerSpotlightTarget(el, e.clientX, e.clientY);
-
-      if (enableTilt && rect.width > 0 && rect.height > 0) {
-        const pctX = x / rect.width - 0.5;
-        const pctY = y / rect.height - 0.5;
-        el.style.setProperty('--tilt-x', `${(pctY * -4).toFixed(2)}deg`);
-        el.style.setProperty('--tilt-y', `${(pctX * 4).toFixed(2)}deg`);
-      }
-    },
-    [enableTilt]
-  );
-
-  const handlePointerLeave = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const el = e.currentTarget;
-      unregisterSpotlightTarget(el);
-      if (!enableTilt) return;
-      el.style.setProperty('--tilt-x', '0deg');
-      el.style.setProperty('--tilt-y', '0deg');
-    },
-    [enableTilt]
-  );
-
-  const combinedStyle: React.CSSProperties = {
-    '--spotlight-color': spotlightColor,
-    '--border-glow-color': borderGlowColor,
-    ...(enableTilt
-      ? {
-          transform:
-            'perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))',
-          transition: 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease',
-          willChange: 'transform',
-        }
-      : undefined),
-    ...style,
-  } as React.CSSProperties;
-
-  return (
-    <div
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-      style={combinedStyle}
-      className={`group relative overflow-hidden ${className}`}
-      {...rest}
-    >
-      {/* Surface Radial Spotlight Layer */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"
-        style={{
-          background:
-            'radial-gradient(550px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), var(--spotlight-color, rgba(255,255,255,0.06)), transparent 40%)',
-        }}
-      />
-
-      {/* 1px Illuminated Border Layer */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20"
-        style={{
-          padding: '1px',
-          background:
-            'radial-gradient(350px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), var(--border-glow-color, rgba(255,255,255,0.35)), transparent 40%)',
-          WebkitMask:
-            'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMaskComposite: 'xor',
-          maskComposite: 'exclude',
-        }}
-      />
-
-      {children}
-    </div>
-  );
-};
 
 export const HomePage: React.FC<HomePageProps> = ({
   onNavigate,

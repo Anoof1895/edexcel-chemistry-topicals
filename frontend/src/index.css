@@ -48,6 +48,15 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Linear / Raycast tier micro-surface & design tokens */
 .tabular-nums {
   font-variant-numeric: tabular-nums;

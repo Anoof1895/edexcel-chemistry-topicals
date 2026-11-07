@@ -91,8 +91,12 @@ export function getLocalImageUrl(path: string | null | undefined): string {
  * Returns the Cloudflare R2 CDN URL for a path if hosted on CDN, otherwise returns local URL.
  */
 export function getCdnImageUrl(path: string | null | undefined): string {
-  const cleanPath = getLocalImageUrl(path);
-  if (!cleanPath || cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+  if (!path) return '';
+  const cleanPath =
+    path.startsWith('/') || path.startsWith('http://') || path.startsWith('https://')
+      ? path
+      : getLocalImageUrl(path);
+  if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
     return cleanPath;
   }
   if (!IMAGE_BASE_URL) return cleanPath;
@@ -104,7 +108,7 @@ export function getCdnImageUrl(path: string | null | undefined): string {
 /**
  * Returns the default full image URL.
  * - In local development (import.meta.env.DEV), prefers local static assets served from
- *   /public (e.g. /extracted/ Chemistry crops or /crops_math/) so newly generated or
+ *   /public (e.g. /extracted/ Chemistry crops, /crops_physics/, or /crops_math/) so newly generated or
  *   re-cropped files are instantly viewable on localhost without Cloudflare CDN staleness.
  *   (Can be overridden with VITE_FORCE_R2=true).
  * - In production, returns the Cloudflare R2 CDN URL.
@@ -119,7 +123,11 @@ export function getFullImageUrl(path: string | null | undefined): string {
   const forceR2 = import.meta.env.VITE_FORCE_R2 === 'true';
   if (import.meta.env.DEV && !forceR2) {
     const pathname = cleanPath.split('?')[0];
-    if (pathname.startsWith('/extracted/') || pathname.startsWith('/crops_math/')) {
+    if (
+      pathname.startsWith('/extracted/') ||
+      pathname.startsWith('/crops_math/') ||
+      pathname.startsWith('/crops_physics/')
+    ) {
       return cleanPath;
     }
   }

@@ -57,8 +57,8 @@ export function usePrefetchQuestions(
 
     // Helper to queue an un-cached URL
     const queueUrl = (url: string | null | undefined) => {
-      if (url && !prefetchedUrlCache.has(url)) {
-        prefetchedUrlCache.add(url);
+      if (url && !prefetchedUrlCache.has(url) && !urlsToPrefetch.includes(url)) {
+
         urlsToPrefetch.push(url);
       }
     };
@@ -94,6 +94,8 @@ export function usePrefetchQuestions(
 
     const performPrefetch = () => {
       urlsToPrefetch.forEach((url) => {
+        if (prefetchedUrlCache.has(url)) return;
+        prefetchedUrlCache.add(url);
         try {
           const img = new Image();
           img.crossOrigin = 'anonymous';

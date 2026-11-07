@@ -36,7 +36,13 @@ import {
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { SubtopicGroup, buildStaticSubtopicHierarchy } from '../constants/taxonomy';
-import { getQuestionType, getQuestionSubject } from '../utils/questionClassification';
+import {
+  getQuestionType,
+  getQuestionSubject,
+  doesQuestionMatchUnit,
+  getQuestionValidSubtopics,
+  isPrimarySubtopicMatch,
+} from '../utils/questionClassification';
 import { sortQuestionsLatestFirst } from './QuestionList';
 import { ImageCanvas } from './ImageCanvas';
 import { resolveQuestionImageUrl, resolveMarkSchemeImageUrl } from '../utils/imageUrl';
@@ -387,18 +393,18 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     if (filters.selectedUnits.length === 0) return questions;
     return questions.filter((q) =>
       filters.selectedUnits.some((fu) => {
-        if (fu === q.unit || fu === q.unitCode) return true;
-        const fuPrefix = fu.split(':')[0].trim().toLowerCase();
-        const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
-        return Boolean(fuPrefix && qPrefix && fuPrefix === qPrefix);
+        return doesQuestionMatchUnit(q, fu);
+
+
+
       })
     );
   }, [questions, filters.selectedUnits]);
 
   // Canonical Subtopic Hierarchy
   const subtopicHierarchy: SubtopicGroup[] = useMemo(() => {
-    return buildStaticSubtopicHierarchy(filters.selectedUnits, unitFilteredQuestions, activeSubject);
-  }, [unitFilteredQuestions, filters.selectedUnits, activeSubject]);
+    return buildStaticSubtopicHierarchy(filters.selectedUnits, unitFilteredQuestions, activeSubject, Boolean(filters.primarySubtopicsOnly));
+  }, [unitFilteredQuestions, filters.selectedUnits, activeSubject, filters.primarySubtopicsOnly]);
 
   // Filter the question pool
   const filteredPool = useMemo(() => {
@@ -407,17 +413,17 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
         // Unit filter
         if (filters.selectedUnits.length > 0) {
           const matchesUnit = filters.selectedUnits.some((fu) => {
-            if (fu === q.unit || fu === q.unitCode) return true;
-            const fuPrefix = fu.split(':')[0].trim().toLowerCase();
-            const qPrefix = (q.unit || '').split(':')[0].trim().toLowerCase();
-            return fuPrefix && qPrefix && fuPrefix === qPrefix;
+            return doesQuestionMatchUnit(q, fu);
+    
+    
+
           });
           if (!matchesUnit) return false;
         }
 
         // Subtopics filter
         if (filters.selectedSubtopics.length > 0) {
-          const qSubs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : [q.subtopic];
+          const qSubs = getQuestionValidSubtopics(q, !filters.primarySubtopicsOnly);
           const hasMatch = qSubs.some((s) => s && filters.selectedSubtopics.includes(s));
           if (!hasMatch) return false;
         }
@@ -508,7 +514,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
 
         return true;
       })
-      .sort(sortQuestionsLatestFirst);
+      .sort((a, b) => {
+        if (filters.selectedSubtopics && filters.selectedSubtopics.length > 0) {
+          const aPrimary = isPrimarySubtopicMatch(a, filters.selectedSubtopics);
+          const bPrimary = isPrimarySubtopicMatch(b, filters.selectedSubtopics);
+          if (aPrimary && !bPrimary) return -1;
+          if (!aPrimary && bPrimary) return 1;
+        }
+        return sortQuestionsLatestFirst(a, b);
+      });
   }, [questions, filters, marksFilter, isMath]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPool.length / PAGE_SIZE));
@@ -591,15 +605,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
         return;
       }
 
-      if (isPresetsModalOpen || isSittingModalOpen) return;
+      if (isPresetsModalOpen || isSittingModalOpen || document.querySelector('[role="dialog"], [aria-modal="true"]')) return;
 
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'k' || e.key === 'K') {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'j' || e.key === 'J') {
         e.preventDefault();
         goToNextQuestion();
         return;
       }
 
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'j' || e.key === 'J') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'k' || e.key === 'K') {
         e.preventDefault();
         goToPrevQuestion();
         return;
@@ -713,6 +727,20 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
     const neededMarks = targetMarks - totalCartMarks;
     if (neededMarks <= 0) return;
 
+    const hasActiveFilters =
+      filters.selectedUnits.length > 0 ||
+      filters.selectedSubtopics.length > 0 ||
+      filters.selectedYears.length > 0 ||
+      filters.selectedSeries.length > 0 ||
+      filters.questionType !== 'all' ||
+      marksFilter !== 'all' ||
+      Boolean(filters.searchQuery.trim());
+
+    if (hasActiveFilters && filteredPool.length === 0) {
+      showGeneratorWarning('No questions match your current filters. Please adjust your filters before generating.');
+      return;
+    }
+
     const basePool = (filteredPool.length > 0 ? filteredPool : questions).filter(
       (q) => !cartQuestionIds.includes(q.id)
     );
@@ -727,6 +755,9 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       targetMarks: neededMarks,
       mode: generateMode,
       structure: examStructure,
+      selectedUnits: filters.selectedUnits,
+      selectedSubtopics: filters.selectedSubtopics,
+      primarySubtopicsOnly: Boolean(filters.primarySubtopicsOnly),
       questionStatuses,
       bookmarks,
     });
@@ -752,6 +783,19 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
   };
 
   const handleSmartGenerate = () => {
+    const hasActiveFilters =
+      filters.selectedUnits.length > 0 ||
+      filters.selectedSubtopics.length > 0 ||
+      filters.selectedYears.length > 0 ||
+      filters.selectedSeries.length > 0 ||
+      filters.questionType !== 'all' ||
+      marksFilter !== 'all' ||
+      Boolean(filters.searchQuery.trim());
+
+    if (hasActiveFilters && filteredPool.length === 0) {
+      showGeneratorWarning('No questions match your current filters. Please adjust your filters before generating.');
+      return;
+    }
     const pool = filteredPool.length > 0 ? filteredPool : questions;
     if (pool.length === 0) {
       showGeneratorWarning('No questions available in the current filter pool.');
@@ -762,6 +806,9 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
       targetMarks,
       mode: generateMode,
       structure: examStructure,
+      selectedUnits: filters.selectedUnits,
+      selectedSubtopics: filters.selectedSubtopics,
+      primarySubtopicsOnly: Boolean(filters.primarySubtopicsOnly),
       questionStatuses,
       bookmarks,
     });
@@ -1037,6 +1084,15 @@ export const TestMakerPage: React.FC<TestMakerPageProps> = ({
                   setFilters((prev) => ({ ...prev, selectedSubtopics: subs }));
                   setCurrentPage(1);
                 }}
+                primaryOnly={Boolean(filters.primarySubtopicsOnly)}
+                onTogglePrimaryOnly={() => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    primarySubtopicsOnly: !prev.primarySubtopicsOnly,
+                  }));
+                  setCurrentPage(1);
+                }}
+                activeSubject={activeSubject}
                 questions={unitFilteredQuestions}
                 fullWidth
                 align="right"

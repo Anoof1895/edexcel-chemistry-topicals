@@ -74,6 +74,7 @@ export interface FilterState {
   statusFilter: StatusFilter; // 'all' | 'review' | 'unattempted' | 'mastered'
   questionType: QuestionTypeFilter; // 'all' | 'mcq' | 'theory'
   bookmarkedOnly: boolean;
+  primarySubtopicsOnly?: boolean; // When true, only match primary subtopic (ignore secondary subtopics)
   // Backwards compatibility optional fields
   unit?: string;
   year?: string;

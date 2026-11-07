@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   X
 } from 'lucide-react';
-import { FilterState, ViewMode, QuestionItem } from '../types';
+import { FilterState, ViewMode, QuestionItem, Subject } from '../types';
 import { SubtopicMultiSelect } from './SubtopicMultiSelect';
 import { FilterMultiSelect, FilterOption } from './FilterMultiSelect';
 import { SubtopicGroup } from '../constants/taxonomy';
@@ -36,6 +36,7 @@ interface TopBarProps {
   totalMarks: number;
   onResetFilters: () => void;
   allQuestions?: QuestionItem[];
+  activeSubject?: Subject;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -49,7 +50,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   totalFiltered,
   totalMarks,
   onResetFilters,
-  allQuestions
+  allQuestions,
+  activeSubject,
 }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isSecondaryPopoverOpen, setIsSecondaryPopoverOpen] = useState(false);
@@ -117,6 +119,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   // Detect if Mathematics is active
   const isMath = useMemo(() => {
+    if (activeSubject) return activeSubject === 'mathematics';
     return (
       allQuestions?.some(
         (q) =>
@@ -134,14 +137,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           u.includes('Statistics 1')
       )
     );
-  }, [allQuestions, availableUnits]);
+  }, [activeSubject, allQuestions, availableUnits]);
 
   const isPhysics = useMemo(() => {
+    if (activeSubject) return activeSubject === 'physics';
     return (
       allQuestions?.some((q) => q.unitCode?.startsWith('WPH')) ||
       availableUnits.some((u) => u.startsWith('WPH'))
     );
-  }, [allQuestions, availableUnits]);
+  }, [activeSubject, allQuestions, availableUnits]);
 
   const subjectBadgeClass = isMath
     ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30'
@@ -154,6 +158,26 @@ export const TopBar: React.FC<TopBarProps> = ({
     : isPhysics
     ? 'bg-indigo-600 text-white shadow-sm'
     : 'bg-cyan-600 text-white shadow-sm';
+
+  const currentSubject: Subject = activeSubject ?? (isMath ? 'mathematics' : isPhysics ? 'physics' : 'chemistry');
+
+  const activeSecondaryBtnClass = isMath
+    ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/50'
+    : isPhysics
+    ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/50'
+    : 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50';
+
+  const secondaryIconClass = isMath
+    ? 'text-amber-600 dark:text-amber-400'
+    : isPhysics
+    ? 'text-indigo-600 dark:text-indigo-400'
+    : 'text-cyan-600 dark:text-cyan-400';
+
+  const secondaryBadgeClass = isMath
+    ? 'bg-amber-600 text-white'
+    : isPhysics
+    ? 'bg-indigo-600 text-white'
+    : 'bg-cyan-600 text-white';
 
   // Precompute options with question counts
   const unitOptions: FilterOption[] = useMemo(() => {
@@ -284,7 +308,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     <>
       <header className="surface-glass relative z-30 h-10 sm:h-11 border-b border-slate-200 dark:border-white/[0.07] px-2.5 sm:px-4 flex items-center justify-between gap-2 sm:gap-3 select-none shrink-0 transition-colors">
         {/* Context Badge */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden xl:flex items-center gap-2 shrink-0">
           <span className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
             <span className="hidden sm:inline">Topical</span> Explorer
             <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${subjectBadgeClass}`}>
@@ -315,14 +339,14 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={() => setIsMobileDrawerOpen(true)}
             className={`min-h-[34px] px-2.5 sm:px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
               hasActiveFilters
-                ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-sm'
+                ? `${activeSecondaryBtnClass} shadow-sm`
                 : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08]'
             }`}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+            <SlidersHorizontal className={`w-3.5 h-3.5 shrink-0 ${hasActiveFilters ? secondaryIconClass : 'text-slate-400 dark:text-slate-500'}`} />
             <span>Filters</span>
             {hasActiveFilters && (
-              <span className="w-4 h-4 rounded-full bg-cyan-600 text-white font-bold font-mono tabular-nums text-[10px] flex items-center justify-center">
+              <span className={`w-4 h-4 rounded-full ${secondaryBadgeClass} font-bold font-mono tabular-nums text-[10px] flex items-center justify-center`}>
                 {activeFilterCount}
               </span>
             )}
@@ -396,6 +420,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             options={unitOptions}
             selectedValues={filters.selectedUnits}
             onChange={(units) => onFilterChange({ selectedUnits: units })}
+            activeSubject={currentSubject}
           />
 
           {/* Primary 3: Searchable Multi-Select Subtopics with Collapsible Main Topics */}
@@ -404,6 +429,9 @@ export const TopBar: React.FC<TopBarProps> = ({
             selectedSubtopics={filters.selectedSubtopics}
             onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
             questions={unitFilteredQuestions}
+            primaryOnly={Boolean(filters.primarySubtopicsOnly)}
+            onTogglePrimaryOnly={(val) => onFilterChange({ primarySubtopicsOnly: val })}
+            activeSubject={currentSubject}
           />
 
           {/* Primary 4: Question Type (All | MCQ | Theory) Segmented Switch - Hidden in Mathematics */}
@@ -461,15 +489,15 @@ export const TopBar: React.FC<TopBarProps> = ({
               style={getSubjectSpotlightStyle(isMath ? 'mathematics' : isPhysics ? 'physics' : 'chemistry', 180)}
               className={`spotlight-surface h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all active:scale-95 ${
                 activeSecondaryCount > 0
-                  ? 'bg-cyan-50 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/50 shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)]'
+                  ? `${activeSecondaryBtnClass} shadow-[0_1px_2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.12)]`
                   : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/[0.08] hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]'
               }`}
               title="Consolidated filters: Year, Series, Status"
             >
-              <SlidersHorizontal className="relative z-10 w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              <SlidersHorizontal className={`relative z-10 w-3.5 h-3.5 shrink-0 ${activeSecondaryCount > 0 ? secondaryIconClass : 'text-slate-400 dark:text-slate-500'}`} />
               <span className="relative z-10">Filters</span>
               {activeSecondaryCount > 0 && (
-                <span className="relative z-10 font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-cyan-600 text-white">
+                <span className={`relative z-10 font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.2 rounded-full ${secondaryBadgeClass}`}>
                   • {activeSecondaryCount}
                 </span>
               )}
@@ -769,6 +797,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   options={unitOptions}
                   selectedValues={filters.selectedUnits}
                   onChange={(units) => onFilterChange({ selectedUnits: units })}
+            activeSubject={currentSubject}
                 />
               </div>
 
@@ -783,6 +812,9 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onChange={(subs) => onFilterChange({ selectedSubtopics: subs })}
                   questions={unitFilteredQuestions}
                   fullWidth
+                  primaryOnly={Boolean(filters.primarySubtopicsOnly)}
+                  onTogglePrimaryOnly={(val) => onFilterChange({ primarySubtopicsOnly: val })}
+            activeSubject={currentSubject}
                 />
               </div>
 

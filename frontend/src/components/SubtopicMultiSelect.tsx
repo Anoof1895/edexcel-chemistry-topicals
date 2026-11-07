@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallba
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, Search, Check, X, BookOpen } from 'lucide-react';
 import { SubtopicGroup } from '../constants/taxonomy';
-import { QuestionItem } from '../types';
+import { QuestionItem, Subject } from '../types';
+import { getQuestionValidSubtopics } from '../utils/questionClassification';
 
 interface SubtopicMultiSelectProps {
   hierarchy: SubtopicGroup[];
@@ -11,6 +12,9 @@ interface SubtopicMultiSelectProps {
   questions?: QuestionItem[];
   align?: 'left' | 'right';
   fullWidth?: boolean;
+  primaryOnly?: boolean;
+  onTogglePrimaryOnly?: (primaryOnly: boolean) => void;
+  activeSubject?: Subject;
 }
 
 interface PopoverPosition {
@@ -27,9 +31,48 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
   questions,
   align = 'left',
   fullWidth = false,
+  primaryOnly = false,
+  onTogglePrimaryOnly,
+  activeSubject = 'chemistry',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const isMath = activeSubject === 'mathematics';
+  const isPhysics = activeSubject === 'physics';
+
+  const accent = isMath
+    ? {
+        activeToggle: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40',
+        actionLink: 'text-amber-600 dark:text-amber-400 hover:underline font-semibold',
+        allBtn: 'bg-amber-600 border-amber-600 text-white',
+        partialBtn: 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300',
+        rowSelected: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100',
+        checkbox: 'bg-amber-600 border-amber-600 text-white shadow-sm shadow-amber-500/30',
+        activeTrigger: 'bg-amber-50 dark:bg-amber-500/15 border-amber-400/70 dark:border-amber-500/40 text-amber-800 dark:text-amber-200 shadow-sm',
+        triggerIcon: 'text-amber-600 dark:text-amber-400',
+      }
+    : isPhysics
+    ? {
+        activeToggle: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40',
+        actionLink: 'text-indigo-600 dark:text-indigo-400 hover:underline font-semibold',
+        allBtn: 'bg-indigo-600 border-indigo-600 text-white',
+        partialBtn: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-700 dark:text-indigo-300',
+        rowSelected: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-100',
+        checkbox: 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-500/30',
+        activeTrigger: 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-400/70 dark:border-indigo-500/40 text-indigo-800 dark:text-indigo-200 shadow-sm',
+        triggerIcon: 'text-indigo-600 dark:text-indigo-400',
+      }
+    : {
+        activeToggle: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/40',
+        actionLink: 'text-cyan-600 dark:text-cyan-400 hover:underline font-semibold',
+        allBtn: 'bg-cyan-600 border-cyan-600 text-white',
+        partialBtn: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300',
+        rowSelected: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-100',
+        checkbox: 'bg-cyan-600 border-cyan-600 text-white shadow-sm shadow-cyan-500/30',
+        activeTrigger: 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400/70 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm',
+        triggerIcon: 'text-cyan-600 dark:text-cyan-400',
+      };
   const [collapsedTopics, setCollapsedTopics] = useState<Record<string, boolean>>({});
   const [popoverPos, setPopoverPos] = useState<PopoverPosition | null>(null);
 
@@ -126,12 +169,12 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
     };
   }, [isOpen]);
 
-  // Count how many unit-filtered questions belong to each subtopic
+  // Count how many unit-filtered questions belong to each subtopic (strictly unit-scoped)
   const subtopicCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     if (!questions) return counts;
     questions.forEach((q) => {
-      const subs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : [q.subtopic];
+      const subs = getQuestionValidSubtopics(q, !primaryOnly);
       const seen = new Set<string>();
       subs.forEach((s) => {
         if (s && !seen.has(s)) {
@@ -141,7 +184,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
       });
     });
     return counts;
-  }, [questions]);
+  }, [questions, primaryOnly]);
 
   const selectedSet = useMemo(() => new Set(selectedSubtopics), [selectedSubtopics]);
 
@@ -260,16 +303,38 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
             )}
           </div>
 
-          <div className="flex items-center justify-between text-[11px] px-0.5">
+          <div className="flex items-center justify-between flex-wrap gap-y-1.5 text-[11px] px-0.5">
             <span className="text-slate-500 dark:text-slate-400 font-medium tabular-nums">
               {selectedCount} of {allAvailableSubtopics.length} selected
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {onTogglePrimaryOnly && (
+                <>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onTogglePrimaryOnly(!primaryOnly)}
+                    title={
+                      primaryOnly
+                        ? 'Showing only questions where selected subtopic is the Primary topic. Click to include Secondary matches.'
+                        : 'Primary matches appear first, followed by Secondary matches. Click to match Primary topic only.'
+                    }
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
+                      primaryOnly
+                        ? accent.activeToggle
+                        : 'bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 border-slate-300 dark:border-white/10 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {primaryOnly ? 'Primary Only' : 'Primary + Related'}
+                  </button>
+                  <span className="text-slate-300 dark:text-slate-700">·</span>
+                </>
+              )}
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSelectAll}
-                className="text-cyan-600 dark:text-cyan-400 hover:underline font-semibold"
+                className={accent.actionLink}
               >
                 Select All
               </button>
@@ -335,9 +400,9 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
                       onClick={() => handleToggleTopicGroup(group)}
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors shrink-0 ${
                         allGroupSelected
-                          ? 'bg-cyan-600 border-cyan-600 text-white'
+                          ? accent.allBtn
                           : partialGroupSelected
-                          ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300'
+                          ? accent.partialBtn
                           : 'bg-white dark:bg-[#0f1420] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-cyan-500/50'
                       }`}
                     >
@@ -361,7 +426,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
                             onClick={() => handleToggleSubtopic(sub.name)}
                             className={`flex items-center justify-between gap-2.5 px-3 py-2 cursor-pointer transition-colors text-xs ${
                               isChecked
-                                ? 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-100'
+                                ? accent.rowSelected
                                 : 'hover:bg-slate-50 dark:hover:bg-[#161f31] text-slate-700 dark:text-slate-200'
                             }`}
                           >
@@ -369,7 +434,7 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
                               <div
                                 className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0 ${
                                   isChecked
-                                    ? 'bg-cyan-600 border-cyan-600 text-white shadow-sm shadow-cyan-500/30'
+                                    ? accent.checkbox
                                     : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0b0f19]'
                                 }`}
                               >
@@ -414,12 +479,12 @@ export const SubtopicMultiSelect: React.FC<SubtopicMultiSelectProps> = ({
           fullWidth ? 'w-full' : 'min-w-[140px] max-w-[220px]'
         } ${
           selectedCount > 0
-            ? 'bg-cyan-50 dark:bg-cyan-500/15 border-cyan-400/70 dark:border-cyan-500/40 text-cyan-800 dark:text-cyan-200 shadow-sm'
+            ? accent.activeTrigger
             : 'bg-slate-100 dark:bg-dark-850 border-slate-200 dark:border-dark-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-dark-600'
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          <BookOpen className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+          <BookOpen className={`w-3.5 h-3.5 shrink-0 ${accent.triggerIcon}`} />
           <span className="truncate">{buttonLabel}</span>
         </div>
         <div className="flex items-center gap-1 shrink-0">

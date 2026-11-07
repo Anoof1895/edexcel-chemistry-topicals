@@ -12,12 +12,19 @@ import json
 from collections import defaultdict
 from typing import Dict, Any, List, Tuple, Optional
 
+from pathlib import Path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from pipeline.audit_dataset import audit_math_classification_quality
 from pipeline.syllabus_math import (
     OFFICIAL_MATH_SYLLABUS,
     normalize_math_unit_code,
     get_all_math_subtopics_for_unit,
     get_math_parent_topic_for_subtopic,
-    get_expected_paper_marks
+    get_expected_paper_marks,
+    is_math_subtopic_valid_for_unit,
 )
 
 
@@ -137,9 +144,22 @@ def run_math_audit(
             taxonomy_errors.append((paper_id, qid, topic, f"Topic '{topic}' not in {norm_code} specification"))
 
         subs = q.get("subtopics") or ([q.get("subtopic")] if q.get("subtopic") else [])
+        rel_subs = q.get("relatedSubtopics") or []
+        if len(rel_subs) > 1:
+            taxonomy_errors.append((paper_id, qid, str(len(rel_subs)), f"relatedSubtopics count ({len(rel_subs)}) exceeds max 1"))
         for s in subs:
             if s and s != "General Mathematics" and s not in all_valid_subtopics:
                 taxonomy_errors.append((paper_id, qid, s, f"Subtopic '{s}' not found in official taxonomy"))
+            elif s and not is_math_subtopic_valid_for_unit(s, norm_code):
+                taxonomy_errors.append((paper_id, qid, s, f"Cross-unit subtopic '{s}' on {norm_code} question"))
+
+    diag = audit_math_classification_quality(questions)
+    diag_error_count = (
+        len(diag["cross_unit_violations"])
+        + len(diag["prefix_collisions"])
+        + len(diag["generic_primary_hijacks"])
+        + len(diag["excessive_secondary_tags"])
+    )
 
     # ---------------------------------------------------------
     # PART C: Mark Reconciliation by Paper
@@ -244,14 +264,18 @@ def run_math_audit(
 
     # Taxonomy summary
     print("\n--- [TAXONOMY & SYLLABUS INTEGRITY SUMMARY] ---")
-    if taxonomy_errors:
-        print(f"[!] TAXONOMY ISSUES ({len(taxonomy_errors)} found):")
+    print(f"Cross-Unit Violations           : {len(diag['cross_unit_violations'])}")
+    print(f"Ambiguous Prefix/Subtopic Issues: {len(diag['prefix_collisions'])}")
+    print(f"Generic Primary Topic Hijacks   : {len(diag['generic_primary_hijacks'])}")
+    print(f"Excessive Secondary Tags (>1)   : {len(diag['excessive_secondary_tags'])}")
+    if taxonomy_errors or diag_error_count > 0:
+        print(f"[!] TAXONOMY / CLASSIFICATION ISSUES ({len(taxonomy_errors)} taxonomy, {diag_error_count} classification quality found):")
         for pid, qid, field, reason in taxonomy_errors[:15]:
             print(f"  [X] {pid} ({qid}): {reason}")
         if len(taxonomy_errors) > 15:
             print(f"  ... and {len(taxonomy_errors) - 15} more taxonomy discrepancies.")
     else:
-        print("[SUCCESS] 100% of questions conform strictly to the official IAL Mathematics syllabus.")
+        print("[SUCCESS] 100% of questions conform strictly to the official IAL Mathematics syllabus and classification hierarchy.")
 
     # Mark Reconciliation summary
     print("\n--- [SPECIFICATION 75-MARK RECONCILIATION SUMMARY] ---")
@@ -268,12 +292,12 @@ def run_math_audit(
         print("[SUCCESS] 100% of papers reconcile to exactly 75 marks.")
 
     # Final verdict
-    all_passed = (len(asset_errors) == 0 and len(taxonomy_errors) == 0 and len(mark_discrepancies) == 0)
+    all_passed = (len(asset_errors) == 0 and len(taxonomy_errors) == 0 and diag_error_count == 0 and len(mark_discrepancies) == 0)
     print("\n" + "=" * 85)
     if all_passed:
-        print("[AUDIT PASSED] Dataset meets 100% specification reconciliation and asset integrity.")
+        print("[AUDIT PASSED] Dataset meets 100% specification reconciliation, asset integrity, and strict classification accuracy.")
     else:
-        print(f"[AUDIT COMPLETED WITH ISSUES] {len(asset_errors)} asset errors, {len(taxonomy_errors)} taxonomy errors, {len(mark_discrepancies)} mark discrepancies.")
+        print(f"[AUDIT COMPLETED WITH ISSUES] {len(asset_errors)} asset errors, {len(taxonomy_errors)} taxonomy errors, {diag_error_count} classification quality issues, {len(mark_discrepancies)} mark discrepancies.")
     print("=" * 85 + "\n")
 
     return all_passed

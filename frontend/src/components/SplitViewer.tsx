@@ -224,6 +224,18 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [question, isMcq, isMath, isFullQuestionOpen, handleMcqSelect]);
 
+  useEffect(() => {
+    if (!isFullQuestionOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsFullQuestionOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullQuestionOpen]);
+
   if (!question) {
     return (
       <main className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-dark-950 text-slate-400 dark:text-slate-500">
@@ -803,6 +815,9 @@ export const SplitViewer: React.FC<SplitViewerProps> = ({
           onClick={() => setIsFullQuestionOpen(false)}
         >
           <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="All Parts of Question"
             className="w-full max-w-3xl bg-white dark:bg-dark-900 border-l border-slate-200 dark:border-dark-750 h-full flex flex-col shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >

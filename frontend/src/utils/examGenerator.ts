@@ -1,5 +1,10 @@
 import { QuestionItem, Subject } from '../types';
-import { getQuestionType } from './questionClassification';
+import {
+  getQuestionType,
+  doesQuestionMatchUnit,
+  getQuestionValidSubtopics,
+  isPrimarySubtopicMatch,
+} from './questionClassification';
 
 export type SmartGenerateMode = 'balanced' | 'review_first' | 'unattempted_only';
 export type ExamStructure = 'authentic' | 'theory_only' | 'mcq_sprint';
@@ -13,6 +18,7 @@ export interface ExamGeneratorOptions {
   selectedUnits?: string[];
   selectedTopics?: string[];
   selectedSubtopics?: string[];
+  primarySubtopicsOnly?: boolean;
   isMcqOnly?: boolean;
   questionStatuses?: Record<string, string>;
   bookmarks?: Set<string> | string[];
@@ -371,12 +377,7 @@ export function autoGenerateExam(
   let unitFiltered = validPool;
   if (selectedUnits && selectedUnits.length > 0 && !selectedUnits.includes('all')) {
     const matched = validPool.filter((q) =>
-      selectedUnits.some(
-        (u) =>
-          String(q.unit).toLowerCase() === u.toLowerCase() ||
-          String(q.unitCode).toLowerCase() === u.toLowerCase() ||
-          `unit ${q.unit}`.toLowerCase() === u.toLowerCase()
-      )
+      selectedUnits.some((u) => doesQuestionMatchUnit(q, u))
     );
     if (matched.length > 0) {
       unitFiltered = matched;
@@ -429,7 +430,7 @@ export function autoGenerateExam(
         if (!q.topic || !selectedTopics.includes(q.topic)) return false;
       }
       if (selectedSubtopics && selectedSubtopics.length > 0) {
-        const qSubs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : [q.subtopic];
+        const qSubs = getQuestionValidSubtopics(q, !options.primarySubtopicsOnly);
         const hasMatch = qSubs.some((s) => s && selectedSubtopics.includes(s));
         if (!hasMatch) return false;
       }
@@ -474,6 +475,9 @@ export function autoGenerateExam(
       }
     } else if (mode === 'unattempted_only') {
       score = !st || st === 'unattempted' ? 250 : 40;
+    }
+    if (selectedSubtopics && selectedSubtopics.length > 0 && isPrimarySubtopicMatch(q, selectedSubtopics)) {
+      score += 150;
     }
     priorityMap.set(q.id, score + Math.random() * 40);
   }

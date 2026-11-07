@@ -26,10 +26,27 @@ export const FullPaperPresetsModal: React.FC<FullPaperPresetsModalProps> = ({
   onApplyPreset,
   accentClasses,
 }) => {
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Official Pearson Edexcel IAL Presets"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+    >
       <div
         className="bg-white dark:bg-[#0E131F] border border-slate-200 dark:border-white/10 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}

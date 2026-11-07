@@ -151,6 +151,9 @@ export const DataBookletDrawer: React.FC<DataBookletDrawerProps> = ({
     >
       {/* Drawer Container */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Official Data Booklet & Formulae"
         className={`w-full ${
           isGridActive ? 'md:w-[92vw] lg:w-[960px] max-w-5xl' : 'sm:w-[500px] md:w-[560px]'
         } h-full bg-white dark:bg-[#0B0F17] border-l border-slate-200 dark:border-white/[0.08] flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 z-10 select-text transition-[width] pointer-events-auto`}

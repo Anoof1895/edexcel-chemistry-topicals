@@ -781,15 +781,57 @@ export function isUnitMatch(unitDef: UnitDefinition, filterUnit: string): boolea
   return false;
 }
 
+// Precomputed lookup table mapping every canonical subtopic to its strict parent UnitDefinition
+const SUBTOPIC_UNIT_LOOKUP = new Map<string, UnitDefinition>();
+for (const tax of [
+  OFFICIAL_IAL_CHEMISTRY_TAXONOMY,
+  OFFICIAL_IAL_PHYSICS_TAXONOMY,
+  OFFICIAL_IAL_MATHEMATICS_TAXONOMY,
+]) {
+  for (const unitDef of tax) {
+    for (const topic of unitDef.topics) {
+      for (const s of topic.subtopics) {
+        SUBTOPIC_UNIT_LOOKUP.set(s, unitDef);
+      }
+    }
+  }
+}
+
+/**
+ * Checks whether a subtopic strictly belongs to the given question's Unit.
+ * Prevents any cross-unit secondary subtopic bleed (e.g. a Unit 5 question matching a Unit 1 subtopic).
+ */
+export function isSubtopicValidForQuestionUnit(
+  subtopic: string,
+  questionUnit?: string,
+  questionUnitCode?: string
+): boolean {
+  if (!subtopic) return false;
+  const unitDef = SUBTOPIC_UNIT_LOOKUP.get(subtopic);
+  if (!unitDef) return false;
+
+  if (questionUnit && isUnitMatch(unitDef, questionUnit)) {
+    return true;
+  }
+  if (questionUnitCode && isUnitMatch(unitDef, questionUnitCode)) {
+    return true;
+  }
+  if (!questionUnit && !questionUnitCode) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Builds the canonical subtopic hierarchy based strictly on the official specification taxonomy.
  * Subtopics are permanently locked to their official parent topic and unit.
- * Question counts are dynamically calculated from the questions dataset.
+ * Question counts are dynamically calculated from the questions dataset, strictly scoped by unit.
  */
 export function buildStaticSubtopicHierarchy(
   unitFilter: string | string[],
-  questions: { subtopic?: string; subtopics?: string[]; unit?: string; unitCode?: string; paperId?: string }[],
-  subject?: 'chemistry' | 'physics' | 'mathematics'
+  questions: { mainSubtopic?: string; subtopic?: string; subtopics?: string[]; unit?: string; unitCode?: string; paperId?: string }[],
+  subject?: 'chemistry' | 'physics' | 'mathematics',
+  primarySubtopicsOnly: boolean = false
 ): SubtopicGroup[] {
   // Normalize unitFilter to an array of unit identifiers
   const unitList: string[] = Array.isArray(unitFilter)
@@ -828,7 +870,7 @@ export function buildStaticSubtopicHierarchy(
     }
   }
 
-  // Precompute subtopic frequency across the questions
+  // Precompute subtopic frequency across the questions (strictly unit-scoped)
   const subtopicCounts = new Map<string, number>();
   for (const q of questions) {
     if (unitList.length > 0 && q.unit) {
@@ -841,9 +883,15 @@ export function buildStaticSubtopicHierarchy(
       });
       if (!matchesAnyUnit) continue;
     }
-    const subs = q.subtopics && q.subtopics.length > 0 ? q.subtopics : (q.subtopic ? [q.subtopic] : []);
-    for (const s of subs) {
-      if (!s) continue;
+    const primarySub = q.mainSubtopic || q.subtopic || (q.subtopics && q.subtopics[0]) || '';
+    const rawSubs = primarySubtopicsOnly
+      ? (primarySub ? [primarySub] : [])
+      : (q.subtopics && q.subtopics.length > 0 ? q.subtopics : (primarySub ? [primarySub] : []));
+    const seen = new Set<string>();
+    for (const s of rawSubs) {
+      if (!s || seen.has(s)) continue;
+      if (!isSubtopicValidForQuestionUnit(s, q.unit, q.unitCode)) continue;
+      seen.add(s);
       subtopicCounts.set(s, (subtopicCounts.get(s) || 0) + 1);
     }
   }

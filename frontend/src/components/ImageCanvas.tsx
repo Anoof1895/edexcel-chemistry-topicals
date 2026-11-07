@@ -54,6 +54,7 @@ export interface TextAnnotation {
   xPercent: number; // 0 to 100 (% of image width)
   yPercent: number; // 0 to 100 (% of image height)
   fontSize: number; // base font size in px
+  color?: string;
 }
 
 const inMemoryTextCache = new Map<string, TextAnnotation[]>();
@@ -402,6 +403,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       xPercent,
       yPercent,
       fontSize: config.fontSize,
+      color: penColor,
     };
     editingItemRef.current = newItem;
     setEditingInLightbox(isLightbox);
@@ -1113,8 +1115,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
                 left: `${item.xPercent}%`,
                 top: `${item.yPercent}%`,
                 fontSize: `${displayFontSize}px`,
-                color: penColor,
-                borderColor: penColor,
+                color: item.color || penColor,
+                borderColor: item.color || penColor,
               }}
               title={
                 isAnnotating
@@ -1168,8 +1170,8 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
               fontSize: `${Math.round(editingItem.fontSize * scaleFactor)}px`,
               width: `${Math.max(8, editingItem.text.length + 1)}ch`,
               maxWidth: '90%',
-              color: penColor,
-              borderColor: penColor,
+              color: editingItem.color || penColor,
+              borderColor: editingItem.color || penColor,
             }}
           />
         )}
@@ -1300,7 +1302,7 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
             )}
           </div>
         ) : (
-          <div className="relative z-10 flex flex-col justify-start items-center pt-1 pb-12 w-full max-w-full">
+          <div className="relative z-10 flex flex-col justify-start items-center pt-1 pb-24 sm:pb-28 w-full max-w-full">
             {/* Minimal Floating Annotation Controls */}
             {enableAnnotation && (
               <div className="sticky top-2 z-10 mb-3.5 flex items-center justify-center pointer-events-auto">
@@ -1372,6 +1374,9 @@ export const ImageCanvas: React.FC<ImageCanvasProps> = ({
       {/* Full-Screen Lightbox Modal */}
       {isLightboxOpen && src && !hasError && (
         <div 
+          role="dialog"
+          aria-modal="true"
+          aria-label={title ? `${title} Lightbox` : "Image Lightbox"}
           className="fixed inset-0 z-[70] bg-black/85 backdrop-blur-md flex flex-col animate-in fade-in duration-150"
           onClick={closeLightbox}
         >

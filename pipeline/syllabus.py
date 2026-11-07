@@ -6,7 +6,46 @@ Covers:
 Strictly aligned with Pearson Edexcel IAL Chemistry Specification (Topics 1–20 + Unit 3 & Unit 6 Practical Skills).
 """
 
-from typing import Dict, List, Any
+from typing import Any, Dict, List, Set, Tuple
+import re
+
+HAZARD_SUBTOPIC = "4A (4.1-4.3): Hazards, Risk Assessment & Safe Laboratory Precautions"
+EQUATIONS_SUBTOPIC = "1.3 & 1.12: Chemical & Ionic Equations, State Symbols & Test-Tube Observations"
+EQUATIONS_SUBTOPIC_ALIAS = "1.3 & 1.10: Chemical & Ionic Equations, State Symbols & Test-Tube Observations"
+NOMENCLATURE_SUBTOPIC = "4A (4.4-4.8): Homologous Series, IUPAC Nomenclature, Reaction Types & Bond Fission"
+ALKANE_FUELS_POLLUTANTS_SUBTOPIC = "4B (4.12-4.16): Crude Oil, Fractional Distillation, Cracking, Pollutants & Carbon Neutrality"
+ALKENE_ADDITION_SUBTOPIC = "5.4-5.5: Addition Reactions of Alkenes (H2, Halogens, HX, Steam, KMnO4) & Bromine Test"
+
+SUBTOPIC_ALIASES: Dict[str, str] = {
+    EQUATIONS_SUBTOPIC_ALIAS: EQUATIONS_SUBTOPIC,
+    "1.3 & 1.10": EQUATIONS_SUBTOPIC,
+}
+
+FOUNDATIONAL_GENERIC_SUBTOPICS: Set[str] = {
+    EQUATIONS_SUBTOPIC,
+    EQUATIONS_SUBTOPIC_ALIAS,
+    HAZARD_SUBTOPIC,
+    NOMENCLATURE_SUBTOPIC,
+}
+
+# Broad hazard/risk/precaution vocabulary
+HAZARD_BROAD_RE = re.compile(
+    r"\b(hazard|hazards|hazardous|risk|risks|precaution|precautions|toxic|toxicity|flammable|inflammable|corrosive|irritant|carcinogen|carcinogenic|poisonous|fume\s+cupboard|gloves|goggles|eye\s+protection|explosion|explosive|oxidising\s+agent|stored\s+in\s+the\s+same\s+cupboard)\b",
+    re.I,
+)
+
+# Direct hazard/risk prompt detector: sub-part explicitly asks about hazard, risk assessment, or safety precaution
+HAZARD_PROMPT_RE = re.compile(
+    r"\b(hazard|hazards|risk\s+assessment|precaution|precautions)\b|"
+    r"(?:\b(?:reduce|minimise|minimize)\s+the\s+risk\b)|"
+    r"(?:\b(?:toxic|flammable|corrosive)\b.*?\b(?:hazard|risk|precaution|symbol|store|stored|cupboard|safety)\b)",
+    re.I,
+)
+
+NON_HAZARD_PROMPT_EXCLUSION_RE = re.compile(
+    r"\b(polymer\s+disposal|disposal\s+of\s+polymers|calculate\s+the\s+maximum\s+number\s+of\s+\w+\s+molecules)\b",
+    re.I,
+)
 
 OFFICIAL_SYLLABUS: Dict[str, Dict[str, Any]] = {
     "WCH11": {
@@ -209,16 +248,146 @@ def get_all_subtopics_for_unit(unit_name: str) -> List[str]:
         subtopics.extend(subs)
     return subtopics
 
+def normalize_subtopic_name(subtopic: str) -> str:
+    s = (subtopic or "").strip()
+    return SUBTOPIC_ALIASES.get(s, s)
+
+
 def get_parent_topic_for_subtopic(subtopic: str) -> str:
+    s = normalize_subtopic_name(subtopic)
     for _, unit_data in OFFICIAL_SYLLABUS.items():
         for top, subs in unit_data["topics"].items():
-            if subtopic in subs:
+            if s in subs:
                 return top
     return "General Chemistry"
 
+
 def get_unit_for_subtopic(subtopic: str) -> str:
+    s = normalize_subtopic_name(subtopic)
     for _, unit_data in OFFICIAL_SYLLABUS.items():
         for _, subs in unit_data["topics"].items():
-            if subtopic in subs:
+            if s in subs:
                 return unit_data["unit"]
     return "Unit 1"
+
+
+def is_subtopic_valid_for_unit(subtopic: str, unit_or_code: str) -> bool:
+    """Returns True if and only if `subtopic` belongs strictly to `unit_or_code` (e.g. 'Unit 1' or 'WCH11')."""
+    s = normalize_subtopic_name(subtopic)
+    if not s:
+        return False
+    u_raw = (unit_or_code or "").strip()
+    target_unit = u_raw if u_raw.startswith("Unit ") else get_unit_from_code(u_raw)
+    allowed_subs = set(get_all_subtopics_for_unit(target_unit))
+    return s in allowed_subs
+
+
+def enforce_chemistry_subtopic_hierarchy(
+    unit_or_code: str,
+    main_subtopic: str,
+    related_subtopics: List[str],
+    own_prompt_text: str = "",
+    own_ms_text: str = "",
+) -> Tuple[str, str, List[str]]:
+    """
+    Enforces strict Edexcel IAL Chemistry classification rules:
+    1. Strict Unit Scoping: A question from Unit X can ONLY be assigned primary & secondary subtopics from Unit X.
+    2. Sub-part Isolation & Hazard/Risk Assessment Rules:
+       - `4A (4.1-4.3)` is strictly a Unit 1 subtopic.
+       - Any Unit 1 sub-part explicitly asking about a hazard, risk, risk assessment, or safety precaution
+         must have `4A (4.1-4.3)` as its primary subtopic (with `4B (4.12-4.16)` as secondary when involving alkane pollutants).
+       - Strip `4A (4.1-4.3)` if attached to non-hazard sub-parts (e.g., IUPAC naming, structure drawing, or sub-parts with no hazard/risk concepts).
+    3. Primary vs. Secondary Subtopic Hierarchy:
+       - Foundational generic skills (`1.3 & 1.12` / `1.3 & 1.10`, `4A (4.4-4.8)`) must not usurp a specific Topic 1-5 subtopic as primary.
+    4. Secondary Subtopic Cap:
+       - Maximum 1 secondary subtopic (`len(related_subtopics) <= 1`, max 2 subtopics total).
+    """
+    u_raw = (unit_or_code or "").strip()
+    unit_name = u_raw if u_raw.startswith("Unit ") else get_unit_from_code(u_raw)
+    allowed_unit_subs = get_all_subtopics_for_unit(unit_name)
+    allowed_set = set(allowed_unit_subs)
+
+    main_sub = normalize_subtopic_name(main_subtopic)
+    raw_rels = [normalize_subtopic_name(r) for r in (related_subtopics or []) if r]
+
+    # 1. Strict Unit Scoping on primary and secondary subtopics
+    valid_rels: List[str] = []
+    for r in raw_rels:
+        if r in allowed_set and r not in valid_rels:
+            valid_rels.append(r)
+
+    if main_sub not in allowed_set:
+        if valid_rels:
+            main_sub = valid_rels.pop(0)
+        else:
+            main_sub = allowed_unit_subs[0]
+
+    valid_rels = [r for r in valid_rels if r != main_sub]
+
+    own_qp = (own_prompt_text or "").strip()
+    own_ms = (own_ms_text or "").strip()
+    own_combined = f"{own_qp} {own_ms}".strip()
+
+    # 2. Hazard & Risk Assessment (`4A (4.1-4.3)`) Rules (Unit 1 only)
+    if unit_name == "Unit 1":
+        # Strip non-hazard 4A (4.1-4.3) bleed
+        is_iupac_or_structure_prompt = bool(
+            re.search(
+                r"\b(iupac\s+name|give\s+the\s+name|skeletal\s+formula|displayed\s+formula|structural\s+formula)\b",
+                own_qp,
+                re.I,
+            )
+            and not HAZARD_PROMPT_RE.search(own_qp)
+        )
+        if HAZARD_SUBTOPIC in valid_rels:
+            if (own_qp and not HAZARD_BROAD_RE.search(own_qp)) or is_iupac_or_structure_prompt:
+                valid_rels = [r for r in valid_rels if r != HAZARD_SUBTOPIC]
+
+        if main_sub == HAZARD_SUBTOPIC and valid_rels:
+            if (own_combined and not HAZARD_BROAD_RE.search(own_combined)) or is_iupac_or_structure_prompt:
+                main_sub = valid_rels.pop(0)
+
+        # Promote 4A (4.1-4.3) to primary when Unit 1 sub-part explicitly asks about hazard/risk/precaution
+        if (
+            main_sub != HAZARD_SUBTOPIC
+            and own_qp
+            and HAZARD_PROMPT_RE.search(own_qp)
+            and not NON_HAZARD_PROMPT_EXCLUSION_RE.search(own_qp)
+        ):
+            prev_main = main_sub
+            main_sub = HAZARD_SUBTOPIC
+            valid_rels = [r for r in valid_rels if r != HAZARD_SUBTOPIC]
+            if prev_main in allowed_set and prev_main != HAZARD_SUBTOPIC:
+                valid_rels.insert(0, prev_main)
+
+    # 3. Primary vs. Secondary Subtopic Hierarchy (prevent generic subtopic hijacking)
+    if main_sub in (EQUATIONS_SUBTOPIC, NOMENCLATURE_SUBTOPIC):
+        specific_rels = [r for r in valid_rels if r not in FOUNDATIONAL_GENERIC_SUBTOPICS]
+        if specific_rels:
+            promoted = specific_rels[0]
+            demoted = main_sub
+            remaining = [r for r in valid_rels if r != promoted]
+            main_sub = promoted
+            # Keep the demoted generic subtopic as secondary only if no other specific subtopic takes priority
+            valid_rels = [demoted] + remaining
+        elif main_sub == EQUATIONS_SUBTOPIC and unit_name == "Unit 1" and own_qp:
+            if re.search(
+                r"\b(combustion|complete\s+combustion|incomplete\s+combustion|reforming|cracking|alkane|heptane|octane|dodecane|isooctane|propane|butane)\b",
+                own_qp,
+                re.I,
+            ):
+                main_sub = ALKANE_FUELS_POLLUTANTS_SUBTOPIC
+                valid_rels = [EQUATIONS_SUBTOPIC]
+            elif re.search(
+                r"\b(hydrogenation|alkene|squalene|propene|ethene|bromine\s+water)\b",
+                own_qp,
+                re.I,
+            ):
+                main_sub = ALKENE_ADDITION_SUBTOPIC
+                valid_rels = [EQUATIONS_SUBTOPIC]
+
+    # 4. Cap secondary subtopics at max 1 (total max 2 subtopics per sub-part)
+    valid_rels = [r for r in valid_rels if r != main_sub and r in allowed_set][:1]
+    main_topic = get_parent_topic_for_subtopic(main_sub)
+    return main_topic, main_sub, valid_rels
+
